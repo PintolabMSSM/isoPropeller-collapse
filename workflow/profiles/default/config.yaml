@@ -1,0 +1,34 @@
+# --- Define basic settings --- #
+
+executor: cluster-generic
+
+latency-wait:     5
+rerun-incomplete: true
+jobs:             100
+use-singularity:  true
+use-conda:        true
+
+# --- Define the generic cluster submit command --- #
+cluster-generic-submit-cmd: bsub -W {resources.runtime} -n 12 -M {resources.mem_mb} -P {resources.project} -q {resources.queue} -R {resources.span} -oo clusterlogs/%J.OU
+
+# --- Define default resources --- #
+default-resources:
+  mem_mb:   25000
+  queue:    "express"
+  project:  "acc_PVI"
+  runtime:  "12h"
+  span:     "\"span[hosts=1]\""
+
+# --- Define task-specific resources --- #
+set-resources:
+
+  bam_to_fasta:
+    mem_mb:   16000
+    runtime:  "6h"
+
+  mapping:
+    mem_mb:   32000
+
+  talon_label_reads:
+    mem_mb:   32000
+

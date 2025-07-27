@@ -1,0 +1,5 @@
+samples:                "samples.csv"
+use_transcriptclean:    true
+
+reference_genome_fasta: "/sc/arion/projects/pintod02c/reference-databases/hg38-v41-ERCC/GRCh38.primary_assembly.genome.fa"
+max_intron_length:      1250000

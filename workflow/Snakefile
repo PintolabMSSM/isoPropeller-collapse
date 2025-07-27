@@ -1,0 +1,96 @@
+#!/usr/bin/env snakemake
+
+##########
+# IMPORT #
+##########
+
+import pandas as pd
+import os
+import sys
+
+from collections import defaultdict
+
+##########
+# CONFIG #
+##########
+
+# Define minimum snakemake version
+min_snakemake_version = "8.25.0"
+
+# Load configuration from config file
+configfile: ''.join([os.environ['GIT_REPODIR'], "/config/config.yaml"])
+
+
+####################
+# INPUT VALIDATION #
+####################
+
+# Define expected columns in the CSV
+expected_columns = {"path_to_flnc_bam", "sample"}
+sample_csv_path  = config.get("samples")
+
+# Load and validate sample sheet
+if not sample_csv_path or not os.path.isfile(sample_csv_path):
+    sys.exit(f"[ERROR] Sample CSV file not found or missing: {sample_csv_path}")
+
+samples_df = pd.read_csv(sample_csv_path)
+
+# Check required headers
+if not expected_columns.issubset(samples_df.columns):
+    sys.exit(f"[ERROR] CSV must contain columns: {expected_columns}")
+
+# Validate BAM file existence
+missing = samples_df.loc[~samples_df["path_to_flnc_bam"].apply(os.path.exists), "path_to_flnc_bam"]
+if not missing.empty:
+    sys.exit("[ERROR] These FLNC BAM files do not exist:\n  " + "\n  ".join(missing.tolist()))
+
+# Check for duplicate BAM paths
+if samples_df["path_to_flnc_bam"].duplicated().any():
+    dups = samples_df.loc[samples_df["path_to_flnc_bam"].duplicated(), "path_to_flnc_bam"]
+    sys.exit("[ERROR] Duplicate FLNC BAM paths found:\n  " + "\n  ".join(dups.tolist()))
+
+print("[INFO] Sample sheet validation passed.")
+
+
+#########
+# SETUP #
+#########
+
+# Set snakemake main workdir variable. 
+SNAKEDIR = os.path.dirname(workflow.snakefile) + "/"
+
+# Group BAMs by sample
+FLNC_BAMS = defaultdict(list)
+for row in samples_df.itertuples(index=False):
+    FLNC_BAMS[row.sample].append(row.path_to_flnc_bam)
+
+# Create flat map of (sample, part) -> bam_path
+FLNC_BAM_PARTS = {
+    (sample, i): bam
+    for sample, bam_list in FLNC_BAMS.items()
+    for i, bam in enumerate(bam_list)
+}
+
+# Define local variables
+SAMPLES      = sorted(FLNC_BAMS.keys())
+USE_TC       = config.get("use_transcriptclean", True)
+GENOMEFASTA  = config["reference_genome_fasta"]
+MAXINTRONLEN = config.get("max_intron_length", 1250000)
+
+
+#########
+# RULES #
+#########
+
+# Import common rules
+include: "rules/mapping.smk"
+
+# Import conditional rules
+#if USE_TC:
+#    include: "rules/transcriptclean.smk"
+
+
+# Make final targets
+rule all:
+    input:
+        expand("01_mapping/{sample}/{sample}_mapped_labeled.bam", sample=SAMPLES)

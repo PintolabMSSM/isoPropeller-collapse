@@ -27,3 +27,16 @@ limit_output_to_chrNXY: true
 
 # Prefix to use for the merged isoform file and final merged isoforms
 merged_isoform_prefix:  "ISOP"
+
+# After the isoPropeller merging steps, optionally perform the following filtering steps to reduce
+# technical and biological noise.
+remove_monoexons_without_cage_support:              True
+remove_monoexon_premRNA_fragments:                  True
+remove_isoforms_with_noncanonical_splice_junctions: True
+remove_isoforms_with_template_switching_artifacts:  True
+remove_isoforms_with_antisense_perfect_splicematch: True
+remove_isoforms_with_intrapriming_artifacts:        True
+remove_isoforms_fully_contained_in_repeats:         True
+remove_isoforms_overlapping_PAR_regions:            True
+remove_isoforms_not_found_in_min_samples:           3
+

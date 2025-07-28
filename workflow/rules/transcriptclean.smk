@@ -60,8 +60,8 @@ rule transcriptclean_sam_to_bam:
     input:
         sam = "02_transcriptclean/{sample}/{sample}_clean.sam"
     output:
-        bam = "02_transcriptclean/{sample}/{sample}_mapped_labeled_tcclean.bam",
-        bai = "02_transcriptclean/{sample}/{sample}_mapped_labeled_tcclean.bam.bai"
+        bam = "02_transcriptclean/{sample}/{sample}_mapped_labeled_tclean.bam",
+        bai = "02_transcriptclean/{sample}/{sample}_mapped_labeled_tclean.bam.bai"
     log:
         "logs/02_transcriptclean/{sample}_sam_to_bam.log"
     benchmark:

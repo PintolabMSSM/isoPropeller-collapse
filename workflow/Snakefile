@@ -78,6 +78,8 @@ GENOMEFASTA     = config["reference_genome_fasta"]
 MAXINTRONLEN    = config.get("max_intron_length", 1250000)
 SPLICEJUNCTIONS = config.get("splice_junctions_file")
 CAGEBED         = config.get("cage_bed_file")
+MERGEDISOPREFIX = config.get("merged_isoform_prefix", "ISOP")
+ONLYCHR         = config.get("limit_output_to_chrNXY", True)
 
 #########
 # RULES #
@@ -86,6 +88,7 @@ CAGEBED         = config.get("cage_bed_file")
 # Import common rules
 include: "rules/mapping.smk"
 include: "rules/isopropeller.smk"
+include: "rules/isopropeller-merge.smk"
 
 # Import conditional rules
 if USE_TC:
@@ -99,4 +102,5 @@ rule all:
         expand("01_mapping/{sample}/{sample}_mapped_labeled.bam", sample=SAMPLES),
         expand("02_transcriptclean/{sample}/{sample}_mapped_labeled_tclean.bam", sample=SAMPLES),
         expand("03_isoPropeller/{sample}/{sample}_all.gtf", sample=SAMPLES),
-        expand("03_isoPropeller/{sample}/{sample}_depth_gt1.gtf", sample=SAMPLES)
+        expand("03_isoPropeller/{sample}/{sample}_depth-gt1.gtf", sample=SAMPLES),
+        expand("04_isoPropeller-merge/{prefix}_{suffix}.gtf", prefix=MERGEDISOPREFIX, suffix=["all", "depth-gt1"])

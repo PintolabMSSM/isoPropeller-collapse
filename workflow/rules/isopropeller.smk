@@ -8,7 +8,10 @@ rule run_isopropeller:
         ref  = GENOMEFASTA,
         cage = CAGEBED
     output:
-        gtf   = "03_isoPropeller/{sample}/{sample}_all.gtf"
+        gtf   = "03_isoPropeller/{sample}/{sample}_all.gtf",
+        end   = "03_isoPropeller/{sample}/{sample}_all_end_dist.txt",
+        stat  = "03_isoPropeller/{sample}/{sample}_all_stat.txt",
+        log   = "03_isoPropeller/{sample}/{sample}_all.log"
     log:
         "logs/03_isoPropeller/{sample}_run.log"
     benchmark:
@@ -38,7 +41,7 @@ rule filter_isopropeller_gtf:
     input:
         gtf          = "03_isoPropeller/{sample}/{sample}_all.gtf"
     output:
-        filtered_gtf = "03_isoPropeller/{sample}/{sample}_depth_gt1.gtf"
+        filtered_gtf = "03_isoPropeller/{sample}/{sample}_depth-gt1.gtf"
     log:
         "logs/03_isoPropeller/{sample}_filter_gtf.log"
     benchmark:
@@ -47,13 +50,18 @@ rule filter_isopropeller_gtf:
     params:
         prefix      = "03_isoPropeller/{sample}/{sample}",
         tmp_id_file = "03_isoPropeller/{sample}/{sample}_temp_transcript_id.txt",
-        attr        = "transcript_id"
+        attr        = "transcript_id",
+        onlychr     = ONLYCHR
     conda:
         SNAKEDIR + "envs/isopropeller.yaml"
     shell:
         """
         # Extract transcript IDs with depth > 1
-        grep $'\ttranscript\t' {input.gtf} | grep -v 'depth "1"' | cut -d'"' -f4 > {params.tmp_id_file}
+        if [ "{params.onlychr}" = "True" ]; then
+            grep $'\ttranscript\t' {input.gtf} | grep "^chr" | grep -vi "^chrM" | grep -v 'depth "1"' | cut -d'"' -f4 > {params.tmp_id_file}
+        else
+            grep $'\ttranscript\t' {input.gtf} | grep -v 'depth "1"' | cut -d'"' -f4 > {params.tmp_id_file}
+        fi
 
         # Filter GTF with perl script
         select_gtf_by_attribute_list.pl {input.gtf} {output.filtered_gtf} {params.tmp_id_file} {params.attr}

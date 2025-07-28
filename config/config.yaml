@@ -1,7 +1,26 @@
-samples:                "samples.csv"
-use_transcriptclean:    true
 
+# CSV formatted file with sample names and paths to flnc files
+samples: "samples.csv"
+
+# Full path to the reference genome fasta file for isoform mapping
 reference_genome_fasta: "/sc/arion/projects/pintod02c/reference-databases/hg38-v41-ERCC/GRCh38.primary_assembly.genome.fa"
-max_intron_length:      1250000
-splice_junctions_file:  "/sc/arion/work/pintod02/opt/isoseq_pipeline/data/merged-intropolis-PEC-GTEX.SJ.out.tab"
-cage_bed_file:          "/sc/arion/work/pintod02/opt/isoseq_pipeline/data/combined_cage_Pitt-Fantom5-119FrontalLob_refTSS3.3_refseq_gencode_extended.merged.sorted_chr.bed"
+
+# The maximum allowed intron length when mapping reads to the reference genome with minimap2
+# This is set to 1.25 Mb by default, which is the maximum known intron size in the human genome
+max_intron_length: 1250000
+
+# Path to file with known splice junctions (needed for transcriptclean step)
+splice_junctions_file: "/sc/arion/work/pintod02/opt/isoseq_pipeline/data/merged-intropolis-PEC-GTEX.SJ.out.tab"
+
+# Set to 'true' to perform transcriptclean after mapping FLNC reads to the genome
+# This will correct sequencing errors and splice sites and is recommended in general
+use_transcriptclean: true
+
+# Bed-formatted file with know TSS regions and CAGE peaks
+cage_bed_file: "/sc/arion/work/pintod02/opt/isoseq_pipeline/data/combined_cage_Pitt-Fantom5-119FrontalLob_refTSS3.3_refseq_gencode_extended.merged.sorted_chr.bed"
+
+# Set to 'true' if outputs should be limited to autosomes (chrN) and sex chromosomes (chrX, chrY), removing chrM and other chromosomes
+limit_output_to_chrNXY: true
+
+# Prefix to use for the merged isoform file and final merged isoforms
+merged_isoform_prefix:  "ISOP"

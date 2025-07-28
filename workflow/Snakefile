@@ -77,6 +77,7 @@ USE_TC          = config.get("use_transcriptclean", True)
 GENOMEFASTA     = config["reference_genome_fasta"]
 MAXINTRONLEN    = config.get("max_intron_length", 1250000)
 SPLICEJUNCTIONS = config.get("splice_junctions_file")
+CAGEBED         = config.get("cage_bed_file")
 
 #########
 # RULES #
@@ -84,6 +85,7 @@ SPLICEJUNCTIONS = config.get("splice_junctions_file")
 
 # Import common rules
 include: "rules/mapping.smk"
+include: "rules/isopropeller.smk"
 
 # Import conditional rules
 if USE_TC:
@@ -95,4 +97,5 @@ if USE_TC:
 rule all:
     input:
         expand("01_mapping/{sample}/{sample}_mapped_labeled.bam", sample=SAMPLES),
-        expand("02_transcriptclean/{sample}/{sample}_mapped_labeled_tclean.bam", sample=SAMPLES)
+        expand("02_transcriptclean/{sample}/{sample}_mapped_labeled_tclean.bam", sample=SAMPLES),
+        expand("03_isoPropeller/{sample}/{sample}.gtf", sample=SAMPLES)

@@ -36,3 +36,8 @@ set-resources:
     mem_mb:   250000
     runtime:  "24h"
     queue:    "premium"
+
+  run_isopropeller:
+    mem_mb:   90000
+    runtime:  "24h"
+    queue:    "premium"

@@ -86,15 +86,14 @@ ONLYCHR         = config.get("limit_output_to_chrNXY", True)
 #########
 
 # Import common rules
-include: "rules/mapping.smk"
-include: "rules/isopropeller.smk"
-include: "rules/isopropeller-merge.smk"
+include: "rules/01_mapping.smk"
+include: "rules/03_isopropeller.smk"
+include: "rules/04_isopropeller-merge.smk"
 
 # Import conditional rules
 if USE_TC:
     print("[INFO] Loading conditional transcriptclean rules.")
-    include: "rules/transcriptclean.smk"
-
+    include: "rules/02_transcriptclean.smk"
 
 # Make final targets
 rule all:

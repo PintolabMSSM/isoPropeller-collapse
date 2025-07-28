@@ -41,3 +41,8 @@ set-resources:
     mem_mb:   90000
     runtime:  "24h"
     queue:    "premium"
+
+  merge_isopropeller_gtfs:
+    mem_mb:   90000
+    runtime:  "24h"
+    queue:    "premium"

@@ -95,4 +95,4 @@ if USE_TC:
 rule all:
     input:
         expand("01_mapping/{sample}/{sample}_mapped_labeled.bam", sample=SAMPLES),
-        expand("02_transcriptclean/{sample}/{sample}_clean.bam", sample=SAMPLES)
+        expand("02_transcriptclean/{sample}/{sample}_mapped_labeled_tcclean.bam", sample=SAMPLES)

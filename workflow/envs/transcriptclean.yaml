@@ -1,0 +1,10 @@
+name: transcriptclean_env
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - python=3.8
+  - transcriptclean
+  - samtools >=1.12
+  - gzip

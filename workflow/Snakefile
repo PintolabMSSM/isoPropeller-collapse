@@ -72,11 +72,11 @@ FLNC_BAM_PARTS = {
 }
 
 # Define local variables
-SAMPLES      = sorted(FLNC_BAMS.keys())
-USE_TC       = config.get("use_transcriptclean", True)
-GENOMEFASTA  = config["reference_genome_fasta"]
-MAXINTRONLEN = config.get("max_intron_length", 1250000)
-
+SAMPLES         = sorted(FLNC_BAMS.keys())
+USE_TC          = config.get("use_transcriptclean", True)
+GENOMEFASTA     = config["reference_genome_fasta"]
+MAXINTRONLEN    = config.get("max_intron_length", 1250000)
+SPLICEJUNCTIONS = config.get("splice_junctions_file")
 
 #########
 # RULES #
@@ -93,4 +93,6 @@ include: "rules/mapping.smk"
 # Make final targets
 rule all:
     input:
-        expand("01_mapping/{sample}/{sample}_mapped_labeled.bam", sample=SAMPLES)
+        expand("01_mapping/{sample}/{sample}_mapped_labeled.bam", sample=SAMPLES),
+        expand("02_transcriptclean/{sample}/{sample}_clean.bam", sample=SAMPLES),
+        expand("02_transcriptclean/{sample}/{sample}_clean_junctions.bed.gz", sample=SAMPLES)

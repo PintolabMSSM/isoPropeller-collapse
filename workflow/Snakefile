@@ -98,4 +98,5 @@ rule all:
     input:
         expand("01_mapping/{sample}/{sample}_mapped_labeled.bam", sample=SAMPLES),
         expand("02_transcriptclean/{sample}/{sample}_mapped_labeled_tclean.bam", sample=SAMPLES),
-        expand("03_isoPropeller/{sample}/{sample}.gtf", sample=SAMPLES)
+        expand("03_isoPropeller/{sample}/{sample}_all.gtf", sample=SAMPLES),
+        expand("03_isoPropeller/{sample}/{sample}_depth_gt1.gtf", sample=SAMPLES)

@@ -103,4 +103,5 @@ rule all:
         expand("02_transcriptclean/{sample}/{sample}_mapped_labeled_tclean.bam", sample=SAMPLES),
         expand("03_isoPropeller/{sample}/{sample}_all.gtf", sample=SAMPLES),
         expand("03_isoPropeller/{sample}/{sample}_depth-gt1.gtf", sample=SAMPLES),
-        expand("04_isoPropeller-merge/{prefix}_{suffix}.gtf", prefix=MERGEDISOPREFIX, suffix=["all", "depth-gt1"])
+        expand("04_isoPropeller-merge/{prefix}_{suffix}.gtf", prefix=MERGEDISOPREFIX, suffix=["all", "depth-gt1"]),
+        expand("04_isoPropeller-merge/{prefix}_{suffix}_{end}.bed", prefix=MERGEDISOPREFIX, suffix=["all", "depth-gt1"], end=["tss", "tts"])

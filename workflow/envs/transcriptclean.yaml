@@ -5,6 +5,8 @@ channels:
   - defaults
 dependencies:
   - python=3.8
-  - transcriptclean
+  - pip
   - samtools >=1.12
   - gzip
+  - pip:
+      - git+https://github.com/mortazavilab/TranscriptClean.git

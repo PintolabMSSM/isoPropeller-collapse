@@ -24,16 +24,14 @@ rule run_transcriptclean:
         sam = "02_transcriptclean/{sample}/{sample}.sam",
         ref = GENOMEFASTA
     output:
-        cleaned_sam = temp("02_transcriptclean/{sample}/{sample}_clean.sam"),
-        junctions   = temp("02_transcriptclean/{sample}/{sample}_clean_junctions.bed"),
-        notes       = temp("02_transcriptclean/{sample}/{sample}_clean_notes.txt")
+        cleaned_sam = temp("02_transcriptclean/{sample}/{sample}_clean.sam")
     log:
         "logs/02_transcriptclean/{sample}_transcriptclean.log"
     benchmark:
         "benchmarks/02_transcriptclean/{sample}_transcriptclean.txt"
     params:
         junctions_file = SPLICEJUNCTIONS,
-        outprefix      = "02_transcriptclean/{sample}/{sample}_clean"
+        outprefix      = "02_transcriptclean/{sample}/{sample}"
     threads: 24
     conda:
         SNAKEDIR + "envs/transcriptclean.yaml"

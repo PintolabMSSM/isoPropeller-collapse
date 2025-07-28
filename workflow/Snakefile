@@ -86,13 +86,13 @@ SPLICEJUNCTIONS = config.get("splice_junctions_file")
 include: "rules/mapping.smk"
 
 # Import conditional rules
-#if USE_TC:
-#    include: "rules/transcriptclean.smk"
+if USE_TC:
+    print("[INFO] Loading conditional transcriptclean rules.")
+    include: "rules/transcriptclean.smk"
 
 
 # Make final targets
 rule all:
     input:
         expand("01_mapping/{sample}/{sample}_mapped_labeled.bam", sample=SAMPLES),
-        expand("02_transcriptclean/{sample}/{sample}_clean.bam", sample=SAMPLES),
-        expand("02_transcriptclean/{sample}/{sample}_clean_junctions.bed.gz", sample=SAMPLES)
+        expand("02_transcriptclean/{sample}/{sample}_clean.bam", sample=SAMPLES)

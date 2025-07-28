@@ -32,3 +32,7 @@ set-resources:
   talon_label_reads:
     mem_mb:   32000
 
+  run_transcriptclean:
+    mem_mb:   250000
+    runtime:  "24h"
+    queue:    "premium"

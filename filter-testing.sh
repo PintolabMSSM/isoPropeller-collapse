@@ -64,3 +64,13 @@ cd /sc/arion/scratch/pintod02/isopropeller-collapse-test/04_isoPropeller-merge
    --out_stats            filter-test_PAR-overlap.stats.txt \
    --min_overlap_fraction 0
 
+# Min-TPM filter
+~/opt/isoPropeller-collapse/workflow/scripts/filter_TPM-fraction.py \
+   --count_matrix         ISOP_all_exp.txt \
+   --isoform_bed12        ISOP_all.bed \
+   --out_ids              filter-test_min-TPM.ids \
+   --out_bed              filter-test_min-TPM.bed \
+   --min_cpm              1 \
+   --min_fraction_samples 0.05
+
+

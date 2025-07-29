@@ -22,7 +22,8 @@ rule run_transcriptclean:
     message: "Running transcriptclean on {wildcards.sample}"
     input:
         sam = "02_transcriptclean/{sample}/{sample}.sam",
-        ref = GENOMEFASTA
+        ref = GENOMEFASTA,
+        fai = GENOMEFASTA + ".fai"
     output:
         cleaned_sam   = temp("02_transcriptclean/{sample}/{sample}_clean.sam")
     log:

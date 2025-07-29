@@ -65,12 +65,26 @@ rule mapping:
         """
 
 
+# Rule: Create .fai index for genome fasta
+rule index_genome_fasta:
+    message: "Indexing genome FASTA: {input.fasta}"
+    input:
+        fasta = GENOMEFASTA
+    output:
+        fai   = GENOMEFASTA + ".fai"
+    conda:
+        SNAKEDIR + "envs/transcriptclean.yaml"
+    shell:
+        "samtools faidx {input.fasta}"
+
+
 # Rule: Run talon_label_reads to prepare a talon-compatible mapping file
 rule talon_label_reads:
     message: "Running TALON label_reads on sample {wildcards.sample}"
     input:
         bam = "01_mapping/{sample}/mapped.bam",
-        ref = GENOMEFASTA
+        ref = GENOMEFASTA,
+        fai = GENOMEFASTA + ".fai"
     output:
         bam = "01_mapping/{sample}/{sample}_mapped_labeled.bam",
         bai = "01_mapping/{sample}/{sample}_mapped_labeled.bam.bai"

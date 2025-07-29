@@ -2,6 +2,7 @@ name: isoform_filter_env
 channels:
   - conda-forge
   - bioconda
+  - hvbakel
   - defaults
 dependencies:
   - python

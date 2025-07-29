@@ -1,0 +1,8 @@
+name: omics-toolkit_env
+channels:
+  - conda-forge
+  - bioconda
+  - hvbakel
+  - defaults
+dependencies:
+  - omics-toolkit

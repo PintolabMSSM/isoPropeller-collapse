@@ -7,6 +7,8 @@ dependencies:
   - python=3.8
   - pip
   - samtools >=1.12
+  - setuptools
+  - wheel
   - pigz
   - pip:
       - git+https://github.com/mortazavilab/TranscriptClean.git

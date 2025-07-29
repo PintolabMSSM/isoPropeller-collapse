@@ -20,8 +20,9 @@ rule run_isopropeller:
     conda:
         SNAKEDIR + "envs/isopropeller.yaml"
     params:
-        sample = "{sample}",
-        outdir = "03_isoPropeller/{sample}"
+        sample     = "{sample}",
+        outdir     = "03_isoPropeller/{sample}",
+        extra_args = ISOPROPEXTRAARGS
     shell:
         """
         mkdir -p {params.outdir}
@@ -32,7 +33,8 @@ rule run_isopropeller:
             -o {params.outdir}/{params.sample}_all \
             -g {input.ref} \
             -f {input.cage} \
-            -t {threads} 2>> {log}
+            -t {threads} \
+            {params.extra_args} 2>> {log}
         """
 
 # Rule: Filter per-sample GTF fiels to keep transcripts with at least 2 or more reads

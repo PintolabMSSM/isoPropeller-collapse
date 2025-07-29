@@ -80,6 +80,14 @@ SPLICEJUNCTIONS = config.get("splice_junctions_file")
 CAGEBED         = config.get("cage_bed_file")
 MERGEDISOPREFIX = config.get("merged_isoform_prefix", "ISOP")
 ONLYCHR         = config.get("limit_output_to_chrNXY", True)
+TERMINALEXONBED = config.get("intrapriming_exclude_regions_bed","")
+
+# Set conditional isoPropeller arguments. If a terminal exon bed file is defined
+# in the configuration file, use it.
+if TERMINALEXONBED:
+    ISOPROPEXTRAARGS = f"-l {TERMINALEXONBED}"
+else:
+    ISOPROPEXTRAARGS = ""
 
 #########
 # RULES #

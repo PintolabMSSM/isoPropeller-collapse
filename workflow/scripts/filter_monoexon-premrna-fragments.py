@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-#  monoexon-premrna-filter
+#  filter_monoexon-premrna-fragments
 #
 
 ##################
@@ -37,7 +37,7 @@ def is_interactive():
 
 def parse_args():
     parser = argparse.ArgumentParser(
-        description="Remove mono-exonic isoforms that likely represent pre-mRNA fragments (overlap reference exon AND intron)."
+        description="Remove mono-exonic isoforms that likely represent pre-mRNA fragments (overlap reference exon AND intron, unless matching a reference mono-exon)."
     )
     parser.add_argument("--isoform_gtf",         required=True,  help="GTF file of isoform predictions")
     parser.add_argument("--reference",           required=True,  help="Reference annotations in GTF or BED format")
@@ -81,7 +81,6 @@ def extract_introns_from_gtf(reference_gtf):
 
 
 def extract_introns_from_bed12(bed):
-    """Extract introns from BED12 format (blockStarts and blockSizes)."""
     intron_lines = []
     for entry in bed:
         if len(entry.fields) < 12:
@@ -103,8 +102,58 @@ def extract_introns_from_bed12(bed):
     return pybedtools.BedTool(intron_lines)
 
 
+def extract_monoexonic_references(reference_path):
+    """
+    Return a BedTool of exons from reference transcripts that have exactly one exon.
+    Supports GTF and BED12.
+    """
+    _, ext = os.path.splitext(reference_path.lower())
+    mono_ref_lines = []
+
+    if ext in [".gtf", ".gff"]:
+        exon_by_tid = defaultdict(list)
+        with open(reference_path) as ref_in:
+            for line in ref_in:
+                if line.startswith("#"):
+                    continue
+                fields = line.strip().split('\t')
+                if len(fields) < 9 or fields[2] != "exon":
+                    continue
+                attr_field = fields[8]
+                tid = extract_transcript_id(attr_field)
+                if tid:
+                    exon_by_tid[tid].append(fields)
+
+        for tid, exons in exon_by_tid.items():
+            if len(exons) == 1:
+                fields = exons[0]
+                chrom = fields[0]
+                start = fields[3]
+                end = fields[4]
+                strand = fields[6]
+                mono_ref_lines.append(f"{chrom}\t{start}\t{end}\t{tid}\t.\t{strand}")
+
+    elif ext in [".bed", ".bed6", ".bed12"]:
+        bed = pybedtools.BedTool(reference_path)
+        for f in bed:
+            if len(f.fields) >= 12:
+                block_count = int(f[9])
+                if block_count == 1:
+                    chrom = f.chrom
+                    start = f.start + int(f.fields[11].split(',')[0])
+                    end = start + int(f.fields[10].split(',')[0])
+                    mono_ref_lines.append(f"{chrom}\t{start}\t{end}\t{f.name}\t.\t{f.strand}")
+            else:
+                mono_ref_lines.append(str(f))  # fallback for BED6 assumed to be mono-exonic
+
+    else:
+        raise ValueError(f"Unsupported reference format: {ext}")
+
+    logging.info(f"Identified {len(mono_ref_lines)} mono-exonic reference transcripts.")
+    return pybedtools.BedTool(mono_ref_lines)
+
+
 def load_reference(reference_path):
-    """Load reference exons and introns depending on file extension and format."""
     _, ext = os.path.splitext(reference_path.lower())
     bed = pybedtools.BedTool(reference_path)
 
@@ -116,7 +165,7 @@ def load_reference(reference_path):
 
     elif ext in [".bed", ".bed6", ".bed12"]:
         exons = bed.saveas()
-        has_blocks = all(len(f.fields) >= 12 for f in bed[:10])  # check first few lines
+        has_blocks = all(len(f.fields) >= 12 for f in bed[:10])
         if has_blocks:
             introns = extract_introns_from_bed12(bed)
             logging.info(f"Loaded BED12 with {len(exons)} exons and {len(introns)} derived introns.")
@@ -132,6 +181,7 @@ def load_reference(reference_path):
 def filter_premrna_like_monoexons(isoform_gtf_path, reference_path, genome_index, min_intron_overlap):
     isoform_bed = pybedtools.BedTool(isoform_gtf_path)
     reference_exons, reference_introns = load_reference(reference_path)
+    mono_ref_bed = extract_monoexonic_references(reference_path)
 
     # Group isoform exons by transcript
     transcript_exons = defaultdict(list)
@@ -141,7 +191,6 @@ def filter_premrna_like_monoexons(isoform_gtf_path, reference_path, genome_index
             if tid:
                 transcript_exons[tid].append(feature)
 
-    # Collect mono-exonic transcripts
     mono_lines = []
     mono_ids = set()
     for tid, exons in transcript_exons.items():
@@ -150,14 +199,12 @@ def filter_premrna_like_monoexons(isoform_gtf_path, reference_path, genome_index
             exon = exons[0]
             mono_lines.append(f"{exon.chrom}\t{exon.start}\t{exon.end}\t{tid}\t.\t{exon.strand}")
     mono_bed = pybedtools.BedTool(mono_lines)
-    logging.info(f"Identified {len(mono_ids)} mono-exonic transcripts.")
+    logging.info(f"Identified {len(mono_ids)} mono-exonic isoforms.")
 
-    # Intersect mono-exons with reference exons
     exon_hits = mono_bed.intersect(reference_exons, u=True, s=True)
     exon_hit_ids = {line.name for line in exon_hits}
     logging.info(f"Mono-exons overlapping reference exons: {len(exon_hit_ids)}")
 
-    # Intersect mono-exons with introns (if available)
     intron_hit_ids = set()
     if len(reference_introns) > 0:
         intron_hits = mono_bed.intersect(reference_introns, wo=True, s=True)
@@ -169,8 +216,11 @@ def filter_premrna_like_monoexons(isoform_gtf_path, reference_path, genome_index
     else:
         logging.warning("No introns loaded — skipping intron overlap filtering.")
 
-    flagged_ids = exon_hit_ids & intron_hit_ids if len(reference_introns) > 0 else set()
-    logging.info(f"Flagged as likely pre-mRNA: {len(flagged_ids)} mono-exons.")
+    mono_ref_overlap_ids = {f.name for f in mono_bed.intersect(mono_ref_bed, u=True, s=True)}
+    logging.info(f"Mono-exons overlapping mono-exonic reference transcripts: {len(mono_ref_overlap_ids)}")
+
+    flagged_ids = (exon_hit_ids & intron_hit_ids) - mono_ref_overlap_ids
+    logging.info(f"Flagged as likely pre-mRNA (after mono-exon ref exclusion): {len(flagged_ids)}")
 
     return flagged_ids
 

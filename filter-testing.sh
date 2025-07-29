@@ -41,7 +41,6 @@ remove_isoforms_with_antisense_perfect_splicematch: True
 remove_isoforms_overlapping_PAR_regions:            True  # Here we do any overlap
 remove_isoforms_fully_contained_in_repeats:         True  # Here we specify the degree of overlap (e.g. >90%)
 
-
 # Template switching filter
 remove_isoforms_with_template_switching_artifacts:  True
 

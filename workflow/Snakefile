@@ -49,7 +49,7 @@ if samples_df["path_to_flnc_bam"].duplicated().any():
     dups = samples_df.loc[samples_df["path_to_flnc_bam"].duplicated(), "path_to_flnc_bam"]
     sys.exit("[ERROR] Duplicate FLNC BAM paths found:\n  " + "\n  ".join(dups.tolist()))
 
-print("[INFO] Sample sheet validation passed.")
+print("[INFO] Sample sheet validation passed.", file=sys.stderr)
 
 
 #########
@@ -92,7 +92,7 @@ include: "rules/04_isopropeller-merge.smk"
 
 # Import conditional rules
 if USE_TC:
-    print("[INFO] Loading conditional transcriptclean rules.")
+    print("[INFO] Loading conditional transcriptclean rules.", file=sys.stderr)
     include: "rules/02_transcriptclean.smk"
 
 # Make final targets

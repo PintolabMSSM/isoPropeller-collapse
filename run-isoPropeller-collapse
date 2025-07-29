@@ -128,6 +128,24 @@ echo -e "\n## Run command\n$cmd\n\n## Pipeline output" >> "$logfile"
 
 $cmd >> "$logfile" 2>&1
 
+# Generate DAG of executed steps
+if [[ $? -eq 0 ]]; then
+   echo -e "\n## Generating DAG of executed steps..." >> "$logfile"
+   snakemake \
+       ${PROFILE} \
+       --snakefile ${GIT_REPODIR}/workflow/Snakefile \
+       --config ${SAMPLES} \
+       --dag \
+       | dot -Tpdf > pipeline_${timestamp}_dag.pdf 2>> "$logfile"
+
+   if [[ $? -eq 0 ]]; then
+       echo "DAG saved to dag_pipeline_${timestamp}.pdf" >> "$logfile"
+   else
+       echo "Failed to generate DAG" >> "$logfile"
+   fi
+fi
+
+
 # ===== COMPLETION STATUS ===== #
 if [[ $? -eq 0 ]]; then
    echo -e "\n# ISOPROPELLER-COLLAPSE PIPELINE COMPLETED SUCCESSFULLY #" >> "$logfile"

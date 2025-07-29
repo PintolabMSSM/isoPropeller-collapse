@@ -39,7 +39,6 @@ cd /sc/arion/scratch/pintod02/isopropeller-collapse-test/04_isoPropeller-merge
    --out_ids             filter-test_multiexonic-rt-switching.ids \
    --out_bed             filter-test_multiexonic-rt-switching.bedl
 
-
 # Antisense perfect splice match filter
 ~/opt/isoPropeller-collapse/workflow/scripts/filter_multiexon-antisense-splicechain-match.py \
    --isoform_bed12       ISOP_all.bed \
@@ -47,10 +46,21 @@ cd /sc/arion/scratch/pintod02/isopropeller-collapse-test/04_isoPropeller-merge
    --out_ids             filter-test_multiexonic-antisense-splicechain-match.ids \
    --out_bed             filter-test_multiexonic-antisense-splicechain-match.bed
    
+# Reference region overlap filter, contained in repeats
+~/opt/isoPropeller-collapse/workflow/scripts/filter_reference-overlap-on-exons.py \
+   --isoform_bed12        ISOP_all.bed \
+   --reference_bed12      /sc/arion/projects/pintod02c/reference-databases/hg38-v41-ERCC/GRCh38.primary_assembly.genome_rmsk_nr.bed \
+   --out_ids              filter-test_repeatmasker-overlap.ids \
+   --out_bed              filter-test_repeatmasker-overlap.bed \
+   --out_stats            filter-test_repeatmasker-overlap.stats.txt \
+   --min_overlap_fraction 0.9
 
-
-# Reference region overlap filter
-# We allow specifying any overlap or a fraction of overlap relative to the isoform
-remove_isoforms_overlapping_PAR_regions:            True  # Here we do any overlap
-remove_isoforms_fully_contained_in_repeats:         True  # Here we specify the degree of overlap (e.g. >90%)
+# Reference region overlap filter, contained in repeats
+~/opt/isoPropeller-collapse/workflow/scripts/filter_reference-overlap-on-exons.py \
+   --isoform_bed12        ISOP_all.bed \
+   --reference_bed12      /hpc/users/pintod02/opt/isoseq_pipeline/data/GRCh38.p13_PARs.bed \
+   --out_ids              filter-test_PAR-overlap.ids \
+   --out_bed              filter-test_PAR-overlap.bed \
+   --out_stats            filter-test_PAR-overlap.stats.txt \
+   --min_overlap_fraction 0
 

@@ -7,6 +7,7 @@
 
 import argparse
 import logging
+import sys
 import csv
 from pybedtools import BedTool
 
@@ -27,6 +28,7 @@ def is_interactive():
 
 
 def parse_args():
+    """Parse command-line arguments."""
     parser = argparse.ArgumentParser(description="Filter isoforms based on expression across samples using a CPM threshold.")
     parser.add_argument("--count_matrix", required=True, help="TSV file of raw counts. First column is isoform ID; header row required.")
     parser.add_argument("--isoform_bed12", required=True, help="BED12 file of isoforms (ID in 4th column).")
@@ -42,6 +44,16 @@ def parse_args():
 
 
 def compute_column_sums_and_count(filepath):
+    """
+    Compute column-wise sums of raw counts to enable CPM normalization.
+
+    Args:
+        filepath (str): Path to raw count matrix
+
+    Returns:
+        list[int]: Sum of counts for each sample (column)
+        int: Number of samples (excluding ID column)
+    """
     sums = []
     with open(filepath, 'r') as f:
         reader = csv.reader(f, delimiter='\t')
@@ -55,6 +67,19 @@ def compute_column_sums_and_count(filepath):
 
 
 def filter_low_expression_ids(filepath, col_sums, sample_count, min_fraction, min_tpm):
+    """
+    Identify isoform IDs that do not meet expression threshold across samples.
+
+    Args:
+        filepath (str): Raw count matrix file
+        col_sums (list[int]): Per-sample count totals
+        sample_count (int): Number of samples
+        min_fraction (float): Minimum fraction of samples with CPM >= min_cpm
+        min_cpm (float): Minimum CPM considered as "expressed"
+
+    Returns:
+        set[str]: Isoform IDs that should be removed
+    """
     low_expr_ids = set()
     threshold_count = int(min_fraction * sample_count)
     with open(filepath, 'r') as f:
@@ -64,7 +89,6 @@ def filter_low_expression_ids(filepath, col_sums, sample_count, min_fraction, mi
             tid = row[0]
             counts = list(map(int, row[1:]))
             cpm = [(1e6 * c / col_sums[i]) if col_sums[i] > 0 else 0 for i, c in enumerate(counts)]
-            print(cpm)
             expressed = sum(1 for val in cpm if val >= min_tpm)
             if expressed < threshold_count:
                 low_expr_ids.add(tid)
@@ -72,6 +96,14 @@ def filter_low_expression_ids(filepath, col_sums, sample_count, min_fraction, mi
 
 
 def write_filtered_bed(isoform_bed, filtered_ids, output_bed):
+    """
+    Write BED12 entries for isoforms flagged for removal.
+
+    Args:
+        isoform_bed (str): BED12 input file path
+        filtered_ids (set[str]): Set of isoform IDs to keep
+        output_bed (str): Output BED file path for filtered isoforms
+    """
     bed = BedTool(isoform_bed)
     with open(output_bed, 'w') as out_bed:
         for entry in bed:

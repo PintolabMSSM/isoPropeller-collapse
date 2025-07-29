@@ -1,7 +1,12 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+##################
+# IMPORT MODULES #
+##################
+
 import argparse
+import sys
 import pybedtools
 import logging
 from collections import defaultdict
@@ -12,7 +17,18 @@ logging.basicConfig(
     datefmt='%Y-%m-%d %H:%M:%S'
 )
 
+#############
+# FUNCTIONS #
+#############
+
+def is_interactive():
+    """Check if we're in an interactive session (e.g. Jupyter notebook)."""
+    import __main__ as main
+    return not hasattr(main, '__file__')
+
+
 def parse_args():
+    """Parse command-line arguments."""
     parser = argparse.ArgumentParser(description="Remove isoforms that overlap reference features at the exon level, based on absolute or fractional overlap.")
     parser.add_argument("--isoform_bed12", required=True, help="BED12 file of isoform predictions")
     parser.add_argument("--reference_bed12", required=True, help="BED12 file of reference annotations (exons)")
@@ -21,7 +37,12 @@ def parse_args():
     parser.add_argument("--out_stats", required=True, help="Output TSV file with stats for removed isoforms")
     parser.add_argument("--min_overlap_fraction", type=float, default=0.0, help="Minimum fraction of exon bases overlapping reference features to trigger removal (0 = any overlap)")
     parser.add_argument("--strand_specific", action="store_true", help="Enable strand-specific comparisons")
-    return parser.parse_args()
+    
+    if is_interactive():
+        return parser.parse_args('')
+    else:
+        return parser.parse_args(args=None if sys.argv[1:] else ['--help'])
+
 
 def bed12_to_exons(bed12_entry):
     """Expand a BED12 entry into a list of exon-level BED intervals."""
@@ -41,6 +62,11 @@ def bed12_to_exons(bed12_entry):
             chrom, str(exon_start), str(exon_end), name, '0', strand
         ]))
     return exons
+
+
+########
+# MAIN #
+########
 
 if __name__ == "__main__":
     args = parse_args()

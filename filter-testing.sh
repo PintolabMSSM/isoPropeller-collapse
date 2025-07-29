@@ -70,7 +70,7 @@ cd /sc/arion/scratch/pintod02/isopropeller-collapse-test/04_isoPropeller-merge
    --isoform_bed12        ISOP_all.bed \
    --out_ids              filter-test_min-TPM.ids \
    --out_bed              filter-test_min-TPM.bed \
-   --min_cpm              1 \
-   --min_fraction_samples 0.05
+   --min_tpm              10 \
+   --min_fraction_samples 0.5
 
 

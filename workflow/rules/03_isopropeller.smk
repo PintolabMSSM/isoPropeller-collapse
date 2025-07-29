@@ -60,14 +60,14 @@ rule filter_isopropeller_gtf:
         """
         # Extract transcript IDs with depth > 1
         if [ "{params.onlychr}" = "True" ]; then
-            awk 'BEGIN {IGNORECASE=1} $3 == "transcript" && $1 ~ /^chr([0-9]+|[XY])$/ {print}' {input.gtf} | grep -v 'depth "1"' | cut -d'"' -f4 > {params.tmp_id_file}
+            awk 'BEGIN {IGNORECASE=1} $3 == "transcript" && $1 ~ /^chr([0-9]+|[XY])$/ {print}' {input.gtf} | grep -v 'depth "1"' | cut -d'"' -f4 > {params.tmp_id_file}  2>> {log}
         else
-            awk 'BEGIN {IGNORECASE=1} $3 == "transcript"' {input.gtf} | grep -v 'depth "1"' | cut -d'"' -f4 > {params.tmp_id_file}
+            awk 'BEGIN {IGNORECASE=1} $3 == "transcript"' {input.gtf} | grep -v 'depth "1"' | cut -d'"' -f4 > {params.tmp_id_file}  2>> {log}
         fi
 
         # Filter GTF with perl script
-        select_gtf_by_attribute_list.pl {input.gtf} {output.filtered_gtf} {params.tmp_id_file} {params.attr}
+        select_gtf_by_attribute_list.pl {input.gtf} {output.filtered_gtf} {params.tmp_id_file} {params.attr}  2>> {log}
 
         # Clean up temporary ID list
-        rm -f {params.tmp_id_file}
+        rm -f {params.tmp_id_file}  2>> {log}
         """

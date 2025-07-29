@@ -31,6 +31,7 @@ def is_interactive():
     return not hasattr(main, '__file__')
 
 def parse_args():
+    """Parse command-line arguments."""
     parser = argparse.ArgumentParser(description="Identify isoforms with non-canonical splice junctions from BED12.")
     parser.add_argument("--isoform_bed12",  required=True, help="BED12 file of isoforms")
     parser.add_argument("--genome_fasta",   required=True, help="Reference genome FASTA file")

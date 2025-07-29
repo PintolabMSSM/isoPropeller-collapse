@@ -92,7 +92,11 @@ def fetch_splice_motif(chrom, donor_pos, acceptor_pos, strand, genome):
         return "NNNN"
 
 
-def main():
+########
+# MAIN #
+########
+
+if __name__ == '__main__':
     args = parse_args()
     genome = load_genome(args.genome_fasta)
     bed = pybedtools.BedTool(args.isoform_bed12)
@@ -138,11 +142,3 @@ def main():
 
     gc.collect()
     logging.info("Processing complete.")
-
-
-########
-# MAIN #
-########
-
-if __name__ == "__main__":
-    main()

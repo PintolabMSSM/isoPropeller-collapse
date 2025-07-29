@@ -1,8 +1,5 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-#
-#  detect-noncanonical-splice.py
-#
 
 ##################
 # IMPORT MODULES #
@@ -35,11 +32,11 @@ def is_interactive():
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Identify isoforms with non-canonical splice junctions from BED12.")
-    parser.add_argument("--isoform_bed",    required=True, help="BED12 file of isoforms")
+    parser.add_argument("--isoform_bed12",  required=True, help="BED12 file of isoforms")
     parser.add_argument("--genome_fasta",   required=True, help="Reference genome FASTA file")
     parser.add_argument("--out_ids",        required=True, help="Output file for isoform IDs with non-canonical junctions")
     parser.add_argument("--out_motifs",     required=True, help="Output TSV listing non-canonical motifs per isoform")
-    parser.add_argument("--out_bed12",      required=True, help="Output BED12 file of isoforms with non-canonical junctions")
+    parser.add_argument("--out_bed",      required=True, help="Output BED12 file of isoforms with non-canonical junctions")
     parser.add_argument("--allowed_motifs", nargs='*', default=["GTAG", "GCAG", "ATAC"],
                         help="Allowed splice site motifs (default: GTAG GCAG ATAC)")
 
@@ -98,7 +95,7 @@ def fetch_splice_motif(chrom, donor_pos, acceptor_pos, strand, genome):
 def main():
     args = parse_args()
     genome = load_genome(args.genome_fasta)
-    bed = pybedtools.BedTool(args.isoform_bed)
+    bed = pybedtools.BedTool(args.isoform_bed12)
 
     allowed_motifs = set(args.allowed_motifs)
     logging.info(f"Allowed splice site motifs: {allowed_motifs}")
@@ -133,8 +130,8 @@ def main():
             outf.write(f"{tid}\t{motifs}\n")
 
     # Write filtered BED12 of noncanonical isoforms
-    logging.info(f"Writing BED12 entries for non-canonical isoforms to {args.out_bed12}")
-    with open(args.out_bed12, 'w') as outbed:
+    logging.info(f"Writing BED12 entries for non-canonical isoforms to {args.out_bed}")
+    with open(args.out_bed, 'w') as outbed:
         for entry in bed:
             if entry.name in noncanonical_ids:
                 outbed.write(str(entry))

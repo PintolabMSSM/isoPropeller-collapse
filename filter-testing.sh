@@ -27,7 +27,7 @@ cd /sc/arion/scratch/pintod02/isopropeller-collapse-test/04_isoPropeller-merge
 ~/opt/isoPropeller-collapse/workflow/scripts/filter_multiexon-noncanonical-splices.py \
    --isoform_bed12       ISOP_all.bed \
    --genome_fasta        /sc/arion/projects/pintod02c/reference-databases/hg38-v41-ERCC/GRCh38.primary_assembly.genome.fa \
-   --out_bed12           filter-test-multiexonic-noncanonical-splices.bed \
+   --out_bed             filter-test-multiexonic-noncanonical-splices.bed \
    --out_ids             filter-test-multiexonic-noncanonical-splices.ids \
    --out_motifs          filter-test-multiexonic-noncanonical-splices.motifs.txt
 

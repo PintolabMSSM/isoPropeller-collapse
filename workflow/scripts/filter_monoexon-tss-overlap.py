@@ -1,8 +1,5 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-#
-#  filter_monoexon-tss-overlap
-#
 
 ##################
 # IMPORT MODULES #
@@ -29,11 +26,13 @@ logging.basicConfig(
 #############
 
 def is_interactive():
+    """Check if we're in an interactive session (e.g. Jupyter notebook)."""
     import __main__ as main
     return not hasattr(main, '__file__')
 
 
 def parse_args():
+    """Parse command-line arguments."""
     parser = argparse.ArgumentParser(
         description="Filter mono-exonic BED12 isoforms whose TSS is not within a given distance of any reference TSS peak."
     )
@@ -52,6 +51,15 @@ def parse_args():
 
 
 def identify_monoexonic_ids(bed12_path):
+    """
+    Identify mono-exonic isoforms from a BED12 file.
+
+    Args:
+        bed12_path (str): Path to the input BED12 file.
+
+    Returns:
+        set: Transcript IDs (column 4) with only one exon (blockCount == 1).
+    """
     mono_ids = set()
     with open(bed12_path) as f:
         for line in f:
@@ -67,6 +75,19 @@ def identify_monoexonic_ids(bed12_path):
 
 
 def filter_tss_support(tss_bed_path, reftss_bed_path, genome_index, mono_ids, max_distance):
+    """
+    Filter mono-exonic isoforms whose TSS is not supported by proximity to a reference TSS.
+
+    Args:
+        tss_bed_path (str): Path to BED6 file of isoform TSSs (column 4 is transcript ID).
+        reftss_bed_path (str): Path to BED file of reference TSS peaks (e.g., CAGE).
+        genome_index (str): Path to FAI file (used to slop reference TSSs).
+        mono_ids (set): Transcript IDs identified as mono-exonic.
+        max_distance (int): Maximum distance allowed between isoform TSS and reference TSS.
+
+    Returns:
+        set: Transcript IDs of mono-exonic isoforms removed due to insufficient TSS support.
+    """
     all_tss = pybedtools.BedTool(tss_bed_path)
 
     # Get transcript IDs present in the TSS BED

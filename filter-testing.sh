@@ -7,12 +7,13 @@ cd /sc/arion/scratch/pintod02/isopropeller-collapse-test/04_isoPropeller-merge
 
 # Monoexon tss filter
 ~/opt/isoPropeller-collapse/workflow/scripts/filter_monoexon-tss-overlap.py \
-   --isoform_gtf   ISOP_all.gtf \
-   --reftss_bed    /sc/arion/work/pintod02/opt/isoseq_pipeline/data/combined_cage_Pitt-Fantom5-119FrontalLob_refTSS3.3_refseq_gencode_extended.merged.sorted_chr.bed \
-   --out_gtf       filter-test-monoexon-tss.gtf \
-   --out_ids       filter-test-monoexon-tss.ids \
-   --max_distance  50 \
-   --genome_index  /sc/arion/projects/pintod02c/reference-databases/hg38-v41-ERCC/GRCh38.primary_assembly.genome.fa.fai
+   --isoform_bed12       ISOP_all.bed \
+   --isoform_tss_bed     ISOP_all_tss.bed \
+   --reftss_bed          /sc/arion/work/pintod02/opt/isoseq_pipeline/data/combined_cage_Pitt-Fantom5-119FrontalLob_refTSS3.3_refseq_gencode_extended.merged.sorted_chr.bed \
+   --out_bed             filter-test-monoexon-tss.bed \
+   --out_ids             filter-test-monoexon-tss.ids \
+   --max_distance        10 \
+   --genome_index        /sc/arion/projects/pintod02c/reference-databases/hg38-v41-ERCC/GRCh38.primary_assembly.genome.fa.fai
 
 # Monoexon pre-mRNA filter
 ~/opt/isoPropeller-collapse/workflow/scripts/filter_monoexon-premrna-fragments.py \

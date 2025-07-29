@@ -128,7 +128,6 @@ def main():
 
     # Write TSV of motifs per transcript
     with open(args.out_motifs, 'w') as outf:
-        outf.write("transcript_id\tnoncanonical_motifs\n")
         for tid in sorted(noncanonical_motifs_per_id):
             motifs = ",".join(sorted(noncanonical_motifs_per_id[tid]))
             outf.write(f"{tid}\t{motifs}\n")

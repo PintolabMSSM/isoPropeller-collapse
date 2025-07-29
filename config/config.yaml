@@ -3,8 +3,11 @@
 samples: "samples.csv"
 
 # Full path to the reference genome fasta file for isoform mapping
-#reference_genome_fasta: "/sc/arion/projects/pintod02c/reference-databases/hg38-v41-ERCC/GRCh38.primary_assembly.genome.fa"
-reference_genome_fasta: "/sc/arion/projects/EPIASD/IsoSeq_ourdata/GRCh38_GIABv3_no_alt_analysis_set_maskedGRC_decoys_MAP2K3_KMT2C_KCNJ18.fasta"
+reference_genome_fasta: "/sc/arion/projects/pintod02c/reference-databases/hg38-v41-ERCC/GRCh38.primary_assembly.genome.fa"
+
+# An optional bed file with the position of all 3' terminal exons (+500 bp flanking region)
+# If provided, the isoPropeller intra-priming filter will be disabled in these regions
+intrapriming_exclude_regions_bed: "/sc/arion/projects/pintod02c/reference-databases/hg38-v41-ERCC/gencode.v41.annotation_500bp_terminal.bed"
 
 # The maximum allowed intron length when mapping reads to the reference genome with minimap2
 # This is set to 1.25 Mb by default, which is the maximum known intron size in the human genome

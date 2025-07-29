@@ -17,20 +17,19 @@ cd /sc/arion/scratch/pintod02/isopropeller-collapse-test/04_isoPropeller-merge
 
 # Monoexon pre-mRNA filter
 ~/opt/isoPropeller-collapse/workflow/scripts/filter_monoexon-premrna-fragments.py \
-   --isoform_gtf         ISOP_all.gtf \
-   --reference           /sc/arion/projects/pintod02c/reference-databases/hg38-v41-ERCC/gencode.v41.annotation.bed \
-   --genome_index        /sc/arion/projects/pintod02c/reference-databases/hg38-v41-ERCC/GRCh38.primary_assembly.genome.fa.fai \
-   --out_gtf             filter-test-monoexon-premrna.gtf \
+   --isoform_bed12       ISOP_all.bed \
+   --reference_bed12     /sc/arion/projects/pintod02c/reference-databases/hg38-v41-ERCC/gencode.v41.annotation.bed \
+   --out_bed             filter-test-monoexon-premrna.bed \
    --out_ids             filter-test-monoexon-premrna.ids \
    --min_intron_overlap  10
 
 # Noncanonical splice junction filter
 ~/opt/isoPropeller-collapse/workflow/scripts/filter_multiexon-noncanonical-splices.py \
-   --isoform_bed    ISOP_all.bed \
-   --genome_fasta   /sc/arion/projects/pintod02c/reference-databases/hg38-v41-ERCC/GRCh38.primary_assembly.genome.fa \
-   --out_bed12      filter-test-multiexonic-noncanonical-splices.bed \
-   --out_ids        filter-test-multiexonic-noncanonical-splices.ids \
-   --out_motifs     filter-test-multiexonic-noncanonical-splices.motifs.txt
+   --isoform_bed12       ISOP_all.bed \
+   --genome_fasta        /sc/arion/projects/pintod02c/reference-databases/hg38-v41-ERCC/GRCh38.primary_assembly.genome.fa \
+   --out_bed12           filter-test-multiexonic-noncanonical-splices.bed \
+   --out_ids             filter-test-multiexonic-noncanonical-splices.ids \
+   --out_motifs          filter-test-multiexonic-noncanonical-splices.motifs.txt
 
 
 # Antisense perfect splice match filter

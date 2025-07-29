@@ -121,7 +121,7 @@ if __name__ == '__main__':
     with open(args.isoform_bed12) as infile, open(args.out_bed, 'w') as outfile:
         for line in infile:
             fields = line.strip().split('\t')
-            if len(fields) >= 4 and fields[3] not in removed_ids:
+            if len(fields) >= 4 and fields[3] in removed_ids:
                 outfile.write(line)
 
     gc.collect()

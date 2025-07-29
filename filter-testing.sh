@@ -37,19 +37,20 @@ cd /sc/arion/scratch/pintod02/isopropeller-collapse-test/04_isoPropeller-merge
    --genome_fasta        /sc/arion/projects/pintod02c/reference-databases/hg38-v41-ERCC/GRCh38.primary_assembly.genome.fa \
    --out_rts_tsv         filter-test_multiexonic-rt-switching.repeats.txt \
    --out_ids             filter-test_multiexonic-rt-switching.ids \
-   --out_bed             filter-test_multiexonic-rt-switching.bed
-
+   --out_bed             filter-test_multiexonic-rt-switching.bedl
 
 
 # Antisense perfect splice match filter
-remove_isoforms_with_antisense_perfect_splicematch: True
+~/opt/isoPropeller-collapse/workflow/scripts/filter_multiexon-antisense-splicechain-match.py \
+   --isoform_bed12       ISOP_all.bed \
+   --reference_bed12     /sc/arion/projects/pintod02c/reference-databases/hg38-v41-ERCC/gencode.v41.annotation.bed \
+   --out_ids             filter-test_multiexonic-antisense-splicechain-match.ids \
+   --out_bed             filter-test_multiexonic-antisense-splicechain-match.bed
+   
 
 
 # Reference region overlap filter
 # We allow specifying any overlap or a fraction of overlap relative to the isoform
 remove_isoforms_overlapping_PAR_regions:            True  # Here we do any overlap
 remove_isoforms_fully_contained_in_repeats:         True  # Here we specify the degree of overlap (e.g. >90%)
-
-# Template switching filter
-remove_isoforms_with_template_switching_artifacts:  True
 

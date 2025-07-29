@@ -39,8 +39,6 @@ remove_monoexon_premRNA_fragments:                  True
 remove_isoforms_with_noncanonical_splice_junctions: True
 remove_isoforms_with_template_switching_artifacts:  True
 remove_isoforms_with_antisense_perfect_splicematch: True
-remove_isoforms_with_intrapriming_artifacts:        True
 remove_isoforms_fully_contained_in_repeats:         True
 remove_isoforms_overlapping_PAR_regions:            True
 remove_isoforms_not_found_in_min_samples:           3
-

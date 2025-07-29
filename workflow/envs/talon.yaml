@@ -6,3 +6,4 @@ channels:
 dependencies:
   - talon >=5.0.0
   - samtools
+  - pigz

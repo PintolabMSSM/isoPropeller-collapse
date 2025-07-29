@@ -13,7 +13,7 @@ rule bam_to_fasta:
     conda:
         SNAKEDIR + "envs/mapping.yaml"
     shell:
-        """samtools fasta {input} | gzip > {output.fasta} 2>> {log}"""
+        """samtools fasta {input} | pigz -p {threads} > {output.fasta} 2>> {log}"""
 
 
 # Rule: Merge FASTA parts
@@ -99,7 +99,7 @@ rule talon_label_reads:
 
         # Convert SAM to BAM and remove the intermediate SAM
         samtools view -@ {threads} -b {params.outprefix}_labeled.sam > {output.bam} 2>> {log}
-        samtools index {output.bam}
-        gzip {params.outprefix}_read_labels.tsv
+        samtools index {output.bam} 2>> {log}
+        pigz -p {threads} {params.outprefix}_read_labels.tsv 2>> {log}
         rm {params.outprefix}_labeled.sam
         """

@@ -48,8 +48,8 @@ rule run_transcriptclean:
             -o {params.outprefix} 2>> {log}
         
         # post-run cleanup
-        gzip {params.outprefix}_clean.log
-        gzip {params.outprefix}_clean.TE.log
+        pigz -p {threads} {params.outprefix}_clean.log 2>> {log}
+        pigz -p {threads} {params.outprefix}_clean.TE.log 2>> {log}
         rm -f {params.outprefix}_clean.fa
         """
 

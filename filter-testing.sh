@@ -118,6 +118,6 @@ do
       > isoqc_temp_${SAMPLE}_mismapped-terminal-exon-in-segdup_${LEVEL}.txt
 done
 cat isoqc_temp_${SAMPLE}_mismapped-terminal-exon-in-segdup_*.txt | sort | uniq > isoqc_fail_${SAMPLE}_mismapped-terminal-exon-in-segdup.ids
-intersect-by-ids -ff ${ISOBED} -fc 4 -if isoqc_fail_${SAMPLE}_mismapped-terminal-exon-in-segdup.txt > isoqc_fail_${SAMPLE}_mismapped-terminal-exon-in-segdup.bed
+intersect-by-ids -ff ${ISOBED} -fc 4 -if isoqc_fail_${SAMPLE}_mismapped-terminal-exon-in-segdup.ids > isoqc_fail_${SAMPLE}_mismapped-terminal-exon-in-segdup.bed
 rm -f isoqc_temp_${SAMPLE}_*
 

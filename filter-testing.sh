@@ -10,8 +10,8 @@ cd /sc/arion/scratch/pintod02/isopropeller-collapse-test/04_isoPropeller-merge
    --isoform_bed12       ISOP_all.bed \
    --isoform_tss_bed     ISOP_all_tss.bed \
    --reftss_bed          /sc/arion/work/pintod02/opt/isoseq_pipeline/data/combined_cage_Pitt-Fantom5-119FrontalLob_refTSS3.3_refseq_gencode_extended.merged.sorted_chr.bed \
-   --out_bed             filter-test-monoexon-tss.bed \
-   --out_ids             filter-test-monoexon-tss.ids \
+   --out_bed             filter-test_monoexon-no-reftss-overlap.bed \
+   --out_ids             filter-test_monoexon-no-reftss-overlap.ids \
    --max_distance        10 \
    --genome_index        /sc/arion/projects/pintod02c/reference-databases/hg38-v41-ERCC/GRCh38.primary_assembly.genome.fa.fai
 
@@ -19,17 +19,26 @@ cd /sc/arion/scratch/pintod02/isopropeller-collapse-test/04_isoPropeller-merge
 ~/opt/isoPropeller-collapse/workflow/scripts/filter_monoexon-premrna-fragments.py \
    --isoform_bed12       ISOP_all.bed \
    --reference_bed12     /sc/arion/projects/pintod02c/reference-databases/hg38-v41-ERCC/gencode.v41.annotation.bed \
-   --out_bed             filter-test-monoexon-premrna.bed \
-   --out_ids             filter-test-monoexon-premrna.ids \
+   --out_bed             filter-test_monoexon-likely-premrnas.bed \
+   --out_ids             filter-test_monoexon-likely-premrnas.ids \
    --min_intron_overlap  10
 
 # Noncanonical splice junction filter
 ~/opt/isoPropeller-collapse/workflow/scripts/filter_multiexon-noncanonical-splices.py \
    --isoform_bed12       ISOP_all.bed \
    --genome_fasta        /sc/arion/projects/pintod02c/reference-databases/hg38-v41-ERCC/GRCh38.primary_assembly.genome.fa \
-   --out_bed             filter-test-multiexonic-noncanonical-splices.bed \
-   --out_ids             filter-test-multiexonic-noncanonical-splices.ids \
-   --out_motifs          filter-test-multiexonic-noncanonical-splices.motifs.txt
+   --out_bed             filter-test_multiexonic-noncanonical-splices.bed \
+   --out_ids             filter-test_multiexonic-noncanonical-splices.ids \
+   --out_motifs          filter-test_multiexonic-noncanonical-splices.motifs.txt
+
+# Template switching filter (based on SQANTI5 approach)
+~/opt/isoPropeller-collapse/workflow/scripts/filter_multiexon-rt-switching.py \
+   --isoform_bed12       ISOP_all.bed \
+   --genome_fasta        /sc/arion/projects/pintod02c/reference-databases/hg38-v41-ERCC/GRCh38.primary_assembly.genome.fa \
+   --out_rts_tsv         filter-test_multiexonic-rt-switching.repeats.txt \
+   --out_ids             filter-test_multiexonic-rt-switching.ids \
+   --out_bed             filter-test_multiexonic-rt-switching.bed
+
 
 
 # Antisense perfect splice match filter

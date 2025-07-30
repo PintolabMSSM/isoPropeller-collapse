@@ -374,7 +374,7 @@ rule filter_terminal_exons_in_segdup:
 
         for LEVEL in 1 2 3 4; do
             echo "[INFO] Level $LEVEL filtering..." >> {log}
-            filter_segdup-mismapped-terminal-exons.pl \
+            {params.snakedir}scripts/filter_segdup-mismapped-terminal-exons.pl \
                 -i "$outdir/isoqc_temp_corrected.intronexon.gff" \
                 -g "$outdir/isoqc_temp_reference-gene-regions.gtf" \
                 -s {input.segdup_bed} \

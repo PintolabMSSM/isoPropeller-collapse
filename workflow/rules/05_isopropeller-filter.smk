@@ -363,35 +363,45 @@ rule filter_terminal_exons_in_segdup:
         SNAKEDIR + "envs/omics-toolkit.yaml"
     shell:
         """
-        mkdir -p $(dirname {output.fail_bed})
+        outdir=$(dirname {output.fail_bed})
+        mkdir -p "$outdir"
 
-        # Generate temp files
-        bed2intronexongff.pl -v 1 {input.isoform_bed} > isoqc_temp_{wildcards.prefix}_{wildcards.suffix}_corrected.intronexon.gff
-        gtf-get-gene-regions.pl {input.reference_gtf} > isoqc_temp_{wildcards.prefix}_{wildcards.suffix}_reference-gene-regions.gtf
+        echo "[INFO] Running bed2intronexongff.pl..." >> {log}
+        bed2intronexongff.pl -v 1 {input.isoform_bed} > "$outdir/isoqc_temp_corrected.intronexon.gff" 2>> {log}
+
+        echo "[INFO] Running gtf-get-gene-regions.pl..." >> {log}
+        gtf-get-gene-regions.pl {input.reference_gtf} > "$outdir/isoqc_temp_reference-gene-regions.gtf" 2>> {log}
 
         for LEVEL in 1 2 3 4; do
+            echo "[INFO] Level $LEVEL filtering..." >> {log}
             filter_segdup-mismapped-terminal-exons.pl \
-                -i isoqc_temp_{wildcards.prefix}_{wildcards.suffix}_corrected.intronexon.gff \
-                -g isoqc_temp_{wildcards.prefix}_{wildcards.suffix}_reference-gene-regions.gtf \
+                -i "$outdir/isoqc_temp_corrected.intronexon.gff" \
+                -g "$outdir/isoqc_temp_reference-gene-regions.gtf" \
                 -s {input.segdup_bed} \
-                -l $$LEVEL \
-                > isoqc_temp_{wildcards.prefix}_{wildcards.suffix}_terminal-exons-in-segdup_$$LEVEL.txt
+                -l $LEVEL \
+                > "$outdir/isoqc_temp_terminal-exons-in-segdup_$LEVEL.txt" 2>> {log}
 
+            echo "[INFO] Parsing LEVEL $LEVEL results..." >> {log}
             awkt '($$2=="no" && $$3=="yes" && $$6>0 && $$7>100000) || ($$2=="no" && $$8=="yes" && $$11>0 && $$12>100000) {{print $$1}}' \
-                isoqc_temp_{wildcards.prefix}_{wildcards.suffix}_terminal-exons-in-segdup_$$LEVEL.txt \
-                > isoqc_temp_{wildcards.prefix}_{wildcards.suffix}_mismapped-terminal-exon-in-segdup_$$LEVEL.txt
+                "$outdir/isoqc_temp_terminal-exons-in-segdup_$LEVEL.txt" \
+                > "$outdir/isoqc_temp_mismapped-terminal-exon-in-segdup_$LEVEL.txt" 2>> {log}
         done
 
-        cat isoqc_temp_{wildcards.prefix}_{wildcards.suffix}_mismapped-terminal-exon-in-segdup_*.txt | sort | uniq \
-            > {output.fail_ids}
+        echo "[INFO] Merging .ids files..." >> {log}
+        cat "$outdir"/isoqc_temp_mismapped-terminal-exon-in-segdup_*.txt | sort | uniq \
+            > {output.fail_ids} 2>> {log}
+        echo "[INFO] Final .ids output:" >> {log}
+        head {output.fail_ids} >> {log}
 
-        intersect-by-ids \
-            -ff {input.isoform_bed} -fc 4 \
-            -if {output.fail_ids} \
-            > {output.fail_bed}
+        echo "[INFO] Extracting BED regions for failed isoforms..." >> {log}
+        intersect-by-ids -ff {input.isoform_bed} -fc 4 -if {output.fail_ids} > {output.fail_bed} 2>> {log}
+        echo "[INFO] Final .bed output:" >> {log}
+        head {output.fail_bed} >> {log}
 
-        rm -f isoqc_temp_{wildcards.prefix}_{wildcards.suffix}_*
+        echo "[INFO] Cleaning up intermediate files..." >> {log}
+        rm -f "$outdir"/isoqc_temp_* 2>> {log}
         """
+
 
 
 # ───────────────────────────────────────────────

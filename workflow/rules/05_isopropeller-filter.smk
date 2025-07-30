@@ -382,7 +382,7 @@ rule filter_terminal_exons_in_segdup:
                 > "$outdir/isoqc_temp_terminal-exons-in-segdup_$LEVEL.txt" 2>> {log}
 
             echo "[INFO] Parsing LEVEL $LEVEL results..." >> {log}
-            awkt '($$2=="no" && $$3=="yes" && $$6>0 && $$7>100000) || ($$2=="no" && $$8=="yes" && $$11>0 && $$12>100000) {{print $$1}}' \
+            awk -F '\t' -v OFS='\t' '($$2=="no" && $$3=="yes" && $$6>0 && $$7>100000) || ($$2=="no" && $$8=="yes" && $$11>0 && $$12>100000) {{print $$1}}' \
                 "$outdir/isoqc_temp_terminal-exons-in-segdup_$LEVEL.txt" \
                 > "$outdir/isoqc_temp_mismapped-terminal-exon-in-segdup_$LEVEL.txt" 2>> {log}
         done

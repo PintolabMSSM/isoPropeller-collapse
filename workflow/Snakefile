@@ -105,14 +105,15 @@ FILT_TPM_MIN_COUNT                = config.get("filt_tpm_min_count", 10)
 FILT_TPM_MIN_FRACT                = config.get("filt_tpm_min_fract", 0.5)
 
 # Define local variables: Choose whether or not to run certain rules
-REMOVE_MONOEXONS              = as_bool(config.get("remove_monoexons_without_cage_support", True))
-REMOVE_MONOEXON_FRAGMENTS     = as_bool(config.get("remove_monoexon_premRNA_fragments", True))
+REMOVE_MONOEXONS_NO_TSS       = as_bool(config.get("remove_monoexons_without_cage_support", True))
+REMOVE_MONOEXON_PRE_MRNAS     = as_bool(config.get("remove_monoexon_premRNA_fragments", True))
 REMOVE_NONCANONICAL_SPLICE    = as_bool(config.get("remove_isoforms_with_noncanonical_splice_junctions", True))
 REMOVE_TSWITCH_ARTIFACTS      = as_bool(config.get("remove_isoforms_with_template_switching_artifacts", True))
 REMOVE_ANTISENSE_SPLICEMATCH  = as_bool(config.get("remove_isoforms_with_antisense_perfect_splicematch", True))
 REMOVE_CONTAINED_IN_REPEATS   = as_bool(config.get("remove_isoforms_fully_contained_in_repeats", True))
 REMOVE_PAR_OVERLAP            = as_bool(config.get("remove_isoforms_overlapping_PAR_regions", True))
 REMOVE_BELOW_TPM              = as_bool(config.get("remove_isoforms_not_meeting_TPM_threshold", True))
+REMOVE_TERMINAL_EXONS_SEGDUP  = as_bool(config.get("remove_isoforms_with_mismapped_segdup_exons", True))
 
 # Set conditional isoPropeller arguments. If a terminal exon bed file is defined
 # in the configuration file, use it.

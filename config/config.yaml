@@ -54,6 +54,7 @@ remove_isoforms_with_antisense_perfect_splicematch: True
 remove_isoforms_fully_contained_in_repeats:         True
 remove_isoforms_overlapping_PAR_regions:            True
 remove_isoforms_not_meeting_TPM_threshold:          True
+remove_isoforms_with_mismapped_segdup_exons:        True
 
 # Define thresholds used in filtering
 filt_monoexon_tss_maxdist_bp:       10

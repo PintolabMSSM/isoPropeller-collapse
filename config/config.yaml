@@ -5,23 +5,35 @@ samples: "samples.csv"
 # Full path to the reference genome fasta file for isoform mapping
 reference_genome_fasta: "/sc/arion/projects/pintod02c/reference-databases/hg38-v41-ERCC/GRCh38.primary_assembly.genome.fa"
 
+# Reference gene annotations (e.g. GENCODE) in GTF format
+reference_annotations_gtf: "/sc/arion/projects/pintod02c/reference-databases/hg38-v41-ERCC/gencode.v41.annotation_no-mi-sn-sno-sca-RNAs.gtf"
+
+# A reference set of trusted transcription start sites and CAGE regions in BED format
+reference_tss_bed: "/sc/arion/work/pintod02/opt/isoseq_pipeline/data/combined_cage_Pitt-Fantom5-119FrontalLob_refTSS3.3_refseq_gencode_extended.merged.sorted_chr.bed"
+
+# A reference set of trusted splice junctions (needed for transcriptclean step) in STAR SJ.out.tab format
+splice_junctions_file: "/sc/arion/work/pintod02/opt/isoseq_pipeline/data/merged-intropolis-PEC-GTEX.SJ.out.tab"
+
+# A reference set of repeat regions in the genome (e.g from repeatmasker) in BED format
+reference_repeat_regions_bed: "/sc/arion/projects/pintod02c/reference-databases/hg38-v41-ERCC/GRCh38.primary_assembly.genome_rmsk_nr.bed"
+
+# A reference set of pseudo-autosomal regions (PARS) in BED format
+reference_PAR_regions_bed: "/hpc/users/pintod02/opt/isoseq_pipeline/data/GRCh38.p13_PARs.bed"
+
+# A reference set of segmental duplication regions in BED Format
+reference_segdups_bed: "/sc/arion/work/pintod02/opt/isoseq_pipeline/data/SegDups_hg38.merged.bed"
+
 # An optional bed file with the position of all 3' terminal exons (+500 bp flanking region)
 # If provided, the isoPropeller intra-priming filter will be disabled in these regions
-intrapriming_exclude_regions_bed: "/sc/arion/projects/pintod02c/reference-databases/hg38-v41-ERCC/gencode.v41.annotation_500bp_terminal.bed"
+reference_intrapriming_exclude_regions_bed: "/sc/arion/projects/pintod02c/reference-databases/hg38-v41-ERCC/gencode.v41.annotation_500bp_terminal.bed"
 
 # The maximum allowed intron length when mapping reads to the reference genome with minimap2
 # This is set to 1.25 Mb by default, which is the maximum known intron size in the human genome
 max_intron_length: 1250000
 
-# Path to file with known splice junctions (needed for transcriptclean step)
-splice_junctions_file: "/sc/arion/work/pintod02/opt/isoseq_pipeline/data/merged-intropolis-PEC-GTEX.SJ.out.tab"
-
 # Set to 'true' to perform transcriptclean after mapping FLNC reads to the genome
 # This will correct sequencing errors and splice sites and is recommended in general
 use_transcriptclean: true
-
-# Bed-formatted file with know TSS regions and CAGE peaks
-cage_bed_file: "/sc/arion/work/pintod02/opt/isoseq_pipeline/data/combined_cage_Pitt-Fantom5-119FrontalLob_refTSS3.3_refseq_gencode_extended.merged.sorted_chr.bed"
 
 # Set to 'true' if outputs should be limited to autosomes (chrN) and sex chromosomes (chrX, chrY), 
 # removing chrM and other contix. Make sure to set this to false if you use a non-reference 
@@ -41,4 +53,14 @@ remove_isoforms_with_template_switching_artifacts:  True
 remove_isoforms_with_antisense_perfect_splicematch: True
 remove_isoforms_fully_contained_in_repeats:         True
 remove_isoforms_overlapping_PAR_regions:            True
-remove_isoforms_not_found_in_min_samples:           3
+remove_isoforms_not_meeting_TPM_threshold:          True
+
+# Define thresholds used in filtering
+filt_monoexon_tss_maxdist_bp:       10
+filt_monoexon_min_intron_ovlp_bp:   10
+filt_rmsk_min_ovlp_fract:           0.9
+filt_par_min_ovlp_fract:            0
+filt_tpm_min_count:                 10
+filt_tpm_min_fract:                 0.5
+
+

@@ -5,8 +5,8 @@ rule run_isopropeller:
         bam  = lambda wc: ( f"02_transcriptclean/{wc.sample}/{wc.sample}_mapped_labeled_tclean.bam"
                             if USE_TC
                             else f"01_mapping/{wc.sample}/{wc.sample}_mapped_labeled.bam"),
-        ref  = GENOMEFASTA,
-        cage = CAGEBED
+        genfasta = GENOMEFASTA,
+        reftss   = REFTSS
     output:
         gtf   = "03_isoPropeller/{sample}/{sample}_all.gtf",
         end   = "03_isoPropeller/{sample}/{sample}_all_end_dist.txt",
@@ -31,8 +31,8 @@ rule run_isopropeller:
             -e \
             -p ISOP_{params.sample} \
             -o {params.outdir}/{params.sample}_all \
-            -g {input.ref} \
-            -f {input.cage} \
+            -g {input.genfasta} \
+            -f {input.reftss} \
             -t {threads} \
             {params.extra_args} 2>> {log}
         """

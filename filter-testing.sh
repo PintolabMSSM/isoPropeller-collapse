@@ -6,7 +6,7 @@
 cd /sc/arion/scratch/pintod02/isopropeller-collapse-test/04_isoPropeller-merge
 
 # Arguments that need to be defined in the main config.yaml
-REFGEN="/sc/arion/projects/pintod02c/reference-databases/hg38-v41-ERCC/GRCh38.primary_assembly.genome.fa"
+GENOMEFASTA="/sc/arion/projects/pintod02c/reference-databases/hg38-v41-ERCC/GRCh38.primary_assembly.genome.fa"
 REFGTF="/sc/arion/projects/pintod02c/reference-databases/hg38-v41-ERCC/gencode.v41.annotation_no-mi-sn-sno-sca-RNAs.gtf"
 REFTSS="/sc/arion/work/pintod02/opt/isoseq_pipeline/data/combined_cage_Pitt-Fantom5-119FrontalLob_refTSS3.3_refseq_gencode_extended.merged.sorted_chr.bed"
 RMSKBED="/sc/arion/projects/pintod02c/reference-databases/hg38-v41-ERCC/GRCh38.primary_assembly.genome_rmsk_nr.bed"
@@ -33,7 +33,7 @@ REFFAI="/sc/arion/projects/pintod02c/reference-databases/hg38-v41-ERCC/GRCh38.pr
 
 
 # Monoexon tss filter
-~/opt/isoPropeller-collapse/workflow/scripts/filter_monoexon-tss-overlap.py \
+filter_monoexon-tss-overlap.py \
    --isoform_bed12       ${ISOBED} \
    --isoform_tss_bed     ${ISOTSS} \
    --reftss_bed          ${REFTSS} \
@@ -43,7 +43,7 @@ REFFAI="/sc/arion/projects/pintod02c/reference-databases/hg38-v41-ERCC/GRCh38.pr
    --out_ids             isoqc_fail_${SAMPLE}_monoexon-no-reftss-overlap.ids 
 
 # Monoexon pre-mRNA filter
-~/opt/isoPropeller-collapse/workflow/scripts/filter_monoexon-premrna-fragments.py \
+filter_monoexon-premrna-fragments.py \
    --isoform_bed12       ${ISOBED} \
    --reference_bed12     ${REFBED} \
    --min_intron_overlap  ${FILT_MONOEXON_MIN_INTRON_OVLP_BP} \
@@ -51,30 +51,30 @@ REFFAI="/sc/arion/projects/pintod02c/reference-databases/hg38-v41-ERCC/GRCh38.pr
    --out_ids             isoqc_fail_${SAMPLE}_monoexon-likely-premrnas.ids
 
 # Noncanonical splice junction filter
-~/opt/isoPropeller-collapse/workflow/scripts/filter_multiexon-noncanonical-splices.py \
+filter_multiexon-noncanonical-splices.py \
    --isoform_bed12       ${ISOBED} \
-   --genome_fasta        ${REFGEN} \
+   --genome_fasta        ${GENOMEFASTA} \
    --out_bed             isoqc_fail_${SAMPLE}_multiexonic-noncanonical-splices.bed \
    --out_ids             isoqc_fail_${SAMPLE}_multiexonic-noncanonical-splices.ids \
    --out_motifs          isoqc_fail_${SAMPLE}_multiexonic-noncanonical-splices.motifs.txt
 
 # Template switching filter (based on SQANTI5 approach)
-~/opt/isoPropeller-collapse/workflow/scripts/filter_multiexon-rt-switching.py \
+filter_multiexon-rt-switching.py \
    --isoform_bed12       ${ISOBED} \
-   --genome_fasta        ${REFGEN} \
+   --genome_fasta        ${GENOMEFASTA} \
    --out_rts_tsv         isoqc_fail_${SAMPLE}_multiexonic-rt-switching.repeats.txt \
    --out_ids             isoqc_fail_${SAMPLE}_multiexonic-rt-switching.ids \
    --out_bed             isoqc_fail_${SAMPLE}_multiexonic-rt-switching.bed
 
 # Antisense perfect splice match filter
-~/opt/isoPropeller-collapse/workflow/scripts/filter_multiexon-antisense-splicechain-match.py \
+filter_multiexon-antisense-splicechain-match.py \
    --isoform_bed12       ${ISOBED} \
    --reference_bed12     ${REFBED} \
    --out_ids             isoqc_fail_${SAMPLE}_multiexonic-antisense-splicechain-match.ids \
    --out_bed             isoqc_fail_${SAMPLE}_multiexonic-antisense-splicechain-match.bed
 
 # Reference region overlap filter, contained in repeats
-~/opt/isoPropeller-collapse/workflow/scripts/filter_reference-overlap-on-exons.py \
+filter_reference-overlap-on-exons.py \
    --isoform_bed12        ${ISOBED} \
    --reference_bed12      ${RMSKBED} \
    --min_overlap_fraction ${FILT_RMSK_MIN_OVLP_FRACT} \
@@ -83,7 +83,7 @@ REFFAI="/sc/arion/projects/pintod02c/reference-databases/hg38-v41-ERCC/GRCh38.pr
    --out_stats            isoqc_fail_${SAMPLE}_repeatmasker-overlap.stats.txt
 
 # Reference region overlap filter, contained in repeats
-~/opt/isoPropeller-collapse/workflow/scripts/filter_reference-overlap-on-exons.py \
+filter_reference-overlap-on-exons.py \
    --isoform_bed12        ${ISOBED} \
    --reference_bed12      ${PARBED} \
    --min_overlap_fraction ${FILT_PAR_MIN_OVLP_FRACT} \
@@ -92,7 +92,7 @@ REFFAI="/sc/arion/projects/pintod02c/reference-databases/hg38-v41-ERCC/GRCh38.pr
    --out_stats            isoqc_fail_${SAMPLE}_PAR-overlap.stats.txt 
 
 # Min-TPM filter
-~/opt/isoPropeller-collapse/workflow/scripts/filter_TPM-fraction.py \
+filter_TPM-fraction.py \
    --count_matrix         ${ISOEXP} \
    --isoform_bed12        ${ISOBED} \
    --min_tpm              ${FILT_TPM_MIN_COUNT} \
@@ -106,7 +106,7 @@ bed2intronexongff.pl -v 1 ${ISOBED} > isoqc_temp_${SAMPLE}_corrected.intronexon.
 gtf-get-gene-regions.pl   ${REFGTF} > isoqc_temp_${SAMPLE}_reference-gene-regions.gtf
 for LEVEL in 1 2 3 4
 do
-   ~/opt/isoPropeller-collapse/workflow/scripts/filter_segdup-mismapped-terminal-exons.pl \
+   filter_segdup-mismapped-terminal-exons.pl \
       -i isoqc_temp_${SAMPLE}_corrected.intronexon.gff \
       -g isoqc_temp_${SAMPLE}_reference-gene-regions.gtf \
       -s ${SEGDUP} \

@@ -21,9 +21,9 @@ min_snakemake_version = "8.25.0"
 configfile: ''.join([os.environ['GIT_REPODIR'], "/config/config.yaml"])
 
 
-####################
-# INPUT VALIDATION #
-####################
+########################
+# INPUT CSV VALIDATION #
+########################
 
 # Define expected columns in the CSV
 expected_columns = {"path_to_flnc_bam", "sample"}
@@ -52,9 +52,17 @@ if samples_df["path_to_flnc_bam"].duplicated().any():
 print("[INFO] Sample sheet validation passed.", file=sys.stderr)
 
 
-#########
-# SETUP #
-#########
+##############################
+# LOCAL VARIABLE DEFINITIONS #
+##############################
+
+# Utility function to make sure that values we expect to be booleans are passed as such
+def as_bool(val):
+    if isinstance(val, bool):
+        return val
+    if isinstance(val, str):
+        return val.strip().lower() in {"true", "yes", "1"}
+    return False
 
 # Set snakemake main workdir variable. 
 SNAKEDIR = os.path.dirname(workflow.snakefile) + "/"
@@ -71,16 +79,40 @@ FLNC_BAM_PARTS = {
     for i, bam in enumerate(bam_list)
 }
 
-# Define local variables
+# Define local variables: General
 SAMPLES         = sorted(FLNC_BAMS.keys())
-USE_TC          = config.get("use_transcriptclean", True)
-GENOMEFASTA     = config["reference_genome_fasta"]
-MAXINTRONLEN    = config.get("max_intron_length", 1250000)
-SPLICEJUNCTIONS = config.get("splice_junctions_file")
-CAGEBED         = config.get("cage_bed_file")
 MERGEDISOPREFIX = config.get("merged_isoform_prefix", "ISOP")
-ONLYCHR         = config.get("limit_output_to_chrNXY", True)
-TERMINALEXONBED = config.get("intrapriming_exclude_regions_bed","")
+MAXINTRONLEN    = config.get("max_intron_length", 1250000)
+USE_TC          = as_bool(config.get("use_transcriptclean", True))
+ONLYCHR         = as_bool(config.get("limit_output_to_chrNXY", True))
+
+# Define local variables: Reference files
+GENOMEFASTA     = config.get("reference_genome_fasta")
+REFGTF          = config.get("reference_annotations_gtf")
+REFTSS          = config.get("reference_tss_bed")
+SPLICEJUNCTIONS = config.get("splice_junctions_file")
+TERMINALEXONBED = config.get("reference_intrapriming_exclude_regions_bed","")
+RMSKBED         = config.get("reference_repeat_regions_bed")
+PARBED          = config.get("reference_PAR_regions_bed")
+SEGDUP          = config.get("reference_segdups_bed")
+
+# Define local variables: Filter thresholds
+FILT_MONOEXON_TSS_MAXDIST_BP      = config.get("filt_monoexon_tss_maxdist_bp", 10)
+FILT_MONOEXON_MIN_INTRON_OVLP_BP  = config.get("filt_monoexon_min_intron_ovlp_bp", 10)
+FILT_RMSK_MIN_OVLP_FRACT          = config.get("filt_rmsk_min_ovlp_fract", 0.9)
+FILT_PAR_MIN_OVLP_FRACT           = config.get("filt_par_min_ovlp_fract", 0)
+FILT_TPM_MIN_COUNT                = config.get("filt_tpm_min_count", 10)
+FILT_TPM_MIN_FRACT                = config.get("filt_tpm_min_fract", 0.5)
+
+# Define local variables: Choose whether or not to run certain rules
+REMOVE_MONOEXONS              = as_bool(config.get("remove_monoexons_without_cage_support", True))
+REMOVE_MONOEXON_FRAGMENTS     = as_bool(config.get("remove_monoexon_premRNA_fragments", True))
+REMOVE_NONCANONICAL_SPLICE    = as_bool(config.get("remove_isoforms_with_noncanonical_splice_junctions", True))
+REMOVE_TSWITCH_ARTIFACTS      = as_bool(config.get("remove_isoforms_with_template_switching_artifacts", True))
+REMOVE_ANTISENSE_SPLICEMATCH  = as_bool(config.get("remove_isoforms_with_antisense_perfect_splicematch", True))
+REMOVE_CONTAINED_IN_REPEATS   = as_bool(config.get("remove_isoforms_fully_contained_in_repeats", True))
+REMOVE_PAR_OVERLAP            = as_bool(config.get("remove_isoforms_overlapping_PAR_regions", True))
+REMOVE_BELOW_TPM              = as_bool(config.get("remove_isoforms_not_meeting_TPM_threshold", True))
 
 # Set conditional isoPropeller arguments. If a terminal exon bed file is defined
 # in the configuration file, use it.
@@ -89,14 +121,17 @@ if TERMINALEXONBED:
 else:
     ISOPROPEXTRAARGS = ""
 
+
 #########
 # RULES #
 #########
 
 # Import common rules
+include: "rules/general_rules.smk"
 include: "rules/01_mapping.smk"
 include: "rules/03_isopropeller.smk"
 include: "rules/04_isopropeller-merge.smk"
+include: "rules/05_isopropeller-filter.smk"
 
 # Import conditional rules
 if USE_TC:
@@ -111,4 +146,9 @@ rule all:
         expand("03_isoPropeller/{sample}/{sample}_all.gtf", sample=SAMPLES),
         expand("03_isoPropeller/{sample}/{sample}_depth-gt1.gtf", sample=SAMPLES),
         expand("04_isoPropeller-merge/{prefix}_{suffix}.gtf", prefix=MERGEDISOPREFIX, suffix=["all", "depth-gt1"]),
-        expand("04_isoPropeller-merge/{prefix}_{suffix}_{end}.bed", prefix=MERGEDISOPREFIX, suffix=["all", "depth-gt1"], end=["tss", "tts"])
+        expand("04_isoPropeller-merge/{prefix}_{suffix}_{end}.bed", prefix=MERGEDISOPREFIX, suffix=["all", "depth-gt1"], end=["tss", "tts"]),
+        expand("05_isoPropeller-filter/{prefix}_depth-gt1_" + FILTERTAG + "/filtered_{prefix}_depth-gt1.gtf", prefix=[MERGEDISOPREFIX]),
+        expand("05_isoPropeller-filter/{prefix}_depth-gt1_" + FILTERTAG + "/filtered_{prefix}_depth-gt1_exp.txt", prefix=[MERGEDISOPREFIX]),
+        expand("05_isoPropeller-filter/{prefix}_depth-gt1_" + FILTERTAG + "/filtered_{prefix}_depth-gt1_id.txt", prefix=[MERGEDISOPREFIX]),
+        expand("05_isoPropeller-filter/{prefix}_depth-gt1_" + FILTERTAG + "/filtered_{prefix}_depth-gt1_tss.bed", prefix=[MERGEDISOPREFIX]),
+        expand("05_isoPropeller-filter/{prefix}_depth-gt1_" + FILTERTAG + "/filtered_{prefix}_depth-gt1_tts.bed", prefix=[MERGEDISOPREFIX])

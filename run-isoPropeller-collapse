@@ -130,6 +130,7 @@ $cmd >> "$logfile" 2>&1
 
 # Generate DAG of executed steps
 if [[ $? -eq 0 ]]; then
+   echo -e "\n## ISOPROPELLER-COLLAPSE PIPELINE COMPLETED SUCCESSFULLY" >> "$logfile"
    echo -e "\n## Generating DAG of executed steps..." >> "$logfile"
    snakemake \
        ${PROFILE} \
@@ -143,12 +144,6 @@ if [[ $? -eq 0 ]]; then
    else
        echo "Failed to generate DAG" >> "$logfile"
    fi
-fi
-
-
-# ===== COMPLETION STATUS ===== #
-if [[ $? -eq 0 ]]; then
-   echo -e "\n# ISOPROPELLER-COLLAPSE PIPELINE COMPLETED SUCCESSFULLY #" >> "$logfile"
 else
-   echo -e "\n# ISOPROPELLER-COLLAPSE PIPELINE FAILED WITH ERRORS #" >> "$logfile"
+   echo -e "\n# ISOPROPELLER-COLLAPSE PIPELINE FAILED WITH ERRORS" >> "$logfile"
 fi

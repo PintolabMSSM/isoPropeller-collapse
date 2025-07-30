@@ -147,8 +147,8 @@ rule all:
         expand("03_isoPropeller/{sample}/{sample}_depth-gt1.gtf", sample=SAMPLES),
         expand("04_isoPropeller-merge/{prefix}_{suffix}.gtf", prefix=MERGEDISOPREFIX, suffix=["all", "depth-gt1"]),
         expand("04_isoPropeller-merge/{prefix}_{suffix}_{end}.bed", prefix=MERGEDISOPREFIX, suffix=["all", "depth-gt1"], end=["tss", "tts"]),
-        expand("05_isoPropeller-filter/{prefix}_depth-gt1_" + FILTERTAG + "/filtered_{prefix}_depth-gt1.gtf", prefix=[MERGEDISOPREFIX]),
-        expand("05_isoPropeller-filter/{prefix}_depth-gt1_" + FILTERTAG + "/filtered_{prefix}_depth-gt1_exp.txt", prefix=[MERGEDISOPREFIX]),
-        expand("05_isoPropeller-filter/{prefix}_depth-gt1_" + FILTERTAG + "/filtered_{prefix}_depth-gt1_id.txt", prefix=[MERGEDISOPREFIX]),
-        expand("05_isoPropeller-filter/{prefix}_depth-gt1_" + FILTERTAG + "/filtered_{prefix}_depth-gt1_tss.bed", prefix=[MERGEDISOPREFIX]),
-        expand("05_isoPropeller-filter/{prefix}_depth-gt1_" + FILTERTAG + "/filtered_{prefix}_depth-gt1_tts.bed", prefix=[MERGEDISOPREFIX])
+        expand("05_isoPropeller-filter/{prefix}_depth-gt1_" + FILTERTAG + "/{prefix}_depth-gt1_isoqc_pass.gtf", prefix=[MERGEDISOPREFIX]),
+        expand("05_isoPropeller-filter/{prefix}_depth-gt1_" + FILTERTAG + "/{prefix}_depth-gt1_isoqc_pass_exp.txt", prefix=[MERGEDISOPREFIX]),
+        expand("05_isoPropeller-filter/{prefix}_depth-gt1_" + FILTERTAG + "/{prefix}_depth-gt1_isoqc_pass_id.txt", prefix=[MERGEDISOPREFIX]),
+        expand("05_isoPropeller-filter/{prefix}_depth-gt1_" + FILTERTAG + "/{prefix}_depth-gt1_isoqc_pass_tss.bed", prefix=[MERGEDISOPREFIX]),
+        expand("05_isoPropeller-filter/{prefix}_depth-gt1_" + FILTERTAG + "/{prefix}_depth-gt1_isoqc_pass_tts.bed", prefix=[MERGEDISOPREFIX])

@@ -38,7 +38,7 @@ rule filter_monoexon_tss_overlap:
     shell:
         """
         mkdir -p $(dirname {output.fail_bed})
-        python {params.snakedir}workflow/scripts/filter_monoexon-tss-overlap.py \
+        python {params.snakedir}scripts/filter_monoexon-tss-overlap.py \
             --isoform_bed {input.isoform_bed} \
             --isoform_tss_bed {input.isoform_tss} \
             --reftss_bed {input.reftss_bed} \
@@ -62,11 +62,12 @@ rule filter_aggregate_final_outputs:
         tts = "04_isoPropeller-merge/{prefix}_{suffix}_tts.bed",
         fail_ids = lambda wc: [func(wc) for func in FILTER_FAIL_ID_PATHS]
     output:
-        gtf = "05_isoPropeller-filter/{prefix}_{suffix}_{filtertag}/filtered_{prefix}_{suffix}.gtf",
-        exp = "05_isoPropeller-filter/{prefix}_{suffix}_{filtertag}/filtered_{prefix}_{suffix}_exp.txt",
-        ids = "05_isoPropeller-filter/{prefix}_{suffix}_{filtertag}/filtered_{prefix}_{suffix}_id.txt",
-        tss = "05_isoPropeller-filter/{prefix}_{suffix}_{filtertag}/filtered_{prefix}_{suffix}_tss.bed",
-        tts = "05_isoPropeller-filter/{prefix}_{suffix}_{filtertag}/filtered_{prefix}_{suffix}_tts.bed"
+        gtf = "05_isoPropeller-filter/{prefix}_{suffix}_{filtertag}/{prefix}_{suffix}_isoqc_pass.gtf",
+        exp = "05_isoPropeller-filter/{prefix}_{suffix}_{filtertag}/{prefix}_{suffix}_isoqc_pass_exp.txt",
+        ids = "05_isoPropeller-filter/{prefix}_{suffix}_{filtertag}/{prefix}_{suffix}_isoqc_pass_id.txt",
+        tss = "05_isoPropeller-filter/{prefix}_{suffix}_{filtertag}/{prefix}_{suffix}_isoqc_pass_tss.bed",
+        tts = "05_isoPropeller-filter/{prefix}_{suffix}_{filtertag}/{prefix}_{suffix}_isoqc_pass_tts.bed",
+        qcf = "05_isoPropeller-filter/{prefix}_{suffix}_{filtertag}/{prefix}_{suffix}_isoqc_fail.ids"
     params:
         snakedir = SNAKEDIR,
         filtertag = FILTERTAG
@@ -83,30 +84,18 @@ rule filter_aggregate_final_outputs:
 
         if not input.fail_ids:
             shell("""
-                cp {input.gtf} {output.gtf}
-                cp {input.exp} {output.exp}
-                cp {input.ids} {output.ids}
-                cp {input.tss} {output.tss}
-                cp {input.tts} {output.tts}
+                cp {input.gtf} {output.gtf} 2>> {log}
+                cp {input.exp} {output.exp} 2>> {log}
+                cp {input.ids} {output.ids} 2>> {log}
+                cp {input.tss} {output.tss} 2>> {log}
+                cp {input.tts} {output.tts} 2>> {log}
             """)
         else:
             shell("""
-                cat {input.fail_ids} | sort | uniq > temp_combined_fail_ids.txt
-
-                {params.snakedir}workflow/scripts/gtf-filter-attributes.pl \
-                    -m temp_combined_fail_ids.txt -v {input.gtf} > {output.gtf}
-
-                {params.snakedir}workflow/scripts/intersect-by-ids.pl \
-                    -ff {input.exp} -if temp_combined_fail_ids.txt -fc 1 > {output.exp}
-
-                {params.snakedir}workflow/scripts/intersect-by-ids.pl \
-                    -ff {input.ids} -if temp_combined_fail_ids.txt -fc 1 > {output.ids}
-
-                {params.snakedir}workflow/scripts/intersect-by-ids.pl \
-                    -ff {input.tss} -if temp_combined_fail_ids.txt -fc 4 > {output.tss}
-
-                {params.snakedir}workflow/scripts/intersect-by-ids.pl \
-                    -ff {input.tts} -if temp_combined_fail_ids.txt -fc 4 > {output.tts}
-
-                rm -f temp_combined_fail_ids.txt
+                cat {input.fail_ids} | sort | uniq                       > {output.qcf} 2>> {log}
+                gtf-filter-attributes.pl -m {output.qcf} -v {input.gtf}  > {output.gtf} 2>> {log}
+                diff-by-ids -ff {input.exp} -if {output.qcf} -fc 1       > {output.exp} 2>> {log}
+                diff-by-ids -ff {input.ids} -if {output.qcf} -fc 1       > {output.ids} 2>> {log}
+                diff-by-ids -ff {input.tss} -if {output.qcf} -fc 4       > {output.tss} 2>> {log}
+                diff-by-ids -ff {input.tts} -if {output.qcf} -fc 4       > {output.tts} 2>> {log}
             """)

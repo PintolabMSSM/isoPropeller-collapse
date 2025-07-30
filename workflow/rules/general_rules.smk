@@ -1,13 +1,12 @@
+# ───────────────────────────────────────────────
+# Rule: Index FASTA → FAI
+# ───────────────────────────────────────────────
 rule index_fasta:
     message: "Indexing FASTA file: {input}"
     input:
         fasta = "{base}.fasta"
     output:
         fai   = "{base}.fasta.fai"
-    log:
-        "logs/convert/{base}_faidx.log"
-    benchmark:
-        "benchmarks/convert/{base}_faidx.txt"
     threads: 1
     conda:
         SNAKEDIR + "envs/omics-toolkit.yaml"
@@ -17,6 +16,9 @@ rule index_fasta:
         samtools faidx {input.fasta} 2>> {log}
         """
 
+# ───────────────────────────────────────────────
+# Rule: GTF → GFF
+# ───────────────────────────────────────────────
 rule gtf_to_gff:
     message: "Converting GTF to GFF: {input}"
     input:
@@ -25,10 +27,6 @@ rule gtf_to_gff:
         gff = "{base}.gff"
     params:
         snakedir = SNAKEDIR
-    log:
-        "logs/convert/{base}_gtf2gff.log"
-    benchmark:
-        "benchmarks/convert/{base}_gtf2gff.txt"
     threads: 1
     conda:
         SNAKEDIR + "envs/omics-toolkit.yaml"
@@ -38,6 +36,9 @@ rule gtf_to_gff:
         {params.snakedir}workflow/scripts/gtf2gff.pl {input.gtf} > {output.gff} 2>> {log}
         """
 
+# ───────────────────────────────────────────────
+# Rule: GFF → BED
+# ───────────────────────────────────────────────
 rule gff_to_bed:
     message: "Converting GFF to BED: {input}"
     input:
@@ -46,10 +47,6 @@ rule gff_to_bed:
         bed = "{base}.bed"
     params:
         snakedir = SNAKEDIR
-    log:
-        "logs/convert/{base}_gff2bed.log"
-    benchmark:
-        "benchmarks/convert/{base}_gff2bed.txt"
     threads: 1
     conda:
         SNAKEDIR + "envs/omics-toolkit.yaml"

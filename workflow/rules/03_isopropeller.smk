@@ -64,9 +64,9 @@ rule filter_isopropeller_gtf:
         """
         # Extract transcript IDs with depth > 1
         if [ "{params.onlychr}" = "True" ]; then
-            awk 'BEGIN {IGNORECASE=1} $3 == "transcript" && $1 ~ /^chr([0-9]+|[XY])$/ {print}' {input.gtf} | grep -v 'depth "1"' | cut -d'"' -f4 > {params.tmp_id_file}  2>> {log}
+            awk 'BEGIN {{IGNORECASE=1}} $3 == "transcript" && $1 ~ /^chr([0-9]+|[XY])$/ {print}' {input.gtf} | grep -v 'depth "1"' | cut -d'"' -f4 > {params.tmp_id_file}  2>> {log}
         else
-            awk 'BEGIN {IGNORECASE=1} $3 == "transcript"' {input.gtf} | grep -v 'depth "1"' | cut -d'"' -f4 > {params.tmp_id_file}  2>> {log}
+            awk 'BEGIN {{IGNORECASE=1}} $3 == "transcript"' {input.gtf} | grep -v 'depth "1"' | cut -d'"' -f4 > {params.tmp_id_file}  2>> {log}
         fi
 
         # Filter GTF with perl script

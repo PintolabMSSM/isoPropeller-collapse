@@ -25,7 +25,9 @@ rule run_transcriptclean:
         ref = GENOMEFASTA,
         fai = GENOMEFASTA + ".fai"
     output:
-        cleaned_sam   = temp("02_transcriptclean/{sample}/{sample}_clean.sam")
+        cleaned_sam   = temp("02_transcriptclean/{sample}/{sample}_clean.sam"),
+        clean_log     = "02_transcriptclean/{sample}/{sample}_clean.log.gz",
+        clean_te_log  = "02_transcriptclean/{sample}/{sample}_clean.TE.log.gz"
     log:
         "logs/02_transcriptclean/{sample}_transcriptclean.log"
     benchmark:

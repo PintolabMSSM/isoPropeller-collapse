@@ -1,4 +1,6 @@
+# ───────────────────────────────────────────────
 # Rule: Convert BAM to SAM for transcriptclean
+# ───────────────────────────────────────────────
 rule bam_to_tc_sam:
     message: "Convert BAM to SAM for transcriptclean: {wildcards.sample}"
     input:
@@ -16,8 +18,9 @@ rule bam_to_tc_sam:
         "mkdir -p 02_transcriptclean/{wildcards.sample} && "
         "samtools view -h {input.bam} > {output.sam} 2>> {log}"
 
-
+# ───────────────────────────────────────────────
 # Rule: Run transcriptclean
+# ───────────────────────────────────────────────
 rule run_transcriptclean:
     message: "Running transcriptclean on {wildcards.sample}"
     input:
@@ -56,8 +59,9 @@ rule run_transcriptclean:
         rm -f {params.outprefix}_clean.fa
         """
 
-
+# ───────────────────────────────────────────────
 # Rule: Convert cleaned SAM to BAM + index
+# ───────────────────────────────────────────────
 rule transcriptclean_sam_to_bam:
     message: "Convert cleaned SAM to BAM for {wildcards.sample}"
     input:

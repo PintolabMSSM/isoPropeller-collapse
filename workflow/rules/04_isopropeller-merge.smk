@@ -1,4 +1,6 @@
+# ───────────────────────────────────────────────
 # Rule: Prepare a temporary list with all the gtf input files
+# ───────────────────────────────────────────────
 rule prepare_gtf_list:
     message: "Preparing GTF list for merge: {wildcards.suffix}"
     input:
@@ -15,8 +17,9 @@ rule prepare_gtf_list:
         printf "%s\n" {input.gtfs} > {output.gtf_list}
         """
 
-
+# ───────────────────────────────────────────────
 # Rule: Merge the GTF files together into a single output file
+# ───────────────────────────────────────────────
 rule merge_isopropeller_gtfs:
     message: "Merging isoPropeller GTFs ({wildcards.suffix})"
     input:
@@ -44,8 +47,9 @@ rule merge_isopropeller_gtfs:
             -t {threads} 2>> {log}
         """
 
-
+# ───────────────────────────────────────────────
 # Rule: Similar to what we did for the GTF list, we also prepare and end dist listing for all input files
+# ───────────────────────────────────────────────
 rule prepare_end_dist_list:
     message: "Preparing end distribution file list"
     input:
@@ -62,9 +66,10 @@ rule prepare_end_dist_list:
         printf "%s\n" {input.end_dists} > {output.listfile}
         """
 
-
+# ───────────────────────────────────────────────
 # Rule: And finally, we use this end dist listing together with the list of transcript IDs we want to retain
 # to select the TSS and TTS regions to accompany the main isoform gtf file
+# ───────────────────────────────────────────────
 rule analyze_end_regions:
     message: "Analyzing end regions for suffix {wildcards.suffix}"
     input:

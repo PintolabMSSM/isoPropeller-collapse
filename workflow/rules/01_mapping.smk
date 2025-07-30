@@ -1,4 +1,6 @@
+# ───────────────────────────────────────────────
 # Rule: Convert FLNC BAMs to FASTA (intermediates)
+# ───────────────────────────────────────────────
 rule bam_to_fasta:
     message: "Converting BAM to FASTA: {wildcards.sample}, part {wildcards.part}"
     input:
@@ -15,8 +17,9 @@ rule bam_to_fasta:
     shell:
         """samtools fasta {input} | pigz -p {threads} > {output.fasta} 2>> {log}"""
 
-
+# ───────────────────────────────────────────────
 # Rule: Merge FASTA parts
+# ───────────────────────────────────────────────
 rule merge_flnc_fastas:
     message: "Merging FASTA parts for sample {wildcards.sample}"
     input:
@@ -37,7 +40,9 @@ rule merge_flnc_fastas:
         """cat {input} > {output.fasta} 2>> {log}"""
 
 
+# ───────────────────────────────────────────────
 # Rule: Mapping with minimap2
+# ───────────────────────────────────────────────
 rule mapping:
     message: "Mapping FLNC merged FASTA for sample {wildcards.sample}"
     input:
@@ -64,8 +69,9 @@ rule mapping:
         samtools index {output.bam} 2>> {log}
         """
 
-
+# ───────────────────────────────────────────────
 # Rule: Run talon_label_reads to prepare a talon-compatible mapping file
+# ───────────────────────────────────────────────
 rule talon_label_reads:
     message: "Running TALON label_reads on sample {wildcards.sample}"
     input:

@@ -1,4 +1,6 @@
+# ───────────────────────────────────────────────
 # Rule: Run isoPropeller
+# ───────────────────────────────────────────────
 rule run_isopropeller:
     message: "Running isoPropeller on sample {wildcards.sample}"
     input:
@@ -37,7 +39,9 @@ rule run_isopropeller:
             {params.extra_args} 2>> {log}
         """
 
+# ───────────────────────────────────────────────
 # Rule: Filter per-sample GTF fiels to keep transcripts with at least 2 or more reads
+# ───────────────────────────────────────────────
 rule filter_isopropeller_gtf:
     message: "Filtering isoPropeller GTF for transcripts with depth > 1 for {wildcards.sample}"
     input:

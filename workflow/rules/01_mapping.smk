@@ -74,7 +74,8 @@ rule talon_label_reads:
         fai = GENOMEFASTA + ".fai"
     output:
         bam = "01_mapping/{sample}/{sample}_mapped_labeled.bam",
-        bai = "01_mapping/{sample}/{sample}_mapped_labeled.bam.bai"
+        bai = "01_mapping/{sample}/{sample}_mapped_labeled.bam.bai",
+        tsv = "01_mapping/{sample}/{sample}_mapped_fa_read_labels.tsv.gz"
     log:
         "logs/01_mapping/{sample}_talon_label_reads.log"
     threads: 12

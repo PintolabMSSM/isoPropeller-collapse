@@ -13,7 +13,7 @@ rule index_fasta:
     shell:
         """
         mkdir -p $(dirname {output.fai})
-        samtools faidx {input.fasta} 2>> {log}
+        samtools faidx {input.fasta}
         """
 
 # ───────────────────────────────────────────────
@@ -33,7 +33,7 @@ rule gtf_to_gff:
     shell:
         """
         mkdir -p $(dirname {output.gff})
-        {params.snakedir}workflow/scripts/gtf2gff.pl {input.gtf} > {output.gff} 2>> {log}
+        gtf2gff.pl {input.gtf} > {output.gff}
         """
 
 # ───────────────────────────────────────────────
@@ -53,5 +53,5 @@ rule gff_to_bed:
     shell:
         """
         mkdir -p $(dirname {output.bed})
-        {params.snakedir}workflow/scripts/gff2bed.pl {input.gff} > {output.bed} 2>> {log}
+        gff2bed.pl {input.gff} > {output.bed}
         """

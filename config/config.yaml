@@ -36,7 +36,7 @@ max_intron_length: 1250000
 use_transcriptclean: true
 
 # Set to 'true' if outputs should be limited to autosomes (chrN) and sex chromosomes (chrX, chrY), 
-# removing chrM and other contix. Make sure to set this to false if you use a non-reference 
+# removing chrM and other contigs. Make sure to set this to false if you use a non-reference 
 # organism (other than human/mouse), or want to keep unplaced contigs, or if your reference includes
 # custom contigs
 limit_output_to_chrNXY: true

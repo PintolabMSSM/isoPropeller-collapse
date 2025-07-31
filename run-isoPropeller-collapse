@@ -120,7 +120,7 @@ export PATH="$GIT_REPODIR/bin:$PATH"
 
 # Prepare the snakemake command with support for conda and docker (singularity) environments
 cmd="snakemake ${DEBUG} ${CONFIGFILE} ${TOUCH} ${PROFILE} \
-    --executor cluster-generic \
+    --executor lsf --scheduler greedy \
     --snakefile ${GIT_REPODIR}/workflow/Snakefile \
     --config ${SAMPLES}"
 

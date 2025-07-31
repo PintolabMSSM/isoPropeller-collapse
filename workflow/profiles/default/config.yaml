@@ -1,48 +1,16 @@
-# --- Define basic settings --- #
+executor: lsf
 
-executor: cluster-generic
-
-latency-wait:     5
+jobs: 100
+latency-wait: 5
 rerun-incomplete: true
-jobs:             100
-use-singularity:  true
-use-conda:        true
+use-singularity: true
+use-conda: true
+retries: 3
 
-# --- Define the generic cluster submit command --- #
-cluster-generic-submit-cmd: bsub -W {resources.runtime} -n 12 -M {resources.mem_mb} -P {resources.project} -q {resources.queue} -R {resources.span} -oo clusterlogs/%J.OU
-
-# --- Define default resources --- #
 default-resources:
-  mem_mb:   25000
-  queue:    "express"
-  project:  "acc_PVI"
-  runtime:  "12h"
-  span:     "\"span[hosts=1]\""
-
-# --- Define task-specific resources --- #
-set-resources:
-
-  bam_to_fasta:
-    mem_mb:   16000
-    runtime:  "6h"
-
-  mapping:
-    mem_mb:   32000
-
-  talon_label_reads:
-    mem_mb:   32000
-
-  run_transcriptclean:
-    mem_mb:   250000
-    runtime:  "24h"
-    queue:    "premium"
-
-  run_isopropeller:
-    mem_mb:   90000
-    runtime:  "24h"
-    queue:    "premium"
-
-  merge_isopropeller_gtfs:
-    mem_mb:   90000
-    runtime:  "24h"
-    queue:    "premium"
+  - lsf_queue=express
+  - lsf_project=acc_PVI
+  - mem_mb=25000
+  - runtime=720
+  - threads=4
+  - span="span[hosts=1]"

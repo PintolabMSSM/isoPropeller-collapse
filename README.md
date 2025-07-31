@@ -22,5 +22,5 @@ conda config --set channel_priority strict
 After installation and configuration of conda/miniconda, the following 'conda create' command can be used to set up the required 'snakemake' environment.
 
 ```bash
-conda create -c conda-forge -c bioconda -n snakemake 'snakemake>=9.8' snakemake-executor-plugin-cluster-generic 'tabulate>=0.8'
+conda create -c conda-forge -c bioconda -n snakemake 'snakemake>=9.8' snakemake-executor-plugin-lsf snakemake-executor-plugin-cluster-generic 'tabulate>=0.8'
 ```

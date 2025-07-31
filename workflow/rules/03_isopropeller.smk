@@ -18,6 +18,10 @@ rule run_isopropeller:
         "logs/03_isoPropeller/{sample}_run.log"
     benchmark:
         "benchmarks/03_isoPropeller/{sample}_run.txt"
+    resources:
+        lsf_queue = "premium",
+        mem_mb    = 90000,
+        runtime   = 1440
     threads: 24
     conda:
         SNAKEDIR + "envs/isopropeller.yaml"

@@ -24,7 +24,9 @@ export CONDA_PKGS_DIRS
 ########################################
 
 DEFAULT_SNAKEMAKE_OPTS=(
-  --profile   "${GIT_REPODIR}/workflow/profiles/lsf"
+  --profile   "${GIT_REPODIR}/workflow/profiles/minerva-lsf"
+  --executor  lsf
+  --scheduler greedy
 )
 
 EXTRA_SNAKEMAKE_OPTS=()
@@ -49,7 +51,7 @@ Optional:
 
 Extra Snakemake arguments (passed through):
   Any other flags will be forwarded directly to Snakemake and
-  override defaults like --profile if provided.
+  override defaults like --profile or --executor if provided.
 
 EOF
 }

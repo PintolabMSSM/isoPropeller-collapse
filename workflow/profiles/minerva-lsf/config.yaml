@@ -34,12 +34,12 @@ set-resources:
   run_transcriptclean:
     lsf_queue:  "premium"
     mem_mb:     250000
-    runtime:    1440
+    runtime:    720
 
   run_isopropeller:
     lsf_queue:  "premium"
     mem_mb:     90000
-    runtime:    1440
+    runtime:    720
 
   merge_isopropeller_gtfs:
     lsf_queue:  "premium"

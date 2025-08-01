@@ -12,9 +12,17 @@ rule prepare_gtf_list:
     benchmark:
         "benchmarks/04_isoPropeller-merge/prepare_gtf_list_{suffix}.txt"
     shell:
-        """
+        r"""
+        (
+        set -euo pipefail
+
+        echo "Preparing GTF list for merge"
+        
         mkdir -p 04_isoPropeller-merge
-        printf "%s\n" {input.gtfs} > {output.gtf_list}
+        printf "%s\n" {input.gtfs} | tr ' ' '\n' > {output.gtf_list}
+
+        echo "Finished preparing GTF list for merge"
+        ) &> {log}
         """
 
 # ───────────────────────────────────────────────
@@ -38,13 +46,21 @@ rule merge_isopropeller_gtfs:
     params:
         prefix_val = MERGEDISOPREFIX
     shell:
-        """
+        r"""
+        (
+        set -euo pipefail
+
+        echo "Merging isoPropeller GTFs"
+        
         isoPropeller_merge \
             -i {input.gtf_list} \
             -o 04_isoPropeller-merge/{params.prefix_val}_{wildcards.suffix} \
             -p {params.prefix_val} \
             -e depth \
-            -t {threads} 2>> {log}
+            -t {threads} 
+        
+        echo "Finished merging isoPropeller GTFs"
+        ) &> {log}
         """
 
 # ───────────────────────────────────────────────
@@ -55,16 +71,25 @@ rule prepare_end_dist_list:
     input:
         end_dists = expand("03_isoPropeller/{sample}/{sample}_all_end_dist.txt", sample=SAMPLES)
     output:
-        listfile = temp("04_isoPropeller-merge/temp_end_dist_list.txt")
+        listfile  = temp("04_isoPropeller-merge/temp_end_dist_list.txt")
     log:
         "logs/04_isoPropeller-merge/prepare_end_dist_list.log"
     benchmark:
         "benchmarks/04_isoPropeller-merge/prepare_end_dist_list.txt"
     shell:
-        """
+        r"""
+        (
+        set -euo pipefail
+
+        echo "Preparing end distribution file list"
+        
         mkdir -p 04_isoPropeller-merge
-        printf "%s\n" {input.end_dists} > {output.listfile}
+        printf "%s\n" {input.end_dists}  | tr ' ' '\n' > {output.listfile}
+
+        echo "Finished preparing end distribution file list"
+        ) &> {log}
         """
+
 
 # ───────────────────────────────────────────────
 # Rule: And finally, we use this end dist listing together with the list of transcript IDs we want to retain
@@ -88,10 +113,18 @@ rule analyze_end_regions:
     conda:
         SNAKEDIR + "envs/isopropeller.yaml"
     shell:
-        """
+        r"""
+        (
+        set -euo pipefail
+
+        echo "Analyzing end regions"
+        
         isoPropeller_end_region \
             -i {input.dist_list} \
             -o 04_isoPropeller-merge/{params.prefix_val}_{wildcards.suffix} \
             -d {input.id_list} \
-            -t {threads} 2>> {log}
+            -t {threads}
+
+        echo "Finished analyzing end regions"
+        ) &> {log}
         """

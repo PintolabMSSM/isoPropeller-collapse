@@ -1,52 +1,71 @@
 # ───────────────────────────────────────────────
-# Rule: Convert FLNC BAMs to FASTA (intermediates)
+# Rule: Convert FLNC BAMs to FASTQ (intermediates)
 # ───────────────────────────────────────────────
-rule bam_to_fasta:
-    message: "Converting BAM to FASTA: {wildcards.sample}, part {wildcards.part}"
+rule bam_to_fastq:
+    message: "Converting BAM to FASTQ: {wildcards.sample}, part {wildcards.part}"
     input:
         lambda wc: FLNC_BAM_PARTS[(wc.sample, int(wc.part))]
     output:
-        fasta = temp("01_mapping/{sample}/flnc_parts/flnc_part{part}.fasta.gz")
+        fastq = temp("01_mapping/{sample}/flnc_parts/flnc_part{part}.fastq.gz")
     log:
-        "logs/01_mapping/{sample}_bam_to_fasta_{part}.log"
+        "logs/01_mapping/{sample}_bam_to_fastq_{part}.log"
     threads: 12
     benchmark:
-        "benchmarks/01_mapping/{sample}_bam_to_fasta_{part}.txt"
+        "benchmarks/01_mapping/{sample}_bam_to_fastq_{part}.txt"
     conda:
         SNAKEDIR + "envs/mapping.yaml"
     shell:
-        """samtools fasta {input} | pigz -p {threads} > {output.fasta} 2>> {log}"""
+        r"""
+        (
+        set -euo pipefail
+        
+        echo "Converting bam to fastq"
+        
+        samtools fastq {input} | pigz -p {threads} > {output.fastq}
+        
+        echo "Finished converting bam to fastq"
+        ) &> {log}
+        """
 
 # ───────────────────────────────────────────────
-# Rule: Merge FASTA parts
+# Rule: Merge FASTQ parts
 # ───────────────────────────────────────────────
-rule merge_flnc_fastas:
-    message: "Merging FASTA parts for sample {wildcards.sample}"
+rule merge_flnc_fastqs:
+    message: "Merging FASTQ parts for sample {wildcards.sample}"
     input:
         lambda wc: [
-            f"01_mapping/{wc.sample}/flnc_parts/flnc_part{i}.fasta.gz"
+            f"01_mapping/{wc.sample}/flnc_parts/flnc_part{i}.fastq.gz"
             for i in range(len(FLNC_BAMS[wc.sample]))
         ]
     output:
-        fasta = temp("01_mapping/{sample}/flnc_merged.fasta.gz")
+        fastq = temp("01_mapping/{sample}/flnc_merged.fastq.gz")
     log:
-        "logs/01_mapping/{sample}_merge_fasta.log"
+        "logs/01_mapping/{sample}_merge_fastq.log"
     threads: 1
     benchmark:
-        "benchmarks/01_mapping/{sample}_fasta_merge.txt"
+        "benchmarks/01_mapping/{sample}_fastq_merge.txt"
     conda:
         SNAKEDIR + "envs/mapping.yaml"
     shell:
-        """cat {input} > {output.fasta} 2>> {log}"""
-
+        r"""
+        (
+        set -euo pipefail
+        
+        echo "Merging FASTQ parts"
+        
+        cat {input} > {output.fastq}        
+        
+        echo "Finished merging FASTQ parts"
+        ) &> {log}
+        """
 
 # ───────────────────────────────────────────────
 # Rule: Mapping with minimap2
 # ───────────────────────────────────────────────
 rule mapping:
-    message: "Mapping FLNC merged FASTA for sample {wildcards.sample}"
+    message: "Mapping FLNC merged FASTQ for sample {wildcards.sample}"
     input:
-        fasta = "01_mapping/{sample}/flnc_merged.fasta.gz",
+        fastq = "01_mapping/{sample}/flnc_merged.fastq.gz",
         ref   = GENOMEFASTA
     output:
         bam   = temp("01_mapping/{sample}/mapped.bam"),
@@ -62,11 +81,23 @@ rule mapping:
     conda:
         SNAKEDIR + "envs/mapping.yaml"
     shell:
-        """
+        r"""
+        (
+        set -euo pipefail
+        
+        echo "Mapping FLNC fastq"
+        
         mkdir -p $(dirname {output.bam})
-        minimap2 {params.minimap_flags} -G {params.max_intron_length} -t {threads} {input.ref} {input.fasta} 2>> {log} | \
-            samtools sort -@ {threads} -o {output.bam} 2>> {log}
-        samtools index {output.bam} 2>> {log}
+        minimap2 {params.minimap_flags} \
+            -G {params.max_intron_length} \
+            -t {threads} \
+               {input.ref} \
+               {input.fastq} \
+            | samtools sort -@ {threads} -o {output.bam}
+        samtools index {output.bam}
+        
+        echo "Finished mapping FLNC fastq"
+        ) &> {log}
         """
 
 # ───────────────────────────────────────────────
@@ -79,9 +110,11 @@ rule talon_label_reads:
         ref = GENOMEFASTA,
         fai = GENOMEFASTA + ".fai"
     output:
-        bam = "01_mapping/{sample}/{sample}_mapped_labeled.bam",
-        bai = "01_mapping/{sample}/{sample}_mapped_labeled.bam.bai",
-        tsv = "01_mapping/{sample}/{sample}_mapped_fa_read_labels.tsv.gz"
+        sam     = temp("01_mapping/{sample}/{sample}_mapped_labeled.sam"),
+        tsv_tmp = temp("01_mapping/{sample}/{sample}_mapped_fa_read_labels.tsv"),
+        tsv     = "01_mapping/{sample}/{sample}_mapped_fa_read_labels.tsv.gz",
+        bam     = "01_mapping/{sample}/{sample}_mapped_labeled.bam",
+        bai     = "01_mapping/{sample}/{sample}_mapped_labeled.bam.bai",
     log:
         "logs/01_mapping/{sample}_talon_label_reads.log"
     threads: 12
@@ -93,7 +126,12 @@ rule talon_label_reads:
     conda:
         SNAKEDIR + "envs/talon.yaml"
     shell:
-        """
+        r"""
+        (
+        set -euo pipefail
+        
+        echo "Running TALON label_reads"
+        
         mkdir -p {params.tmpdir}
 
         # Run talon_label_reads function, which produces sam output unfortunately...
@@ -103,11 +141,15 @@ rule talon_label_reads:
             --t={threads} \
             --o={params.outprefix} \
             --tmpDir={params.tmpdir} \
-            --deleteTmp 2>> {log}
+            --deleteTmp
 
         # Convert SAM to BAM and remove the intermediate SAM
-        samtools view -@ {threads} -b {params.outprefix}_labeled.sam > {output.bam} 2>> {log}
-        samtools index {output.bam} 2>> {log}
-        pigz -p {threads} {params.outprefix}_read_labels.tsv 2>> {log}
-        rm {params.outprefix}_labeled.sam
+        samtools view -@ {threads} -b {output.sam} > {output.bam}
+        samtools index {output.bam}
+        
+        # Compress the label read csv output
+        pigz -p {threads} {output.tsv_tmp} > {output.tsv}
+        
+        echo "Finished running TALON label_reads"
+        ) &> {log}
         """

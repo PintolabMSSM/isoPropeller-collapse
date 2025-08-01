@@ -14,3 +14,4 @@ default-resources:
   - runtime=720
   - threads=4
   - span="span[hosts=1]"
+  - lsf_extra="-oo clusterlogs/%J.OU"

@@ -85,6 +85,7 @@ MERGEDISOPREFIX = config.get("merged_isoform_prefix", "ISOP")
 MAXINTRONLEN    = config.get("max_intron_length", 1250000)
 USE_TC          = as_bool(config.get("use_transcriptclean", True))
 ONLYCHR         = as_bool(config.get("limit_output_to_chrNXY", True))
+MAXCHRMREADS    = config.get("max_chrM_reads", 50000)
 
 # Define local variables: Reference files
 GENOMEFASTA     = config.get("reference_genome_fasta")

@@ -41,6 +41,10 @@ use_transcriptclean: true
 # custom contigs
 limit_output_to_chrNXY: true
 
+# If the mitochondrial read count is very high (>500k reads), it will take a long time to run
+# the isoPropeller collapsing. By default the pipeline will therefore downsample mitochondrial reads
+max_chrM_reads: 50000
+
 # Prefix to use for the merged isoform file and final merged isoforms
 merged_isoform_prefix:  "ISOP"
 
@@ -63,5 +67,3 @@ filt_rmsk_min_ovlp_fract:           0.9
 filt_par_min_ovlp_fract:            0
 filt_tpm_min_count:                 10
 filt_tpm_min_fract:                 0.5
-
-

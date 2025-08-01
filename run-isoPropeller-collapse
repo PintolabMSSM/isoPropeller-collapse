@@ -25,8 +25,6 @@ export CONDA_PKGS_DIRS
 
 DEFAULT_SNAKEMAKE_OPTS=(
   --profile   "${GIT_REPODIR}/workflow/profiles/minerva-lsf"
-  --executor  lsf
-  --scheduler greedy
 )
 
 EXTRA_SNAKEMAKE_OPTS=()

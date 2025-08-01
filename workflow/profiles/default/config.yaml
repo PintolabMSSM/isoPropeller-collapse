@@ -1,17 +1,45 @@
 executor: lsf
 
-jobs: 100
-latency-wait: 5
+jobs:             100
+latency-wait:     5
 rerun-incomplete: true
-use-singularity: true
-use-conda: true
-retries: 3
+use-singularity:  true
+use-conda:        true
+retries:          1
 
 default-resources:
-  - lsf_queue=express
-  - lsf_project=acc_PVI
-  - mem_mb=25000
-  - runtime=720
-  - threads=4
-  - span="span[hosts=1]"
-  - lsf_extra="-oo clusterlogs/%J.OU"
+  lsf_queue:    "express"
+  lsf_project:  "acc_PVI"
+  mem_mb:       25000
+  runtime:      720
+  threads:      4
+  span:         "span[hosts=1]"
+  lsf_extra:    "-oo clusterlogs/%J.OU"
+
+# --- Define task-specific resources --- #
+set-resources:
+
+  bam_to_fasta:
+    mem_mb:     16000
+    runtime:    360
+
+  mapping:
+    mem_mb:     32000
+
+  talon_label_reads:
+    mem_mb:     32000
+
+  run_transcriptclean:
+    lsf_queue:  "premium"
+    mem_mb:     250000
+    runtime:    1440
+
+  run_isopropeller:
+    lsf_queue:  "premium"
+    mem_mb:     90000
+    runtime:    1440
+
+  merge_isopropeller_gtfs:
+    lsf_queue:  "premium"
+    mem_mb:     90000
+    runtime:    1440

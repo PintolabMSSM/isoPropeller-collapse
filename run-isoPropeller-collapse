@@ -4,89 +4,107 @@
 # DEFINE GLOBAL ENVIRONMENT PARAMETERS #
 ########################################
 
-# Set path to parent dir for conda environment
-# Also pick up on the number of CPUs defined in jobstatus
 CONDA_PKGS_DIRS="${PWD}/.snakemake/conda/pkgs"
 GIT_REPODIR="${GIT_REPODIR:-$HOME/opt/isoPropeller-collapse}"
 JOB_NCPUS="${JOB_NCPUS:=24}"
 
-# Validate repository path
-# Make sure the repository exists and has a Snakefile at the expected location
-if [[ ! -f "${GIT_REPODIR}/workflow/Snakefile" ]]
-then
-   echo "Error: could not find the Snakemake file in the defined repository location:\n  ${GIT_REPODIR}"
+# Validate Snakefile location
+if [[ ! -f "${GIT_REPODIR}/workflow/Snakefile" ]]; then
+   echo "❌ Error: Snakefile not found in ${GIT_REPODIR}/workflow/"
    exit 2
 fi
 
-# Make sure to use a local package cache to avoid conflicts between jobs
-if [[ ! -d "${CONDA_PKGS_DIRS}" ]]
-then
-   mkdir -p "${CONDA_PKGS_DIRS}"
-fi
+mkdir -p "${CONDA_PKGS_DIRS}"
 
-# Define possible cluster profile paths
-USER_PROFILE="/sc/arion/work/${USER}/snakemake/profiles/lsf/isoPropeller-collapse"
-DEFAULT_PROFILE="${GIT_REPODIR}/workflow/profiles/default"
-
-# Choose profile: prefer user-specific, fall back to default
-if [[ -d "$USER_PROFILE" ]]; then
-    PROFILE="--profile $USER_PROFILE"
-else
-    echo "User-specific profile not found. Falling back to default profile at $DEFAULT_PROFILE"
-    PROFILE="--profile $DEFAULT_PROFILE"
-fi
-
-# Export environment parameters
 export GIT_REPODIR
 export CONDA_PKGS_DIRS
+
+########################################
+# DEFINE DEFAULT SNAKEMAKE PARAMETERS  #
+########################################
+
+DEFAULT_SNAKEMAKE_OPTS=(
+  --profile   "${GIT_REPODIR}/workflow/profiles/lsf"
+)
+
+EXTRA_SNAKEMAKE_OPTS=()
+
+##################################
+# DEFINE REUSABLE HELP FUNCTION  #
+##################################
+
+show_help() {
+  cat << EOF
+
+Usage: run-isoPropeller-collapse -i <samples-csv> [options] [Snakemake args]
+
+Required:
+  -i <samples.csv>        CSV file with header (path_to_flnc,sample)
+
+Optional:
+  -C <config.yaml>        Use custom config file
+  -D                      Dry run with printed shell commands (-p -n)
+  -T                      Touch outputs only
+  -help                   Show this help message
+
+Extra Snakemake arguments (passed through):
+  Any other flags will be forwarded directly to Snakemake and
+  override defaults like --profile if provided.
+
+EOF
+}
 
 ############################
 # PROCESS COMMANDLINE ARGS #
 ############################
 
-while getopts "i:b:m:c:DC:T" opt; do
-   case $opt in
-      i) SAMPLES="samples=$OPTARG" ;;
-      D) DEBUG="-p -n" ;;
-      C) CONFIGFILE="--configfile $OPTARG" ;;
-      T) TOUCH="--touch" ;;
-      *) echo "Usage: $0 -i <samples-csv-file> [-c <config>] [-D] [-T] [-C <configfile>]"; exit 1 ;;
-   esac
-done
-
-# Check arguments and display a help message if the required arguments are not found
-if [ -z "$SAMPLES" ];
-then
-  cat << EOF
-
-   Usage: run-isoPropeller-collapse [ -D -m -c ] -i <samples-csv-file>
-
-   Arguments:
-    -i <string>
-      Csv formatted file with a header (path_to_flnc,sample) listing the paths to each input flnc file
-      and the (unique) name of the sample associated with the flnc bam.
-    -D
-      Run pipeline in debug mode to show the commands that will be executed.
-    -T
-      Touch all analysis outputs without rerunning the pipeline. Use this option
-      when changes are made to the pipeline that do not impact outputs. This
-      avoids rerunning analysis steps unnecessarily.
-    -C <configfile>
-      Path to configfile to override the default yaml config
-    -help
-      This help message
-
-EOF
-  exit 0
+if [[ $# -eq 0 ]]; then
+  show_help
+  exit 1
 fi
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    -i)
+      SAMPLES="samples=$2"
+      shift 2
+      ;;
+    -C)
+      CONFIGFILE="--configfile $2"
+      shift 2
+      ;;
+    -D)
+      DEBUG="-p -n"
+      shift
+      ;;
+    -T)
+      TOUCH="--touch"
+      shift
+      ;;
+    -help|--help)
+      show_help
+      exit 0
+      ;;
+    *)
+      EXTRA_SNAKEMAKE_OPTS+=("$1")
+      shift
+      ;;
+  esac
+done
 
 ####################
 # INPUT VALIDATION #
 ####################
 
-# Check whether the samples file exists
-if [[ ! -f "$(echo $SAMPLES | cut -d= -f2)" ]]; then
-  echo "Error: Input samples file not found: $(echo $SAMPLES | cut -d= -f2)"
+if [[ -z "$SAMPLES" ]]; then
+  echo -e "\n❌ Error: Missing required -i <samples.csv> argument.\n"
+  show_help
+  exit 1
+fi
+
+samples_file=$(echo "$SAMPLES" | cut -d= -f2)
+if [[ ! -f "$samples_file" ]]; then
+  echo -e "\n❌ Error: Input samples file not found: $samples_file\n"
   exit 1
 fi
 
@@ -94,56 +112,67 @@ fi
 # PREPARE THE JOB LOG FILE #
 ############################
 
-# Write basic analysis parameters to a log file
 timestamp="$(date +"%F_%H-%M-%S")${LSB_JOBID:+_lsf$LSB_JOBID}"
 logfile="pipeline_${timestamp}.log"
 echo "## Starting isoPropeller-collapse analysis: ${SAMPLES}" > "$logfile"
-
-# Make sure the clusterlogs folder is created
 mkdir -p clusterlogs
 
 #################################
 # PREPARE SNAKEMAKE ENVIRONMENT #
 #################################
 
-# Load snakemake conda environment on Minerva
 module purge
 unset PYTHONPATH PERL5LIB R_LIBS
 module load anaconda3 singularity/3.6.4 proxies
 source activate snakemake
-
 export PATH="$GIT_REPODIR/bin:$PATH"
+
+##################################
+# BUILD FINAL SNAKEMAKE OPTIONS  #
+##################################
+
+SNAKEMAKE_OPTS=()
+for opt in "${DEFAULT_SNAKEMAKE_OPTS[@]}"; do
+  key=$(echo "$opt" | cut -d= -f1)
+  skip=
+  for useropt in "${EXTRA_SNAKEMAKE_OPTS[@]}"; do
+    if [[ "$useropt" == "$key"* ]]; then
+      skip=1
+      break
+    fi
+  done
+  [[ -z "$skip" ]] && SNAKEMAKE_OPTS+=("$opt")
+done
+SNAKEMAKE_OPTS+=("${EXTRA_SNAKEMAKE_OPTS[@]}")
 
 ############################
 # START SNAKEMAKE PIPELINE #
 ############################
 
-# Prepare the snakemake command with support for conda and docker (singularity) environments
-cmd="snakemake ${DEBUG} ${CONFIGFILE} ${TOUCH} ${PROFILE} \
-    --executor lsf --scheduler greedy \
-    --snakefile ${GIT_REPODIR}/workflow/Snakefile \
-    --config ${SAMPLES}"
+cmd="snakemake ${DEBUG} ${CONFIGFILE} ${TOUCH} \
+  --snakefile ${GIT_REPODIR}/workflow/Snakefile \
+  --config ${SAMPLES} \
+  ${SNAKEMAKE_OPTS[@]}"
 
 echo -e "\n## Run command\n$cmd\n\n## Pipeline output" >> "$logfile"
 
-$cmd >> "$logfile" 2>&1
+eval "$cmd" >> "$logfile" 2>&1
 
-# Generate DAG of executed steps
 if [[ $? -eq 0 ]]; then
-   echo -e "\n## ISOPROPELLER-COLLAPSE PIPELINE COMPLETED SUCCESSFULLY" >> "$logfile"
-   echo -e "\n## Generating DAG of executed steps..." >> "$logfile"
-   snakemake \
-       ${PROFILE} \
-       --snakefile ${GIT_REPODIR}/workflow/Snakefile \
-       --config ${SAMPLES} \
-       --dag \
-       | dot -Tpdf > pipeline_${timestamp}_dag.pdf 2>> "$logfile"
+  echo -e "\n## PIPELINE COMPLETED SUCCESSFULLY" >> "$logfile"
+  echo -e "\n## Generating DAG of executed steps..." >> "$logfile"
 
-   if [[ $? -eq 0 ]]; then
-       echo "DAG saved to dag_pipeline_${timestamp}.pdf" >> "$logfile"
-   else
-       echo "Failed to generate DAG" >> "$logfile"
-   fi
+  snakemake \
+    "${SNAKEMAKE_OPTS[@]}" \
+    --snakefile "${GIT_REPODIR}/workflow/Snakefile" \
+    --config ${SAMPLES} \
+    --dag | dot -Tpdf > "pipeline_${timestamp}_dag.pdf" 2>> "$logfile"
+
+  if [[ $? -eq 0 ]]; then
+    echo "DAG saved to pipeline_${timestamp}_dag.pdf" >> "$logfile"
+  else
+    echo "Failed to generate DAG" >> "$logfile"
+  fi
 else
-   echo -e "\n# ISOPROPELLER-COLLAPSE PIPELINE FAILED WITH ERRORS" >> "$logfile"
+  echo -e "\n## PIPELINE FAILED WITH ERRORS" >> "$logfile"
 fi

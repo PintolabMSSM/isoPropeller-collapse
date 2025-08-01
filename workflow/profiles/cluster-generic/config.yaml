@@ -1,7 +1,5 @@
 # --- Define basic settings --- #
-
-executor: cluster-generic
-
+executor:         cluster-generic
 latency-wait:     5
 rerun-incomplete: true
 jobs:             100
@@ -11,7 +9,7 @@ use-conda:        true
 # --- Define the generic cluster submit command --- #
 cluster-generic-submit-cmd: bsub -W {resources.runtime} -n 12 -M {resources.mem_mb} -P {resources.project} -q {resources.queue} -R {resources.span} -oo clusterlogs/%J.OU
 
-# --- Define default resources --- #
+# --- Define default resources for all rules --- #
 default-resources:
   mem_mb:   25000
   queue:    "express"
@@ -19,7 +17,7 @@ default-resources:
   runtime:  "12h"
   span:     "\"span[hosts=1]\""
 
-# --- Define task-specific resources --- #
+# --- Define rule-specific resources --- #
 set-resources:
 
   bam_to_fasta:

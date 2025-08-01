@@ -104,7 +104,7 @@ rule downsample_chrM:
         SNAKEDIR + "envs/seqtk.yaml"
     shell:
         r"""
-        {
+        {{
             set -euo pipefail
     
             echo "Starting downsample_chrM for {input.bam}"
@@ -137,5 +137,5 @@ rule downsample_chrM:
             fi
     
             echo "Finished downsample_chrM for {wildcards.sample}"
-        } >> {log} 2>&1
+        }} >> {log} 2>&1
         """

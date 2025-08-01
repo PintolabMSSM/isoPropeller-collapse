@@ -32,12 +32,12 @@ set-resources:
     mem_mb:     32000
 
   run_transcriptclean:
-    lsf_queue:  "premium"
+    lsf_queue:  "express"
     mem_mb:     250000
     runtime:    720
 
   run_isopropeller:
-    lsf_queue:  "premium"
+    lsf_queue:  "express"
     mem_mb:     90000
     runtime:    720
 

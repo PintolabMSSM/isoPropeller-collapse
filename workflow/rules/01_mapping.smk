@@ -55,12 +55,13 @@ rule merge_flnc_fastqs:
 
         if len(input) > 1:
             # If there are multiple input files, concatenate them after quoting filenames for special chars
+            num_files     = len(input)
             fastqs_quoted = " ".join([shlex.quote(str(f)) for f in input])
 
             shell(
                 r"""
                 (
-                echo "Merging {len(input)} FASTQ parts"
+                echo "Merging {num_files} FASTQ parts"
                 
                 cat {fastqs_quoted} > "{output.fastq}"
                 

@@ -1,0 +1,8 @@
+name: seqtk_env
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - samtools
+  - pysam

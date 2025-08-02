@@ -17,8 +17,6 @@ rule bam_to_tc_sam:
     shell:
         r"""
         (
-        set -euo pipefail
-
         echo "Converting {input.bam} to sam for transcriptclean"
         
         mkdir -p "02_transcriptclean/{wildcards.sample}"
@@ -57,8 +55,6 @@ rule run_transcriptclean:
     shell:
         r"""
         (
-        set -euo pipefail
-
         echo "Starting transcriptclean for {input.sam}"
 
         # Capture transcriptclean's stderr to a temporary file
@@ -74,8 +70,8 @@ rule run_transcriptclean:
             -o "{params.outprefix}"
 
         # Compress the log files and redirect output to the final paths
-        pigz -c -p {threads} "{output.clean_log}"    > "{output.clean_log_gz}"
-        pigz -c -p {threads} "{output.clean_te_log}" > "{output.clean_te_log_gz}"
+        pigz -f -c -p {threads} "{output.clean_log}"    > "{output.clean_log_gz}"
+        pigz -f -c -p {threads} "{output.clean_te_log}" > "{output.clean_te_log_gz}"
 
         echo "Finished transcriptclean for {wildcards.sample}"
         ) &> "{log}"
@@ -101,8 +97,6 @@ rule transcriptclean_sam_to_bam:
     shell:
         r"""
         (
-        set -euo pipefail
-    
         echo "Starting conversion of {input.sam} to BAM"
         
         samtools sort -@ {threads} -o "{output.bam}" "{input.sam}"
@@ -123,51 +117,15 @@ rule downsample_chrM:
     output:
         bam         = "02_transcriptclean/{sample}/{sample}_mapped_labeled_tclean.bam",
         bai         = "02_transcriptclean/{sample}/{sample}_mapped_labeled_tclean.bam.bai",
-        chrM_bam    = temp("02_transcriptclean/{sample}/{sample}_chrM.bam"),
-        chrM_DS_bam = temp("02_transcriptclean/{sample}/{sample}_chrM_downsampled.bam"),
-        no_chrM_bam = temp("02_transcriptclean/{sample}/{sample}_no_chrM.bam"),
-        merged_bam  = temp("02_transcriptclean/{sample}/{sample}_merged.bam")
     params:
-        max_chrM_reads = MAXCHRMREADS
+        max_chrM_reads = MAXCHRMREADS,
+        seed           = 4232
     log:
         "logs/02_transcriptclean/{sample}_downsample_chrM.log"
     benchmark:
          "benchmarks/02_transcriptclean/{sample}_downsample_chrM.txt"
     threads: 4
     conda:
-        SNAKEDIR + "envs/seqtk.yaml"
-    shell:
-        r"""
-        (
-            set -euo pipefail
-    
-            echo "Starting downsample_chrM for {input.bam}"
-    
-            mito_name=$(samtools idxstats "{input.bam}" | cut -f 1 | grep -E '^chrM$|^chrMT$|^MT$|^M$' || true)
-    
-            if [ -n "$mito_name" ]; then
-                echo "Mitochondrial contig detected: $mito_name"
-    
-                # Extract and downsample mitochondrial reads
-                samtools view -b "{input.bam}" "$mito_name" > "{output.chrM_bam}"
-                samtools view "{output.chrM_bam}" | seqtk sample -s42 - {params.max_chrM_reads} | \
-                    samtools view -Sb - > "{output.chrM_DS_bam}"
-    
-                # Extract all non-mitochondrial reads
-                samtools view -h "{input.bam}" | awk -v mito="$mito_name" '($3 != mito || $1 ~ /^@/)' | \
-                    samtools view -Sb - > "{output.no_chrM_bam}"
-    
-                # Merge and sort
-                samtools merge -@ {threads} -f "{output.merged_bam}" "{output.no_chrM_bam}" "{output.chrM_DS_bam}"
-                samtools sort  -@ {threads} -o "{output.bam}" "{output.merged_bam}"
-                samtools index "{output.bam}"
-    
-            else
-                echo "No mitochondrial contig found. Copying original BAM."
-                cp "{input.bam}" "{output.bam}"
-                samtools index "{output.bam}"
-            fi
-    
-            echo "Finished downsample_chrM for {wildcards.sample}"
-        ) &> "{log}"
-        """
+        SNAKEDIR + "envs/pysam.yaml"
+    script:
+        SNAKEDIR + "scripts/downsample_chrM_bam.py"

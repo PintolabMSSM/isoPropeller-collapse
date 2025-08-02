@@ -21,10 +21,10 @@ rule bam_to_fastq:
         
         echo "Converting bam to fastq"
         
-        bam2fastq {input} -c 6 -o {output.fastq}
+        bam2fastq "{input}" -c 6 -j {threads} -o "{output.fastq}"
         
         echo "Finished converting bam to fastq"
-        ) &> {log}
+        ) &> "{log}"
         """
 
 
@@ -54,10 +54,10 @@ rule merge_flnc_fastqs:
         
         echo "Merging FASTQ parts"
         
-        cat {input} > {output.fastq}        
+        cat "{input}" > "{output.fastq}"
         
         echo "Finished merging FASTQ parts"
-        ) &> {log}
+        ) &> "{log}"
         """
 
 # ───────────────────────────────────────────────
@@ -92,13 +92,13 @@ rule mapping:
         minimap2 {params.minimap_flags} \
             -G {params.max_intron_length} \
             -t {threads} \
-               {input.ref} \
-               {input.fastq} \
-            | samtools sort -@ {threads} -o {output.bam}
-        samtools index {output.bam}
+               "{input.ref}" \
+               "{input.fastq}" \
+            | samtools sort -@ {threads} -o "{output.bam}"
+        samtools index "{output.bam}"
         
         echo "Finished mapping FLNC fastq"
-        ) &> {log}
+        ) &> "{log}"
         """
 
 # ───────────────────────────────────────────────
@@ -137,20 +137,20 @@ rule talon_label_reads:
 
         # Run talon_label_reads function, which produces sam output unfortunately...
         talon_label_reads \
-            --f={input.bam} \
-            --g={input.ref} \
+            --f="{input.bam}" \
+            --g="{input.ref}" \
             --t={threads} \
-            --o={params.outprefix} \
-            --tmpDir={params.tmpdir} \
+            --o="{params.outprefix}" \
+            --tmpDir="{params.tmpdir}" \
             --deleteTmp
 
         # Convert SAM to BAM and remove the intermediate SAM
-        samtools view -@ {threads} -b {output.sam} > {output.bam}
-        samtools index {output.bam}
+        samtools view -@ {threads} -b "{output.sam}" > "{output.bam}"
+        samtools index "{output.bam}"
         
         # Compress the label read csv output
-        pigz -p {threads} {output.tsv_tmp} > {output.tsv}
+        pigz -p {threads} "{output.tsv_tmp}" > "{output.tsv}"
         
         echo "Finished running TALON label_reads"
-        ) &> {log}
+        ) &> "{log}"
         """

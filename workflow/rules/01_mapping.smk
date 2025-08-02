@@ -6,8 +6,7 @@ rule bam_to_fastq:
     input:
         lambda wc: FLNC_BAM_PARTS[(wc.sample, int(wc.part))]
     output:
-        fastq    = temp("01_mapping/{sample}/flnc_parts/flnc_part{part}.fastq"),
-        fastq_gz = temp("01_mapping/{sample}/flnc_parts/flnc_part{part}.fastq.gz")
+        fastq    = temp("01_mapping/{sample}/flnc_parts/flnc_part{part}.fastq.gz"),
     log:
         "logs/01_mapping/{sample}_bam_to_fastq_{part}.log"
     threads: 12
@@ -22,8 +21,7 @@ rule bam_to_fastq:
         
         echo "Converting bam to fastq"
         
-        pbtk bam2fastq {input} -o {output.fastq}
-        pigz -p {threads} -c {output.fastq} > {output.fastq_gz}
+        bam2fastq {input} -c 6 -o {output.fastq}
         
         echo "Finished converting bam to fastq"
         ) &> {log}

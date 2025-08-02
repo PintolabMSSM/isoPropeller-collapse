@@ -28,8 +28,6 @@ rule run_isopropeller:
     shell:
         r"""
         (
-        set -euo pipefail
-
         echo "Running isoPropeller"
         
         mkdir -p "{params.outdir}"
@@ -71,8 +69,6 @@ rule filter_isopropeller_gtf:
     shell:
         r"""
         (
-        set -euo pipefail
-
         echo "Filtering isoPropeller outputs"
         
         # Extract transcript IDs with depth > 1

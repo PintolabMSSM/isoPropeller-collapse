@@ -14,8 +14,6 @@ rule prepare_gtf_list:
     shell:
         r"""
         (
-        set -euo pipefail
-
         echo "Preparing GTF list for merge"
         
         mkdir -p 04_isoPropeller-merge
@@ -52,8 +50,6 @@ rule merge_isopropeller_gtfs:
     shell:
         r"""
         (
-        set -euo pipefail
-
         echo "Merging isoPropeller GTFs"
         
         isoPropeller_merge \
@@ -83,8 +79,6 @@ rule prepare_end_dist_list:
     shell:
         r"""
         (
-        set -euo pipefail
-
         echo "Preparing end distribution file list"
         
         mkdir -p 04_isoPropeller-merge
@@ -123,8 +117,6 @@ rule analyze_end_regions:
     shell:
         r"""
         (
-        set -euo pipefail
-
         echo "Analyzing end regions"
         
         isoPropeller_end_region \

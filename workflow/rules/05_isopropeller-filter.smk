@@ -364,8 +364,6 @@ rule filter_terminal_exons_in_segdup:
     shell:
         r"""
         (
-        set -euo pipefail
-
         echo "Filtering isoforms with mismapped terminal exons"
         
         outdir="$(dirname "{output.fail_bed}")"

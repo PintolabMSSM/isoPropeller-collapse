@@ -4,7 +4,8 @@
 rule bam_to_fastq:
     message: "Converting BAM to FASTQ: {wildcards.sample}, part {wildcards.part}"
     input:
-        lambda wc: FLNC_BAM_PARTS[(wc.sample, int(wc.part))]
+        bam = lambda wc: FLNC_BAM_PARTS[(wc.sample, int(wc.part))],
+        pbi = lambda wc: FLNC_BAM_PARTS[(wc.sample, int(wc.part))] + ".pbi"
     output:
         fastq    = temp("01_mapping/{sample}/flnc_parts/flnc_part{part}.fastq.gz"),
     log:
@@ -17,11 +18,13 @@ rule bam_to_fastq:
     shell:
         r"""
         (
-        set -euo pipefail
-        
         echo "Converting bam to fastq"
         
-        bam2fastq "{input}" -c 6 -j {threads} -o "{output.fastq}"
+        # Strip '.fastq.gz' from the output path to get prefix
+        out_prefix=$(echo "{output.fastq}" | sed 's/\.fastq\.gz$//')
+        
+        # Run bam2fastq
+        bam2fastq "{input.bam}" -c 6 -j {threads} -o "$out_prefix"
         
         echo "Finished converting bam to fastq"
         ) &> "{log}"
@@ -50,11 +53,9 @@ rule merge_flnc_fastqs:
     shell:
         r"""
         (
-        set -euo pipefail
-        
         echo "Merging FASTQ parts"
         
-        cat "{input}" > "{output.fastq}"
+        cat {input} > "{output.fastq}"
         
         echo "Finished merging FASTQ parts"
         ) &> "{log}"
@@ -73,7 +74,7 @@ rule mapping:
         bai   = temp("01_mapping/{sample}/mapped.bam.bai")
     log:
         "logs/01_mapping/{sample}_mapping.log"
-    threads: 12
+    threads: 24
     params:
         max_intron_length = MAXINTRONLEN,
         minimap_flags     = "-ax splice:hq --MD -uf --secondary=no"
@@ -84,8 +85,6 @@ rule mapping:
     shell:
         r"""
         (
-        set -euo pipefail
-        
         echo "Mapping FLNC fastq"
         
         mkdir -p $(dirname {output.bam})
@@ -111,7 +110,7 @@ rule talon_label_reads:
         ref = GENOMEFASTA,
         fai = GENOMEFASTA + ".fai"
     output:
-        sam     = temp("01_mapping/{sample}/{sample}_mapped_labeled.sam"),
+        sam     = temp("01_mapping/{sample}/{sample}_mapped_fa_labeled.sam"),
         tsv_tmp = temp("01_mapping/{sample}/{sample}_mapped_fa_read_labels.tsv"),
         tsv     = "01_mapping/{sample}/{sample}_mapped_fa_read_labels.tsv.gz",
         bam     = "01_mapping/{sample}/{sample}_mapped_labeled.bam",
@@ -129,8 +128,6 @@ rule talon_label_reads:
     shell:
         r"""
         (
-        set -euo pipefail
-        
         echo "Running TALON label_reads"
         
         mkdir -p {params.tmpdir}
@@ -149,7 +146,7 @@ rule talon_label_reads:
         samtools index "{output.bam}"
         
         # Compress the label read csv output
-        pigz -p {threads} "{output.tsv_tmp}" > "{output.tsv}"
+        pigz -f -c -p {threads} "{output.tsv_tmp}" > "{output.tsv}"
         
         echo "Finished running TALON label_reads"
         ) &> "{log}"

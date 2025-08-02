@@ -12,9 +12,29 @@ rule index_fasta:
         SNAKEDIR + "envs/omics-toolkit.yaml"
     shell:
         """
-        mkdir -p $(dirname {output.fai})
+        mkdir -p "$(dirname "{output.fai}")"
         samtools faidx {input.fasta}
         """
+
+
+# ───────────────────────────────────────────────
+# Rule: Index BAM → PBI
+# ───────────────────────────────────────────────
+rule index_bam_pbi:
+    message: "Creating PBI index for BAM file: {input}"
+    input:
+        bam = "{base}.bam"
+    output:
+        pbi = "{base}.bam.pbi"
+    threads: 12
+    conda:
+        SNAKEDIR + "envs/mapping.yaml"
+    shell:
+        """
+        mkdir -p "$(dirname "{output.pbi}")"
+        pbindex -j {threads} "{input.bam}"
+        """
+
 
 # ───────────────────────────────────────────────
 # Rule: GTF → GFF
@@ -32,8 +52,8 @@ rule gtf_to_gff:
         SNAKEDIR + "envs/omics-toolkit.yaml"
     shell:
         """
-        mkdir -p $(dirname {output.gff})
-        gtf2gff.pl {input.gtf} > {output.gff}
+        mkdir -p "$(dirname "{output.gff}")"
+        gtf2gff.pl "{input.gtf}" > "{output.gff}"
         """
 
 # ───────────────────────────────────────────────
@@ -52,6 +72,6 @@ rule gff_to_bed:
         SNAKEDIR + "envs/omics-toolkit.yaml"
     shell:
         """
-        mkdir -p $(dirname {output.bed})
-        gff2bed.pl {input.gff} > {output.bed}
+        mkdir -p "$(dirname "{output.bed}")"
+        gff2bed.pl "{input.gff}" > "{output.bed}"
         """

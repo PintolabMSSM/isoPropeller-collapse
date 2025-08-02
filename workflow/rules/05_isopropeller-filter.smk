@@ -409,7 +409,6 @@ rule filter_terminal_exons_in_segdup:
         """
 
 
-
 # ───────────────────────────────────────────────
 # Rule: Aggregate Filtered Final Outputs 
 # ───────────────────────────────────────────────
@@ -441,6 +440,8 @@ rule filter_aggregate_final_outputs:
         SNAKEDIR + "envs/omics-toolkit.yaml"
     run:
         from pathlib import Path
+        import shlex # Import the shlex module
+
         Path(output.gtf).parent.mkdir(parents=True, exist_ok=True)
 
         if not input.fail_ids:
@@ -452,11 +453,15 @@ rule filter_aggregate_final_outputs:
                 cp "{input.tts}" "{output.tts}" 2>> "{log}"
             """)
         else:
+            # Join the list of files into a single, properly quoted string
+            # shlex.quote() correctly handles spaces and other special characters
+            fail_id_files_quoted = " ".join([shlex.quote(str(f)) for f in input.fail_ids])
+            
             shell("""
-                sort -u "{input.fail_ids}"                                   > "{output.qcf}" 2>> "{log}"
-                gtf-filter-attributes.pl -m "{output.qcf}" -v "{input.gtf}"  > "{output.gtf}" 2>> "{log}"
-                diff-by-ids -ff "{input.exp}" -if "{output.qcf}" -fc 1       > "{output.exp}" 2>> "{log}"
-                diff-by-ids -ff "{input.ids}" -if "{output.qcf}" -fc 1       > "{output.ids}" 2>> "{log}"
-                diff-by-ids -ff "{input.tss}" -if "{output.qcf}" -fc 4       > "{output.tss}" 2>> "{log}"
-                diff-by-ids -ff "{input.tts}" -if "{output.qcf}" -fc 4       > "{output.tts}" 2>> "{log}"
+                sort -u {fail_id_files_quoted}                              > "{output.qcf}" 2>> "{log}"
+                gtf-filter-attributes.pl -m "{output.qcf}" -v "{input.gtf}" > "{output.gtf}" 2>> "{log}"
+                diff-by-ids -ff "{input.exp}" -if "{output.qcf}" -fc 1      > "{output.exp}" 2>> "{log}"
+                diff-by-ids -ff "{input.ids}" -if "{output.qcf}" -fc 1      > "{output.ids}" 2>> "{log}"
+                diff-by-ids -ff "{input.tss}" -if "{output.qcf}" -fc 4      > "{output.tss}" 2>> "{log}"
+                diff-by-ids -ff "{input.tts}" -if "{output.qcf}" -fc 4      > "{output.tts}" 2>> "{log}"
             """)

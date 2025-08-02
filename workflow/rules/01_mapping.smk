@@ -50,16 +50,37 @@ rule merge_flnc_fastqs:
         "benchmarks/01_mapping/{sample}_fastq_merge.txt"
     conda:
         SNAKEDIR + "envs/mapping.yaml"
-    shell:
-        r"""
-        (
-        echo "Merging FASTQ parts"
-        
-        cat {input} > "{output.fastq}"
-        
-        echo "Finished merging FASTQ parts"
-        ) &> "{log}"
-        """
+    run:
+        import shlex
+
+        if len(input) > 1:
+            # If there are multiple input files, concatenate them after quoting filenames for special chars
+            fastqs_quoted = " ".join([shlex.quote(str(f)) for f in input])
+
+            shell(
+                r"""
+                (
+                echo "Merging {len(input)} FASTQ parts"
+                
+                cat {fastqs_quoted} > "{output.fastq}"
+                
+                echo "Finished merging FASTQ parts"
+                ) &> "{log}"
+                """
+            )
+        else:
+            # If there is only one input file, simply move it to the output path.
+            shell(
+                r"""
+                (
+                echo "Only one FASTQ part found. Moving '{input[0]}' to the output path."
+                
+                mv "{input[0]}" "{output.fastq}"
+                
+                echo "Finished moving file"
+                ) &> "{log}"
+                """
+            )
 
 # ───────────────────────────────────────────────
 # Rule: Mapping with minimap2

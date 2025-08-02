@@ -21,11 +21,11 @@ rule bam_to_tc_sam:
 
         echo "Converting {input.bam} to sam for transcriptclean"
         
-        mkdir -p 02_transcriptclean/{wildcards.sample}
-        samtools view -h {input.bam} > {output.sam}
+        mkdir -p "02_transcriptclean/{wildcards.sample}"
+        samtools view -h "{input.bam}" > "{output.sam}"
         
         echo "Finished creating transcriptclean sam for {wildcards.sample}"
-        ) &> {log}
+        ) &> "{log}"
         """
 
 # ───────────────────────────────────────────────
@@ -64,23 +64,21 @@ rule run_transcriptclean:
         # Capture transcriptclean's stderr to a temporary file
         # The main output files will be handled separately
         transcriptclean \
-            -s {input.sam} \
-            -g {input.ref} \
-            -j {params.junctions_file} \
+            -s "{input.sam}" \
+            -g "{input.ref}" \
+            -j "{params.junctions_file}" \
             -t {threads} \
             --primaryOnly \
             --canonOnly \
             --deleteTmp \
-            -o {params.outprefix}
+            -o "{params.outprefix}"
 
         # Compress the log files and redirect output to the final paths
-        # pigz -c (compress to stdout) allows us to redirect to the specified path
-        # without pigz implicitly deleting the source file
-        pigz -c -p {threads} {output.clean_log}    > {output.clean_log_gz}
-        pigz -c -p {threads} {output.clean_te_log} > {output.clean_te_log_gz}
+        pigz -c -p {threads} "{output.clean_log}"    > "{output.clean_log_gz}"
+        pigz -c -p {threads} "{output.clean_te_log}" > "{output.clean_te_log_gz}"
 
         echo "Finished transcriptclean for {wildcards.sample}"
-        ) &> {log}
+        ) &> "{log}"
         """
 
 # ───────────────────────────────────────────────
@@ -107,11 +105,11 @@ rule transcriptclean_sam_to_bam:
     
         echo "Starting conversion of {input.sam} to BAM"
         
-        samtools sort -@ {threads} -o {output.bam} {input.sam}
-        samtools index {output.bam}
+        samtools sort -@ {threads} -o "{output.bam}" "{input.sam}"
+        samtools index "{output.bam}"
     
         echo "Finished conversion to BAM"
-        ) &> {log}
+        ) &> "{log}"
         """
 
 # ───────────────────────────────────────────────
@@ -145,31 +143,31 @@ rule downsample_chrM:
     
             echo "Starting downsample_chrM for {input.bam}"
     
-            mito_name=$(samtools idxstats {input.bam} | cut -f 1 | grep -E '^chrM$|^chrMT$|^MT$|^M$' || true)
+            mito_name=$(samtools idxstats "{input.bam}" | cut -f 1 | grep -E '^chrM$|^chrMT$|^MT$|^M$' || true)
     
             if [ -n "$mito_name" ]; then
                 echo "Mitochondrial contig detected: $mito_name"
     
                 # Extract and downsample mitochondrial reads
-                samtools view -b {input.bam} "$mito_name" > {output.chrM_bam}
-                samtools view {output.chrM_bam} | seqtk sample -s42 - {params.max_chrM_reads} | \
-                    samtools view -Sb - > {output.chrM_DS_bam}
+                samtools view -b "{input.bam}" "$mito_name" > "{output.chrM_bam}"
+                samtools view "{output.chrM_bam}" | seqtk sample -s42 - {params.max_chrM_reads} | \
+                    samtools view -Sb - > "{output.chrM_DS_bam}"
     
                 # Extract all non-mitochondrial reads
-                samtools view -h {input.bam} | awk -v mito="$mito_name" '$3 != mito || $1 ~ /^@/' | \
-                    samtools view -Sb - > {output.no_chrM_bam}
+                samtools view -h "{input.bam}" | awk -v mito="$mito_name" '($3 != mito || $1 ~ /^@/)' | \
+                    samtools view -Sb - > "{output.no_chrM_bam}"
     
                 # Merge and sort
-                samtools merge -@ {threads} -f {output.merged_bam} {output.no_chrM_bam} {output.chrM_DS_bam}
-                samtools sort -@ {threads} -o {output.bam} {output.merged_bam}
-                samtools index {output.bam}
+                samtools merge -@ {threads} -f "{output.merged_bam}" "{output.no_chrM_bam}" "{output.chrM_DS_bam}"
+                samtools sort  -@ {threads} -o "{output.bam}" "{output.merged_bam}"
+                samtools index "{output.bam}"
     
             else
                 echo "No mitochondrial contig found. Copying original BAM."
-                cp {input.bam} {output.bam}
-                samtools index {output.bam}
+                cp "{input.bam}" "{output.bam}"
+                samtools index "{output.bam}"
             fi
     
             echo "Finished downsample_chrM for {wildcards.sample}"
-        ) &> {log}
+        ) &> "{log}"
         """

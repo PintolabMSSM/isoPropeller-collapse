@@ -18,10 +18,6 @@ rule run_isopropeller:
         "logs/03_isoPropeller/{sample}_run.log"
     benchmark:
         "benchmarks/03_isoPropeller/{sample}_run.txt"
-    resources:
-        lsf_queue = "premium",
-        mem_mb    = 90000,
-        runtime   = 1440
     threads: 24
     conda:
         SNAKEDIR + "envs/isopropeller.yaml"
@@ -36,19 +32,19 @@ rule run_isopropeller:
 
         echo "Running isoPropeller"
         
-        mkdir -p {params.outdir}
+        mkdir -p "{params.outdir}"
         isoPropeller \
-            -i {input.bam} \
+            -i "{input.bam}" \
             -e \
-            -p ISOP_{params.sample} \
-            -o {params.outdir}/{params.sample}_all \
-            -g {input.genfasta} \
-            -f {input.reftss} \
+            -p "ISOP_{params.sample}" \
+            -o "{params.outdir}/{params.sample}_all" \
+            -g "{input.genfasta}" \
+            -f "{input.reftss}" \
             -t {threads} \
             {params.extra_args}
         
         echo "Finished running isoPropeller"
-        ) &> {log}
+        ) &> "{log}"
         """
 
 
@@ -81,14 +77,14 @@ rule filter_isopropeller_gtf:
         
         # Extract transcript IDs with depth > 1
         if [ "{params.onlychr}" = "True" ]; then
-            awk 'BEGIN {{IGNORECASE=1}} $3 == "transcript" && $1 ~ /^chr([0-9]+|[XY])$/' {input.gtf} | grep -v 'depth "1"' | cut -d'"' -f4 > {output.tmp_id_file}
+            awk 'BEGIN {{IGNORECASE=1}} $3 == "transcript" && $1 ~ /^chr([0-9]+|[XY])$/' "{input.gtf}" | grep -v 'depth "1"' | cut -d'"' -f4 > "{output.tmp_id_file}"
         else
-            awk 'BEGIN {{IGNORECASE=1}} $3 == "transcript"' {input.gtf} | grep -v 'depth "1"' | cut -d'"' -f4 > {output.tmp_id_file}
+            awk 'BEGIN {{IGNORECASE=1}} $3 == "transcript"' "{input.gtf}" | grep -v 'depth "1"' | cut -d'"' -f4 > "{output.tmp_id_file}"
         fi
 
         # Filter GTF with perl script
-        select_gtf_by_attribute_list.pl {input.gtf} {output.filtered_gtf} {output.tmp_id_file} {params.attr}
+        select_gtf_by_attribute_list.pl "{input.gtf}" "{output.filtered_gtf}" "{output.tmp_id_file}" "{params.attr}"
         
         echo "Finished filtering isoPropeller outputs"
-        ) &> {log}
+        ) &> "{log}"
         """

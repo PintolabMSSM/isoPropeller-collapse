@@ -77,16 +77,16 @@ rule filter_monoexon_tss_overlap:
         SNAKEDIR + "envs/isoform-filter.yaml"
     shell:
         """
-        mkdir -p $(dirname {output.fail_bed})
-        python {params.snakedir}scripts/filter_monoexon-tss-overlap.py \
-            --isoform_bed {input.isoform_bed} \
-            --isoform_tss_bed {input.isoform_tss} \
-            --reftss_bed {input.reftss_bed} \
-            --genome_index {input.genome_index} \
-            --max_distance {params.maxdist} \
-            --out_bed {output.fail_bed} \
-            --out_ids {output.fail_ids} \
-            2>> {log}
+        mkdir -p "$(dirname "{output.fail_bed}")"
+        python "{params.snakedir}scripts/filter_monoexon-tss-overlap.py" \
+            --isoform_bed     "{input.isoform_bed}" \
+            --isoform_tss_bed "{input.isoform_tss}" \
+            --reftss_bed      "{input.reftss_bed}" \
+            --genome_index    "{input.genome_index}" \
+            --max_distance    {params.maxdist} \
+            --out_bed         "{output.fail_bed}" \
+            --out_ids         "{output.fail_ids}" \
+            2>> "{log}"
         """
 
 
@@ -114,14 +114,14 @@ rule filter_monoexon_premrna_fragments:
         SNAKEDIR + "envs/isoform-filter.yaml"
     shell:
         """
-        mkdir -p $(dirname {output.fail_bed})
-        python {params.snakedir}scripts/filter_monoexon-premrna-fragments.py \
-            --isoform_bed12 {input.isoform_bed} \
-            --reference_bed12 {input.reference_bed} \
-            --min_intron_overlap {params.min_intron_ovlp} \
-            --out_bed {output.fail_bed} \
-            --out_ids {output.fail_ids} \
-            2>> {log}
+        mkdir -p "$(dirname "{output.fail_bed}")"
+        python "{params.snakedir}scripts/filter_monoexon-premrna-fragments.py" \
+            --isoform_bed12       "{input.isoform_bed}" \
+            --reference_bed12     "{input.reference_bed}" \
+            --min_intron_overlap  {params.min_intron_ovlp} \
+            --out_bed             "{output.fail_bed}" \
+            --out_ids             "{output.fail_ids}" \
+            2>> "{log}"
         """
 
 
@@ -149,14 +149,14 @@ rule filter_noncanonical_splice_junctions:
         SNAKEDIR + "envs/isoform-filter.yaml"
     shell:
         """
-        mkdir -p $(dirname {output.fail_bed})
-        python {params.snakedir}scripts/filter_multiexon-noncanonical-splices.py \
-            --isoform_bed12 {input.isoform_bed} \
-            --genome_fasta {input.genome_fasta} \
-            --out_bed {output.fail_bed} \
-            --out_ids {output.fail_ids} \
-            --out_motifs {output.motifs} \
-            2>> {log}
+        mkdir -p "$(dirname "{output.fail_bed}")"
+        python "{params.snakedir}scripts/filter_multiexon-noncanonical-splices.py" \
+            --isoform_bed12 "{input.isoform_bed}" \
+            --genome_fasta  "{input.genome_fasta}" \
+            --out_bed       "{output.fail_bed}" \
+            --out_ids       "{output.fail_ids}" \
+            --out_motifs    "{output.motifs}" \
+            2>> "{log}"
         """
 
 
@@ -184,14 +184,14 @@ rule filter_template_switching_artifacts:
         SNAKEDIR + "envs/isoform-filter.yaml"
     shell:
         """
-        mkdir -p $(dirname {output.fail_bed})
-        python {params.snakedir}scripts/filter_multiexon-rt-switching.py \
-            --isoform_bed12 {input.isoform_bed} \
-            --genome_fasta {input.genome_fasta} \
-            --out_rts_tsv {output.fail_rts} \
-            --out_ids {output.fail_ids} \
-            --out_bed {output.fail_bed} \
-            2>> {log}
+        mkdir -p "$(dirname "{output.fail_bed}")"
+        python "{params.snakedir}scripts/filter_multiexon-rt-switching.py" \
+            --isoform_bed12 "{input.isoform_bed}" \
+            --genome_fasta  "{input.genome_fasta}" \
+            --out_rts_tsv   "{output.fail_rts}" \
+            --out_ids       "{output.fail_ids}" \
+            --out_bed       "{output.fail_bed}" \
+            2>> "{log}"
         """
 
 
@@ -218,13 +218,13 @@ rule filter_antisense_splicechain_match:
         SNAKEDIR + "envs/isoform-filter.yaml"
     shell:
         """
-        mkdir -p $(dirname {output.fail_bed})
-        python {params.snakedir}scripts/filter_multiexon-antisense-splicechain-match.py \
-            --isoform_bed12 {input.isoform_bed} \
-            --reference_bed12 {input.reference_bed} \
-            --out_ids {output.fail_ids} \
-            --out_bed {output.fail_bed} \
-            2>> {log}
+        mkdir -p "$(dirname "{output.fail_bed}")"
+        python "{params.snakedir}scripts/filter_multiexon-antisense-splicechain-match.py" \
+            --isoform_bed12   "{input.isoform_bed}" \
+            --reference_bed12 "{input.reference_bed}" \
+            --out_ids         "{output.fail_ids}" \
+            --out_bed         "{output.fail_bed}" \
+            2>> "{log}"
         """
 
 
@@ -253,15 +253,15 @@ rule filter_repeat_region_overlap:
         SNAKEDIR + "envs/isoform-filter.yaml"
     shell:
         """
-        mkdir -p $(dirname {output.fail_bed})
-        python {params.snakedir}scripts/filter_reference-overlap-on-exons.py \
-            --isoform_bed12 {input.isoform_bed} \
-            --reference_bed12 {input.repeat_bed} \
-            --min_overlap_fraction {params.min_frac} \
-            --out_ids {output.fail_ids} \
-            --out_bed {output.fail_bed} \
-            --out_stats {output.fail_stats} \
-            2>> {log}
+        mkdir -p "$(dirname "{output.fail_bed}")"
+        python "{params.snakedir}scripts/filter_reference-overlap-on-exons.py" \
+            --isoform_bed12         "{input.isoform_bed}" \
+            --reference_bed12       "{input.repeat_bed}" \
+            --min_overlap_fraction  {params.min_frac} \
+            --out_ids               "{output.fail_ids}" \
+            --out_bed               "{output.fail_bed}" \
+            --out_stats             "{output.fail_stats}" \
+            2>> "{log}"
         """
 
 
@@ -278,7 +278,7 @@ rule filter_par_region_overlap:
         fail_bed   = "05_isoPropeller-filter/{prefix}_{suffix}_{filtertag}/filt_par_overlap/isoqc_fail_{prefix}_{suffix}_PAR-overlap.bed",
         fail_stats = "05_isoPropeller-filter/{prefix}_{suffix}_{filtertag}/filt_par_overlap/isoqc_fail_{prefix}_{suffix}_PAR-overlap.stats.txt"
     params:
-        min_frac = FILT_PAR_MIN_OVLP_FRACT,
+        min_frac  = FILT_PAR_MIN_OVLP_FRACT,
         filtertag = FILTERTAG,
         snakedir  = SNAKEDIR
     log:
@@ -290,15 +290,15 @@ rule filter_par_region_overlap:
         SNAKEDIR + "envs/isoform-filter.yaml"
     shell:
         """
-        mkdir -p $(dirname {output.fail_bed})
-        python {params.snakedir}scripts/filter_reference-overlap-on-exons.py \
-            --isoform_bed12 {input.isoform_bed} \
-            --reference_bed12 {input.par_bed} \
-            --min_overlap_fraction {params.min_frac} \
-            --out_ids {output.fail_ids} \
-            --out_bed {output.fail_bed} \
-            --out_stats {output.fail_stats} \
-            2>> {log}
+        mkdir -p "$(dirname "{output.fail_bed}")"
+        python "{params.snakedir}scripts/filter_reference-overlap-on-exons.py" \
+            --isoform_bed12         "{input.isoform_bed}" \
+            --reference_bed12       "{input.par_bed}" \
+            --min_overlap_fraction  {params.min_frac} \
+            --out_ids               "{output.fail_ids}" \
+            --out_bed               "{output.fail_bed}" \
+            --out_stats             "{output.fail_stats}" \
+            2>> "{log}"
         """
 
 
@@ -314,10 +314,10 @@ rule filter_tpm_expression:
         fail_ids = "05_isoPropeller-filter/{prefix}_{suffix}_{filtertag}/filt_min_tpm/isoqc_fail_{prefix}_{suffix}_min-TPM.ids",
         fail_bed = "05_isoPropeller-filter/{prefix}_{suffix}_{filtertag}/filt_min_tpm/isoqc_fail_{prefix}_{suffix}_min-TPM.bed"
     params:
-        min_tpm = FILT_TPM_MIN_COUNT,
-        min_fraction = FILT_TPM_MIN_FRACT,
-        filtertag = FILTERTAG,
-        snakedir = SNAKEDIR
+        min_tpm    = FILT_TPM_MIN_COUNT,
+        min_frac   = FILT_TPM_MIN_FRACT,
+        filtertag  = FILTERTAG,
+        snakedir   = SNAKEDIR
     log:
         "logs/05_isoPropeller-filter/{prefix}_{suffix}_{filtertag}/filt_min_tpm/filter_tpm_expression.log"
     benchmark:
@@ -327,15 +327,15 @@ rule filter_tpm_expression:
         SNAKEDIR + "envs/isoform-filter.yaml"
     shell:
         """
-        mkdir -p $(dirname {output.fail_bed})
-        python {params.snakedir}scripts/filter_TPM-fraction.py \
-            --count_matrix {input.count_matrix} \
-            --isoform_bed12 {input.isoform_bed} \
-            --min_tpm {params.min_tpm} \
-            --min_fraction_samples {params.min_fraction} \
-            --out_ids {output.fail_ids} \
-            --out_bed {output.fail_bed} \
-            2>> {log}
+        mkdir -p "$(dirname "{output.fail_bed}")"
+        python "{params.snakedir}scripts/filter_TPM-fraction.py" \
+            --count_matrix         "{input.count_matrix}" \
+            --isoform_bed12        "{input.isoform_bed}" \
+            --min_tpm              {params.min_tpm} \
+            --min_fraction_samples {params.min_frac} \
+            --out_ids              "{output.fail_ids}" \
+            --out_bed              "{output.fail_bed}" \
+            2>> "{log}"
         """
 
 
@@ -368,21 +368,21 @@ rule filter_terminal_exons_in_segdup:
 
         echo "Filtering isoforms with mismapped terminal exons"
         
-        outdir=$(dirname {output.fail_bed})
+        outdir="$(dirname "{output.fail_bed}")"
         mkdir -p "$outdir"
 
         echo "[INFO] Running bed2intronexongff.pl..."
-        bed2intronexongff.pl -v 1 {input.isoform_bed} > "$outdir/isoqc_temp_corrected.intronexon.gff"
+        bed2intronexongff.pl -v 1 "{input.isoform_bed}" > "$outdir/isoqc_temp_corrected.intronexon.gff"
 
         echo "[INFO] Running gtf-get-gene-regions.pl..."
-        gtf-get-gene-regions.pl {input.reference_gtf} > "$outdir/isoqc_temp_reference-gene-regions.gtf"
+        gtf-get-gene-regions.pl "{input.reference_gtf}" > "$outdir/isoqc_temp_reference-gene-regions.gtf"
 
         for LEVEL in 1 2 3 4; do
             echo "[INFO] Level $LEVEL filtering..."
-            {params.snakedir}scripts/filter_segdup-mismapped-terminal-exons.pl \
+            "{params.snakedir}scripts/filter_segdup-mismapped-terminal-exons.pl" \
                 -i "$outdir/isoqc_temp_corrected.intronexon.gff" \
                 -g "$outdir/isoqc_temp_reference-gene-regions.gtf" \
-                -s {input.segdup_bed} \
+                -s "{input.segdup_bed}" \
                 -l $LEVEL \
                 > "$outdir/isoqc_temp_terminal-exons-in-segdup_$LEVEL.txt"
 
@@ -394,20 +394,20 @@ rule filter_terminal_exons_in_segdup:
 
         echo "[INFO] Merging .ids files..."
         cat "$outdir"/isoqc_temp_mismapped-terminal-exon-in-segdup_*.txt | sort | uniq \
-            > {output.fail_ids}
+            > "{output.fail_ids}"
         echo "[INFO] Final .ids output:"
-        head {output.fail_ids}
+        head "{output.fail_ids}"
 
         echo "[INFO] Extracting BED regions for failed isoforms..."
-        intersect-by-ids -ff {input.isoform_bed} -fc 4 -if {output.fail_ids} > {output.fail_bed}
+        intersect-by-ids -ff "{input.isoform_bed}" -fc 4 -if "{output.fail_ids}" > "{output.fail_bed}"
         echo "[INFO] Final .bed output:"
-        head {output.fail_bed}
+        head "{output.fail_bed}"
 
         echo "[INFO] Cleaning up intermediate files..."
         rm -f "$outdir"/isoqc_temp_*
 
         echo "Finished preparing GTF list for merge"
-        ) &> {log}
+        ) &> "{log}"
         """
 
 
@@ -447,18 +447,18 @@ rule filter_aggregate_final_outputs:
 
         if not input.fail_ids:
             shell("""
-                cp {input.gtf} {output.gtf} 2>> {log}
-                cp {input.exp} {output.exp} 2>> {log}
-                cp {input.ids} {output.ids} 2>> {log}
-                cp {input.tss} {output.tss} 2>> {log}
-                cp {input.tts} {output.tts} 2>> {log}
+                cp "{input.gtf}" "{output.gtf}" 2>> "{log}"
+                cp "{input.exp}" "{output.exp}" 2>> "{log}"
+                cp "{input.ids}" "{output.ids}" 2>> "{log}"
+                cp "{input.tss}" "{output.tss}" 2>> "{log}"
+                cp "{input.tts}" "{output.tts}" 2>> "{log}"
             """)
         else:
             shell("""
-                cat {input.fail_ids} | sort | uniq                       > {output.qcf} 2>> {log}
-                gtf-filter-attributes.pl -m {output.qcf} -v {input.gtf}  > {output.gtf} 2>> {log}
-                diff-by-ids -ff {input.exp} -if {output.qcf} -fc 1       > {output.exp} 2>> {log}
-                diff-by-ids -ff {input.ids} -if {output.qcf} -fc 1       > {output.ids} 2>> {log}
-                diff-by-ids -ff {input.tss} -if {output.qcf} -fc 4       > {output.tss} 2>> {log}
-                diff-by-ids -ff {input.tts} -if {output.qcf} -fc 4       > {output.tts} 2>> {log}
+                sort -u "{input.fail_ids}"                                   > "{output.qcf}" 2>> "{log}"
+                gtf-filter-attributes.pl -m "{output.qcf}" -v "{input.gtf}"  > "{output.gtf}" 2>> "{log}"
+                diff-by-ids -ff "{input.exp}" -if "{output.qcf}" -fc 1       > "{output.exp}" 2>> "{log}"
+                diff-by-ids -ff "{input.ids}" -if "{output.qcf}" -fc 1       > "{output.ids}" 2>> "{log}"
+                diff-by-ids -ff "{input.tss}" -if "{output.qcf}" -fc 4       > "{output.tss}" 2>> "{log}"
+                diff-by-ids -ff "{input.tts}" -if "{output.qcf}" -fc 4       > "{output.tts}" 2>> "{log}"
             """)

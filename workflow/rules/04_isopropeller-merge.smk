@@ -19,10 +19,14 @@ rule prepare_gtf_list:
         echo "Preparing GTF list for merge"
         
         mkdir -p 04_isoPropeller-merge
-        printf "%s\n" {input.gtfs} | tr ' ' '\n' > {output.gtf_list}
+        
+        # Use a for loop to handle any characters in file names, including spaces.
+        for f in {input.gtfs}; do
+            echo "$f"
+        done > "{output.gtf_list}"
 
         echo "Finished preparing GTF list for merge"
-        ) &> {log}
+        ) &> "{log}"
         """
 
 # ───────────────────────────────────────────────
@@ -53,14 +57,14 @@ rule merge_isopropeller_gtfs:
         echo "Merging isoPropeller GTFs"
         
         isoPropeller_merge \
-            -i {input.gtf_list} \
-            -o 04_isoPropeller-merge/{params.prefix_val}_{wildcards.suffix} \
-            -p {params.prefix_val} \
+            -i "{input.gtf_list}" \
+            -o "04_isoPropeller-merge/{params.prefix_val}_{wildcards.suffix}" \
+            -p "{params.prefix_val}" \
             -e depth \
             -t {threads} 
         
         echo "Finished merging isoPropeller GTFs"
-        ) &> {log}
+        ) &> "{log}"
         """
 
 # ───────────────────────────────────────────────
@@ -84,10 +88,14 @@ rule prepare_end_dist_list:
         echo "Preparing end distribution file list"
         
         mkdir -p 04_isoPropeller-merge
-        printf "%s\n" {input.end_dists}  | tr ' ' '\n' > {output.listfile}
+        
+        # Use a for loop to handle any characters in file names, including spaces.
+        for f in {input.end_dists}; do
+            echo "$f"
+        done > "{output.listfile}"
 
         echo "Finished preparing end distribution file list"
-        ) &> {log}
+        ) &> "{log}"
         """
 
 
@@ -120,11 +128,11 @@ rule analyze_end_regions:
         echo "Analyzing end regions"
         
         isoPropeller_end_region \
-            -i {input.dist_list} \
-            -o 04_isoPropeller-merge/{params.prefix_val}_{wildcards.suffix} \
-            -d {input.id_list} \
+            -i "{input.dist_list}" \
+            -o "04_isoPropeller-merge/{params.prefix_val}_{wildcards.suffix}" \
+            -d "{input.id_list}" \
             -t {threads}
 
         echo "Finished analyzing end regions"
-        ) &> {log}
+        ) &> "{log}"
         """

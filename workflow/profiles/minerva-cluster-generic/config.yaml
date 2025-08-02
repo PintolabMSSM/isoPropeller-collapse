@@ -13,7 +13,7 @@ cluster-generic-submit-cmd: bsub -W {resources.runtime} -n 12 -M {resources.mem_
 default-resources:
   mem_mb:   25000
   queue:    "express"
-  project:  "acc_PVI"
+  project:  "acc_EPIASD"
   runtime:  "12h"
   span:     "\"span[hosts=1]\""
 
@@ -25,7 +25,7 @@ set-resources:
     runtime:  "6h"
 
   mapping:
-    mem_mb:   32000
+    mem_mb:   64000
 
   talon_label_reads:
     mem_mb:   32000

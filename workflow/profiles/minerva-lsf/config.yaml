@@ -11,7 +11,7 @@ retries:          1
 # --- Define default resources for all rules --- #
 default-resources:
   lsf_queue:    "express"
-  lsf_project:  "acc_PVI"
+  lsf_project:  "acc_EPIASD"
   mem_mb:       25000
   runtime:      720
   threads:      4
@@ -26,7 +26,7 @@ set-resources:
     runtime:    360
 
   mapping:
-    mem_mb:     32000
+    mem_mb:     64000
 
   talon_label_reads:
     mem_mb:     32000

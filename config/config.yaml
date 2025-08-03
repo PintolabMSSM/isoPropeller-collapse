@@ -67,3 +67,7 @@ filt_rmsk_min_ovlp_fract:           0.9
 filt_par_min_ovlp_fract:            0
 filt_tpm_min_count:                 10
 filt_tpm_min_fract:                 0.5
+
+# Set up chunking parameters for transcriptcleain
+transcriptclean_chunk_maxreads:  100000
+transcripclean_chunk_threads:    2

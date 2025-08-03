@@ -116,6 +116,10 @@ REMOVE_PAR_OVERLAP            = as_bool(config.get("remove_isoforms_overlapping_
 REMOVE_BELOW_TPM              = as_bool(config.get("remove_isoforms_not_meeting_TPM_threshold", True))
 REMOVE_TERMINAL_EXONS_SEGDUP  = as_bool(config.get("remove_isoforms_with_mismapped_segdup_exons", True))
 
+# Define local variables, transcriptclean chunking parameters
+TRANSCRIPTCLEAN_CHUNK_MAXREADS  = config.get("transcriptclean_chunk_maxreads",2000000)
+TRANCRIPTCLEAN_CHUNK_THREADS    = config.get("transcripclean_chunk_threads",2)
+
 # Set conditional isoPropeller arguments. If a terminal exon bed file is defined
 # in the configuration file, use it.
 if TERMINALEXONBED:

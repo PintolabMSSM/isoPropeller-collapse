@@ -19,9 +19,10 @@ checkpoint bam_to_sam_and_split:
     benchmark:
         "benchmarks/02_transcriptclean/{sample}_bam_to_sam_split.txt"
     params:
-        # This now directly reflects the number of reads per chunk.
-        reads_per_chunk = TRANSCRIPTCLEAN_CHUNK_MAXREADS
-    threads: 4 # for samtools view
+        reads_per_chunk = TRANSCRIPTCLEAN_CHUNK_MAXREADS,
+        # Define the path for the manifest file listing all created chunks.
+        chunk_list_file=lambda wildcards, output: f"{output}/chunk_list.txt"
+    threads: 4
     conda:
         SNAKEDIR + "envs/transcriptclean.yaml"
     shell:
@@ -33,7 +34,7 @@ checkpoint bam_to_sam_and_split:
         SPLIT_DIR="{output}"
         mkdir -p "$SPLIT_DIR"
 
-        # Define a temporary directory for the headerless alignment chunks
+        # MODIFIED: Create a temporary directory inside the workflow structure.
         ALIGN_DIR=$(mktemp -d -p "$SPLIT_DIR")
         # Define the location for the temporary header file
         HEADER_FILE="$ALIGN_DIR/header.sam"
@@ -53,7 +54,7 @@ checkpoint bam_to_sam_and_split:
             # Extract the numeric suffix (e.g., 01) from the temp file name (e.g., align.chunk_01.body)
             chunk_suffix=$(basename "$align_chunk" | cut -d_ -f2 | cut -d. -f1)
 
-            # MODIFIED: Create a dedicated subdirectory for each chunk
+            # Create a dedicated subdirectory for each chunk
             CHUNK_SUBDIR="$SPLIT_DIR/$chunk_suffix"
             mkdir -p "$CHUNK_SUBDIR"
 
@@ -64,7 +65,13 @@ checkpoint bam_to_sam_and_split:
             cat "$HEADER_FILE" "$align_chunk" > "$final_chunk_file"
         done
 
-        # 4. Clean up the temporary directory containing the header and alignment chunks
+        # 4. Create a manifest of the chunks for downstream rules.
+        # MODIFIED: This command now specifically finds only numeric directory names,
+        # ignoring the temporary directory created by mktemp.
+        echo "Creating chunk manifest file."
+        find "$SPLIT_DIR" -mindepth 1 -maxdepth 1 -type d -exec basename {{}} \; | grep '^[0-9][0-9]*$' | sort -n > "{params.chunk_list_file}"
+
+        # 5. Clean up the temporary directory containing the header and alignment chunks
         echo "Cleaning up temporary split files."
         rm -rf "$ALIGN_DIR"
 
@@ -78,24 +85,23 @@ checkpoint bam_to_sam_and_split:
 rule run_transcriptclean_on_chunk:
     message: "Running transcriptclean on {wildcards.sample}, chunk {wildcards.chunk}"
     input:
-        # MODIFIED: The input SAM path now reflects the new subdirectory structure.
-        sam="02_transcriptclean/{sample}/split/{chunk}/{sample}.chunk_{chunk}.sam",
-        ref=GENOMEFASTA,
-        fai=GENOMEFASTA + ".fai"
+        # The input SAM path reflects the chunk subdirectory structure
+        sam = "02_transcriptclean/{sample}/split/{chunk}/{sample}.chunk_{chunk}.sam",
+        ref = GENOMEFASTA,
+        fai = GENOMEFASTA + ".fai"
     output:
         # Outputs are kept in the unique subdirectory for each chunk to prevent conflicts.
-        cleaned_bam=temp("02_transcriptclean/{sample}/split/{chunk}/{sample}.chunk_{chunk}_clean.bam"),
-        clean_log_gz=temp("02_transcriptclean/{sample}/split_logs/{sample}.chunk_{chunk}_clean.log.gz"),
-        clean_te_log_gz=temp("02_transcriptclean/{sample}/split_logs/{sample}.chunk_{chunk}_clean.TE.log.gz")
+        cleaned_bam     = temp("02_transcriptclean/{sample}/split/{chunk}/{sample}.chunk_{chunk}_clean.bam"),
+        clean_log_gz    = temp("02_transcriptclean/{sample}/split_logs/{sample}.chunk_{chunk}_clean.log.gz"),
+        clean_te_log_gz = temp("02_transcriptclean/{sample}/split_logs/{sample}.chunk_{chunk}_clean.TE.log.gz")
     log:
         "logs/02_transcriptclean/{sample}_transcriptclean_chunk_{chunk}.log"
     benchmark:
         "benchmarks/02_transcriptclean/{sample}_transcriptclean_chunk_{chunk}.txt"
     params:
-        junctions_file=SPLICEJUNCTIONS,
         # The output prefix points to the unique chunk subdirectory.
-        outprefix=lambda wildcards: f"02_transcriptclean/{wildcards.sample}/split/{wildcards.chunk}/{wildcards.sample}.chunk_{wildcards.chunk}"
-    # The number of threads for transcriptclean is now configurable.
+        outprefix      = lambda wildcards: f"02_transcriptclean/{wildcards.sample}/split/{wildcards.chunk}/{wildcards.sample}.chunk_{wildcards.chunk}",
+        junctions_file = SPLICEJUNCTIONS
     threads: TRANCRIPTCLEAN_CHUNK_THREADS
     conda:
         SNAKEDIR + "envs/transcriptclean.yaml"
@@ -138,17 +144,26 @@ rule run_transcriptclean_on_chunk:
         # Clean up the original, uncompressed log files
         rm "$TMP_CLEAN_LOG" "$TMP_CLEAN_TE_LOG"
 
+        # Clean up the input SAM chunk as it is no longer needed.
+        echo "Cleaning up input SAM chunk: {input.sam}"
+        rm "{input.sam}"
+
         echo "Finished transcriptclean for chunk {wildcards.chunk}"
         ) &> "{log}"
         """
 
-# Helper functions to gather all chunked files after the checkpoint is complete.
+# ───────────────────────────────────────────────
+# Helper functions to gather all chunked files 
+# after the checkpoint is complete.
+# ───────────────────────────────────────────────
+
 def get_chunk_wildcards(wildcards):
-    """Helper to get chunk numbers for a sample."""
+    """Helper to get chunk numbers for a sample by reading the manifest file."""
     checkpoint_dir = checkpoints.bam_to_sam_and_split.get(sample=wildcards.sample).output[0]
-    # MODIFIED: The glob pattern now searches within the chunk subdirectories.
-    chunk_wildcard_path = os.path.join(checkpoint_dir, "{chunk}", f"{wildcards.sample}.chunk_{{chunk}}.sam")
-    chunk_numbers, = glob_wildcards(chunk_wildcard_path)
+    # Read the chunk numbers from the manifest file instead of globbing.
+    chunk_list_file = os.path.join(checkpoint_dir, "chunk_list.txt")
+    with open(chunk_list_file) as f:
+        chunk_numbers = [line.strip() for line in f if line.strip()]
     return chunk_numbers
 
 def get_cleaned_chunks(wildcards):
@@ -170,28 +185,30 @@ def get_clean_te_logs(wildcards):
                   sample=wildcards.sample,
                   chunk=get_chunk_wildcards(wildcards))
 
+
 # ───────────────────────────────────────────────
 # Rule 3: Gather results, merge, and index (Gather)
 # ───────────────────────────────────────────────
 rule gather_results:
-    message: "Gathering all results for {wildcards.sample}: merging BAMs and logs."
+    message: "Gathering all results for {wildcards.sample}: merging, sorting, and indexing BAMs and logs."
     input:
-        bams=get_cleaned_chunks,
-        clean_logs=get_clean_logs,
-        te_logs=get_clean_te_logs
+        bams       = get_cleaned_chunks,
+        clean_logs = get_clean_logs,
+        te_logs    = get_clean_te_logs
     output:
-        merged_bam=temp("02_transcriptclean/{sample}/{sample}_mapped_labeled_tclean_temp.bam"),
-        merged_bai=temp("02_transcriptclean/{sample}/{sample}_mapped_labeled_tclean_temp.bam.bai"),
-        merged_log="02_transcriptclean/{sample}/{sample}_final_clean.log.gz",
-        merged_te_log="02_transcriptclean/{sample}/{sample}_final_clean.TE.log.gz"
+        merged_bam    = temp("02_transcriptclean/{sample}/{sample}_mapped_labeled_tclean_temp.bam"),
+        merged_bai    = temp("02_transcriptclean/{sample}/{sample}_mapped_labeled_tclean_temp.bam.bai"),
+        merged_log    = "02_transcriptclean/{sample}/{sample}_final_clean.log.gz",
+        merged_te_log = "02_transcriptclean/{sample}/{sample}_final_clean.TE.log.gz"
     log:
         "logs/02_transcriptclean/{sample}_gather_results.log"
     benchmark:
         "benchmarks/02_transcriptclean/{sample}_gather_results.txt"
     params:
-        bams_count=lambda wildcards, input: len(input.bams),
-        clean_logs_count=lambda wildcards, input: len(input.clean_logs),
-        te_logs_count=lambda wildcards, input: len(input.te_logs)
+        bams_count       = lambda wildcards, input: len(input.bams),
+        clean_logs_count = lambda wildcards, input: len(input.clean_logs),
+        te_logs_count    = lambda wildcards, input: len(input.te_logs),
+        unsorted_bam     = lambda wildcards, output: f"{output.merged_bam}.unsorted.bam"
     threads: 4
     conda:
         SNAKEDIR + "envs/transcriptclean.yaml"
@@ -199,8 +216,17 @@ rule gather_results:
         r"""
         (
         echo "Merging {params.bams_count} cleaned BAM chunks for {wildcards.sample}"
-        samtools merge -f -@ {threads} "{output.merged_bam}" {input.bams}
+        # Merge to a temporary file first to make the process more robust.
+        samtools merge -f -@ {threads} "{params.unsorted_bam}" {input.bams}
         echo "Finished merging BAMs."
+
+        echo "Sorting merged BAM file."
+        # Now sort the temporary merged file into the final output file.
+        samtools sort -@ {threads} -o "{output.merged_bam}" "{params.unsorted_bam}"
+        echo "Finished sorting BAM."
+
+        # Clean up the unsorted temporary file
+        rm "{params.unsorted_bam}"
 
         echo "Indexing temporary merged BAM file."
         samtools index -@ {threads} "{output.merged_bam}"
@@ -214,7 +240,7 @@ rule gather_results:
         zcat -f {input.te_logs} | pigz -c -p {threads} > "{output.merged_te_log}"
         echo "Finished consolidating TE logs."
 
-        # Clean up the intermediate chunk directory to save disk space.
+        # Clean up the now-empty intermediate chunk directory to save disk space.
         echo "Cleaning up intermediate chunk directory."
         rm -rf "02_transcriptclean/{wildcards.sample}/split/"
         echo "Cleanup complete."

@@ -69,5 +69,5 @@ filt_tpm_min_count:                 10
 filt_tpm_min_fract:                 0.5
 
 # Set up chunking parameters for transcriptcleain
-transcriptclean_chunk_maxreads:  100000
-transcripclean_chunk_threads:    2
+transcriptclean_chunk_maxreads:  2000000
+transcripclean_chunk_threads:    8

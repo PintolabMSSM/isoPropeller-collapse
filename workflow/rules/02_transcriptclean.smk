@@ -11,7 +11,7 @@ rule bam_to_tc_sam:
         "logs/02_transcriptclean/{sample}_bam_to_sam.log"
     benchmark:
         "benchmarks/02_transcriptclean/{sample}_bam_to_sam.txt"
-    threads: 12
+    threads: 4
     conda:
         SNAKEDIR + "envs/transcriptclean.yaml"
     shell:
@@ -20,7 +20,7 @@ rule bam_to_tc_sam:
         echo "Converting {input.bam} to sam for transcriptclean"
         
         mkdir -p "02_transcriptclean/{wildcards.sample}"
-        samtools sort -n -@ {threads} -O SAM "{input.bam}" > "{output.sam}"
+        samtools view -h "{input.bam}" > "{output.sam}"
         
         echo "Finished creating transcriptclean sam for {wildcards.sample}"
         ) &> "{log}"
@@ -91,7 +91,7 @@ rule transcriptclean_sam_to_bam:
         "logs/02_transcriptclean/{sample}_sam_to_bam.log"
     benchmark:
         "benchmarks/02_transcriptclean/{sample}_sam_to_bam.txt"
-    threads: 12
+    threads: 8
     conda:
         SNAKEDIR + "envs/transcriptclean.yaml"
     shell:

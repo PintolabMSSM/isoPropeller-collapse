@@ -97,6 +97,7 @@ rule prepare_end_dist_list:
 # Rule: And finally, we use this end dist listing together with the list of transcript IDs we want to retain
 # to select the TSS and TTS regions to accompany the main isoform gtf file
 # ───────────────────────────────────────────────
+ruleorder: analyze_end_regions > gff_to_bed
 rule analyze_end_regions:
     message: "Analyzing end regions for suffix {wildcards.suffix}"
     input:

@@ -1,6 +1,3 @@
-# Define the filter tag used to mark subdirectories and group outputs
-FILTERTAG = f"tpm{FILT_TPM_MIN_COUNT}f{FILT_TPM_MIN_FRACT}"
-
 # ───────────────────────────────────────────────
 # Define active filters (and their filter rules)
 # ───────────────────────────────────────────────

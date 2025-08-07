@@ -1,37 +1,4 @@
 # ───────────────────────────────────────────────
-# Rule: Convert FLNC BAMs to FASTQ (intermediates)
-# ───────────────────────────────────────────────
-rule bam_to_fastq:
-    message: "Converting BAM to FASTQ: {wildcards.sample}, part {wildcards.part}"
-    input:
-        bam = lambda wc: FLNC_BAM_PARTS[(wc.sample, int(wc.part))],
-        pbi = lambda wc: FLNC_BAM_PARTS[(wc.sample, int(wc.part))] + ".pbi"
-    output:
-        fastq    = temp("01_mapping/{sample}/flnc_parts/flnc_part{part}.fastq.gz"),
-    log:
-        "logs/01_mapping/{sample}_bam_to_fastq_{part}.log"
-    threads: 12
-    benchmark:
-        "benchmarks/01_mapping/{sample}_bam_to_fastq_{part}.txt"
-    conda:
-        SNAKEDIR + "envs/mapping.yaml"
-    shell:
-        r"""
-        (
-        echo "Converting bam to fastq"
-        
-        # Strip '.fastq.gz' from the output path to get prefix
-        out_prefix=$(echo "{output.fastq}" | sed 's/\.fastq\.gz$//')
-        
-        # Run bam2fastq
-        bam2fastq "{input.bam}" -c 6 -j {threads} -o "$out_prefix"
-        
-        echo "Finished converting bam to fastq"
-        ) &> "{log}"
-        """
-
-
-# ───────────────────────────────────────────────
 # Rule: Merge FASTQ parts
 # ───────────────────────────────────────────────
 rule merge_flnc_fastqs:
@@ -39,7 +6,7 @@ rule merge_flnc_fastqs:
     input:
         lambda wc: [
             f"01_mapping/{wc.sample}/flnc_parts/flnc_part{i}.fastq.gz"
-            for i in range(len(FLNC_BAMS[wc.sample]))
+            for i in range(len(PARTS[wc.sample]))
         ]
     output:
         fastq = temp("01_mapping/{sample}/flnc_merged.fastq.gz")

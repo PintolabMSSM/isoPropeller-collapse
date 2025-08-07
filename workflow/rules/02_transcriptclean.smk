@@ -102,7 +102,7 @@ rule run_transcriptclean_on_chunk:
         # The output prefix points to the unique chunk subdirectory.
         outprefix      = lambda wildcards: f"02_transcriptclean/{wildcards.sample}/split/{wildcards.chunk}/{wildcards.sample}.chunk_{wildcards.chunk}",
         junctions_file = SPLICEJUNCTIONS
-    threads: TRANCRIPTCLEAN_CHUNK_THREADS
+    threads: TRANSCRIPTCLEAN_CHUNK_THREADS
     conda:
         SNAKEDIR + "envs/transcriptclean.yaml"
     shell:

@@ -15,7 +15,7 @@ from collections import defaultdict
 # ───────────────────────────────────────────────
 
 # Define minimum snakemake version
-min_snakemake_version = "8.25.0"
+minversion: "9.0.0"
 
 # Load configuration from config file
 configfile: ''.join([os.environ['GIT_REPODIR'], "/config/config.yaml"])
@@ -25,31 +25,47 @@ configfile: ''.join([os.environ['GIT_REPODIR'], "/config/config.yaml"])
 # INPUT CSV VALIDATION 
 # ───────────────────────────────────────────────
 
-# Define expected columns in the CSV
-expected_columns = {"path_to_flnc_bam", "sample"}
-sample_csv_path  = config.get("samples")
-
-# Load and validate sample sheet
+sample_csv_path = config.get("samples")
 if not sample_csv_path or not os.path.isfile(sample_csv_path):
     sys.exit(f"[ERROR] Sample CSV file not found or missing: {sample_csv_path}")
 
+# Read samples file and determine if we're dealing with bam or fastq inputs
 samples_df = pd.read_csv(sample_csv_path)
 
-# Check required headers
-if not expected_columns.issubset(samples_df.columns):
-    sys.exit(f"[ERROR] CSV must contain columns: {expected_columns}")
+bam_col = "path_to_bam"
+fq_col  = "path_to_fastq"
+has_bam = bam_col in samples_df.columns
+has_fq  = fq_col  in samples_df.columns
 
-# Validate BAM file existence
-missing = samples_df.loc[~samples_df["path_to_flnc_bam"].apply(os.path.exists), "path_to_flnc_bam"]
+if has_bam == has_fq:  # both True or both False
+    sys.exit(f"[ERROR] CSV must contain exactly one of '{bam_col}' or '{fq_col}'.")
+
+MODE = "bam" if has_bam else "fastq"
+
+# Required columns
+if "sample" not in samples_df.columns:
+    sys.exit("[ERROR] CSV must contain column: 'sample'")
+
+# Validate files & extensions
+col = bam_col if MODE == "bam" else fq_col
+if samples_df[col].isna().any():
+    sys.exit(f"[ERROR] Empty paths in column '{col}' are not allowed.")
+missing = samples_df.loc[~samples_df[col].apply(os.path.exists), col]
 if not missing.empty:
-    sys.exit("[ERROR] These FLNC BAM files do not exist:\n  " + "\n  ".join(missing.tolist()))
+    sys.exit(f"[ERROR] These files from '{col}' do not exist:\n  " + "\n  ".join(map(str, missing.tolist())))
 
-# Check for duplicate BAM paths
-if samples_df["path_to_flnc_bam"].duplicated().any():
-    dups = samples_df.loc[samples_df["path_to_flnc_bam"].duplicated(), "path_to_flnc_bam"]
-    sys.exit("[ERROR] Duplicate FLNC BAM paths found:\n  " + "\n  ".join(dups.tolist()))
+if MODE == "bam":
+    bad_ext = samples_df[col].map(lambda p: not str(p).endswith(".bam"))
+    if bad_ext.any():
+        bad = samples_df.loc[bad_ext, col].astype(str).tolist()
+        sys.exit("[ERROR] Non-.bam paths in bam mode:\n  " + "\n  ".join(bad))
+else:
+    bad_ext = samples_df[col].map(lambda p: not (str(p).endswith(".fastq") or str(p).endswith(".fastq.gz")))
+    if bad_ext.any():
+        bad = samples_df.loc[bad_ext, col].astype(str).tolist()
+        sys.exit("[ERROR] Non-fastq(.gz) paths in fastq mode:\n  " + "\n  ".join(bad))
 
-print("[INFO] Sample sheet validation passed.", file=sys.stderr)
+print(f"[INFO] Sample sheet validation passed. Mode: {MODE}", file=sys.stderr)
 
 
 # ───────────────────────────────────────────────
@@ -67,20 +83,16 @@ def as_bool(val):
 # Set snakemake main workdir variable. 
 SNAKEDIR = os.path.dirname(workflow.snakefile) + "/"
 
-# Group BAMs by sample
-FLNC_BAMS = defaultdict(list)
+# Map samples -> list of source files
+PARTS = defaultdict(list)      
+SRC_COL = bam_col if MODE == "bam" else fq_col
 for row in samples_df.itertuples(index=False):
-    FLNC_BAMS[row.sample].append(row.path_to_flnc_bam)
+    PARTS[row.sample].append(getattr(row, SRC_COL))
+PART_MAP = {(s, i): p for s, lst in PARTS.items() for i, p in enumerate(lst)}
 
-# Create flat map of (sample, part) -> bam_path
-FLNC_BAM_PARTS = {
-    (sample, i): bam
-    for sample, bam_list in FLNC_BAMS.items()
-    for i, bam in enumerate(bam_list)
-}
 
 # Define local variables: General
-SAMPLES         = sorted(FLNC_BAMS.keys())
+SAMPLES         = sorted(PARTS.keys())
 MERGEDISOPREFIX = config.get("merged_isoform_prefix", "ISOP")
 MAXINTRONLEN    = config.get("max_intron_length", 1250000)
 USE_TC          = as_bool(config.get("use_transcriptclean", True))
@@ -105,6 +117,9 @@ FILT_PAR_MIN_OVLP_FRACT           = config.get("filt_par_min_ovlp_fract", 0)
 FILT_TPM_MIN_COUNT                = config.get("filt_tpm_min_count", 10)
 FILT_TPM_MIN_FRACT                = config.get("filt_tpm_min_fract", 0.5)
 
+# Define the filter tag used to mark subdirectories and group outputs
+FILTERTAG = f"tpm{FILT_TPM_MIN_COUNT}f{FILT_TPM_MIN_FRACT}"
+
 # Define local variables: Choose whether or not to run certain rules
 REMOVE_MONOEXONS_NO_TSS       = as_bool(config.get("remove_monoexons_without_cage_support", True))
 REMOVE_MONOEXON_PRE_MRNAS     = as_bool(config.get("remove_monoexon_premRNA_fragments", True))
@@ -118,7 +133,7 @@ REMOVE_TERMINAL_EXONS_SEGDUP  = as_bool(config.get("remove_isoforms_with_mismapp
 
 # Define local variables, transcriptclean chunking parameters
 TRANSCRIPTCLEAN_CHUNK_MAXREADS  = config.get("transcriptclean_chunk_maxreads",2000000)
-TRANCRIPTCLEAN_CHUNK_THREADS    = config.get("transcripclean_chunk_threads",2)
+TRANSCRIPTCLEAN_CHUNK_THREADS   = config.get("transcripclean_chunk_threads",2)
 
 # Set conditional isoPropeller arguments. If a terminal exon bed file is defined
 # in the configuration file, use it.
@@ -140,9 +155,17 @@ include: "rules/04_isopropeller-merge.smk"
 include: "rules/05_isopropeller-filter.smk"
 
 # Import conditional rules
+if MODE == "bam":
+    print("[INFO] Loading BAM→FASTQ staging rules.", file=sys.stderr)
+    include: "rules/00_bam-input.smk"
+else:
+    print("[INFO] Loading FASTQ staging rules.", file=sys.stderr)
+    include: "rules/00_fastq-input.smk"
+
 if USE_TC:
     print("[INFO] Loading conditional transcriptclean rules.", file=sys.stderr)
     include: "rules/02_transcriptclean.smk"
+
 
 # Make final targets
 rule all:

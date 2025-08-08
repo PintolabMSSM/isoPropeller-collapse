@@ -7,7 +7,6 @@ rerun-incomplete:   true
 use-singularity:    true
 use-conda:          true
 retries:            1
-delete-temp-output: true
 
 # --- Define default resources for all rules --- #
 default-resources:

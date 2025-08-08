@@ -134,6 +134,9 @@ rule talon_label_reads:
         samtools view -@ {threads} -b "{output.sam}" > "{output.bam}"
         samtools index "{output.bam}"
         
+        # Clean up sam file
+        rm -f "{output.sam}"
+        
         # Compress the label read csv output
         pigz -f -c -p {threads} "{output.tsv_tmp}" > "{output.tsv}"
         

@@ -36,6 +36,11 @@ set-resources:
     mem_mb:     350000
     runtime:    720
 
+  run_transcriptclean_on_chunk:
+    lsf_queue:  "express"
+    mem_mb:     40000
+    runtime:    720
+
   run_isopropeller:
     lsf_queue:  "express"
     mem_mb:     90000

@@ -99,11 +99,9 @@ rule talon_label_reads:
         ref = GENOMEFASTA,
         fai = GENOMEFASTA + ".fai"
     output:
-        sam     = temp("01_mapping/{sample}/{sample}_mapped_fa_labeled.sam"),
-        tsv_tmp = temp("01_mapping/{sample}/{sample}_mapped_fa_read_labels.tsv"),
         tsv     = "01_mapping/{sample}/{sample}_mapped_fa_read_labels.tsv.gz",
         bam     = "01_mapping/{sample}/{sample}_mapped_labeled.bam",
-        bai     = "01_mapping/{sample}/{sample}_mapped_labeled.bam.bai",
+        bai     = "01_mapping/{sample}/{sample}_mapped_labeled.bam.bai"
     log:
         "logs/01_mapping/{sample}_talon_label_reads.log"
     threads: 12
@@ -131,14 +129,17 @@ rule talon_label_reads:
             --deleteTmp
 
         # Convert SAM to BAM and remove the intermediate SAM
-        samtools view -@ {threads} -b "{output.sam}" > "{output.bam}"
+        samtools view -@ {threads} -b "{params.outprefix}_labeled.sam" > "{output.bam}"
         samtools index "{output.bam}"
         
-        # Clean up sam file
-        rm -f "{output.sam}"
-        
+        # Delete the intermediary sam file
+        rm -f "{params.outprefix}_labeled.sam"
+
         # Compress the label read csv output
-        pigz -f -c -p {threads} "{output.tsv_tmp}" > "{output.tsv}"
+        pigz -f -c -p {threads} "{params.outprefix}_read_labels.tsv" > "{output.tsv}"
+        
+        # Delete the intermediary tsv file
+        rm -f "{params.outprefix}_read_labels.tsv"
         
         echo "Finished running TALON label_reads"
         ) &> "{log}"

@@ -15,7 +15,7 @@ from collections import defaultdict
 # ───────────────────────────────────────────────
 
 # Define minimum snakemake version
-minversion: "9.0.0"
+min_snakemake_version = "8.25.0"
 
 # Load configuration from config file
 configfile: ''.join([os.environ['GIT_REPODIR'], "/config/config.yaml"])

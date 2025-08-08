@@ -1,12 +1,13 @@
 # --- Define basic settings --- #
-executor:         lsf
-scheduler:        greedy
-jobs:             500
-latency-wait:     5
-rerun-incomplete: true
-use-singularity:  true
-use-conda:        true
-retries:          1
+executor:           lsf
+scheduler:          greedy
+jobs:               500
+latency-wait:       5
+rerun-incomplete:   true
+use-singularity:    true
+use-conda:          true
+retries:            1
+delete-temp-output: true
 
 # --- Define default resources for all rules --- #
 default-resources:

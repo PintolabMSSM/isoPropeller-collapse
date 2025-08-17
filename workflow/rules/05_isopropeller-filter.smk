@@ -424,7 +424,8 @@ rule filter_aggregate_final_outputs:
         ids = "05_isoPropeller-filter/{prefix}_{suffix}_{filtertag}/{prefix}_{suffix}_isoqc_pass_id.txt",
         tss = "05_isoPropeller-filter/{prefix}_{suffix}_{filtertag}/{prefix}_{suffix}_isoqc_pass_tss.bed",
         tts = "05_isoPropeller-filter/{prefix}_{suffix}_{filtertag}/{prefix}_{suffix}_isoqc_pass_tts.bed",
-        qcf = "05_isoPropeller-filter/{prefix}_{suffix}_{filtertag}/{prefix}_{suffix}_isoqc_fail.ids"
+        qcf = "05_isoPropeller-filter/{prefix}_{suffix}_{filtertag}/{prefix}_{suffix}_isoqc_fail.ids",
+        trk = "05_isoPropeller-filter/{prefix}_{suffix}_{filtertag}/{prefix}_{suffix}_isoqc_pass.trackgroups",
     params:
         snakedir = SNAKEDIR,
         filtertag = FILTERTAG
@@ -444,10 +445,17 @@ rule filter_aggregate_final_outputs:
         if not input.fail_ids:
             shell("""
                 cp "{input.gtf}" "{output.gtf}" 2>> "{log}"
-                cp "{input.exp}" "{output.exp}" 2>> "{log}"
                 cp "{input.ids}" "{output.ids}" 2>> "{log}"
                 cp "{input.tss}" "{output.tss}" 2>> "{log}"
                 cp "{input.tts}" "{output.tts}" 2>> "{log}"
+                
+                # Reprocess the header of the expression matrix to be compatible with the isoPropeller-annotate pipeline
+                awk 'BEGIN{{OFS="\\t"}} NR==1 {{ $1="#TranscriptID"; for(i=2; i<=NF; i++) {{ split($i, parts, "/"); $i=parts[2] }} }} 1' \
+                "{input.exp}" > "{output.exp}" 2>> "{log}"
+                
+                # Generate a default trackgroups file
+                awk 'BEGIN{{OFS="\\t"}} NR==1{{for(i=2; i<=NF; i++) print $i, "ALL"; exit}}' "{input.exp}" > "{output.trk}" 2>> "{log}"
+                
             """)
         else:
             # Join the list of files into a single, properly quoted string
@@ -457,8 +465,16 @@ rule filter_aggregate_final_outputs:
             shell("""
                 sort -u {fail_id_files_quoted}                              > "{output.qcf}" 2>> "{log}"
                 gtf-filter-attributes.pl -m "{output.qcf}" -v "{input.gtf}" > "{output.gtf}" 2>> "{log}"
-                diff-by-ids -ff "{input.exp}" -if "{output.qcf}" -fc 1      > "{output.exp}" 2>> "{log}"
                 diff-by-ids -ff "{input.ids}" -if "{output.qcf}" -fc 1      > "{output.ids}" 2>> "{log}"
                 diff-by-ids -ff "{input.tss}" -if "{output.qcf}" -fc 4      > "{output.tss}" 2>> "{log}"
                 diff-by-ids -ff "{input.tts}" -if "{output.qcf}" -fc 4      > "{output.tts}" 2>> "{log}"
+                
+                # Reprocess the header of the expression matrix to be compatible with the isoPropeller-annotate pipeline
+                diff-by-ids -ff "{input.exp}" -if "{output.qcf}" -fc 1  \
+                    | awk 'BEGIN{{OFS="\\t"}} NR==1 {{ $1="#TranscriptID"; for(i=2; i<=NF; i++) {{ split($i, parts, "/"); $i=parts[2] }} }} 1' \
+                    > "{output.exp}" 2>> "{log}"
+
+                # Generate a default trackgroups file
+                awk 'BEGIN{{OFS="\\t"}} NR==1{{for(i=2; i<=NF; i++) print $i, "ALL"; exit}}' "{input.exp}" > "{output.trk}" 2>> "{log}"
+
             """)

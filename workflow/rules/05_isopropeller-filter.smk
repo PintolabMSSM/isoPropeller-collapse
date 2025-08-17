@@ -454,7 +454,7 @@ rule filter_aggregate_final_outputs:
                 "{input.exp}" > "{output.exp}" 2>> "{log}"
                 
                 # Generate a default trackgroups file
-                awk 'BEGIN{{OFS="\\t"}} NR==1{{for(i=2; i<=NF; i++) print $i, "ALL"; exit}}' "{input.exp}" > "{output.trk}" 2>> "{log}"
+                awk 'BEGIN{{OFS="\\t"}} NR==1{{for(i=2; i<=NF; i++) print $i, "ALL"; exit}}' "{output.exp}" > "{output.trk}" 2>> "{log}"
                 
             """)
         else:
@@ -475,6 +475,6 @@ rule filter_aggregate_final_outputs:
                     > "{output.exp}" 2>> "{log}"
 
                 # Generate a default trackgroups file
-                awk 'BEGIN{{OFS="\\t"}} NR==1{{for(i=2; i<=NF; i++) print $i, "ALL"; exit}}' "{input.exp}" > "{output.trk}" 2>> "{log}"
+                awk 'BEGIN{{OFS="\\t"}} NR==1{{for(i=2; i<=NF; i++) print $i, "ALL"; exit}}' "{output.exp}" > "{output.trk}" 2>> "{log}"
 
             """)

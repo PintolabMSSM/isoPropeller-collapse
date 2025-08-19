@@ -5,16 +5,8 @@ rule qc_genotyping_snps:
     message:
         "Genotyping QC (mpileup→VarScan) for sample {wildcards.sample}"
     input:
-        bam = lambda wc: (
-            f"01_mapping/{wc.sample}/{wc.sample}_mapped_labeled.bam"
-            if BAM_CHOICE == "labeled"
-            else f"01_mapping/{wc.sample}/mapped.bam"
-        ),
-        bai = lambda wc: (
-            f"01_mapping/{wc.sample}/{wc.sample}_mapped_labeled.bam.bai"
-            if BAM_CHOICE == "labeled"
-            else f"01_mapping/{wc.sample}/mapped.bam.bai"
-        ),
+        bam = "01_mapping/{sample}/{sample}_mapped_labeled.bam",
+        bai = "01_mapping/{sample}/{sample}_mapped_labeled.bam.bai",
         ref = GENOMEFASTA
     output:
         snp = "06_qc-reports/genotyping/{sample}.varscan.snp.tsv"
@@ -24,12 +16,13 @@ rule qc_genotyping_snps:
         "benchmarks/06_qc-reports/{sample}_genotyping_varscan.txt"
     threads: 4
     params:
-        min_cov       = VARSCAN_MIN_COV,
-        min_reads2    = VARSCAN_MIN_READS2,
+        min_cov     = VARSCAN_MIN_COV,
+        min_reads2  = VARSCAN_MIN_READS2,
     conda:
         SNAKEDIR + "envs/varscan.yaml"
     shell:
         r"""
+        set -o pipefail
         (
         echo "Running samtools mpileup + VarScan for {wildcards.sample}"
 

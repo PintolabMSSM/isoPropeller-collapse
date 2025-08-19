@@ -129,7 +129,8 @@ rule talon_label_reads:
             --deleteTmp
 
         # Convert SAM to BAM and remove the intermediate SAM
-        samtools view -@ {threads} -b "{params.outprefix}_labeled.sam" > "{output.bam}"
+        samtools view -@ {threads} -b "{params.outprefix}_labeled.sam" \
+            | samtools sort -@ {threads} -o "{output.bam}"
         samtools index "{output.bam}"
         
         # Delete the intermediary sam file

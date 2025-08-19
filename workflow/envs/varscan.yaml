@@ -1,0 +1,10 @@
+name: qc-genotyping-env
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - samtools>=1.17
+  - varscan=2.4.*
+  - gawk
+  - openjdk>=11

@@ -9,19 +9,19 @@ reference_genome_fasta: "/sc/arion/projects/pintod02c/reference-databases/hg38-v
 reference_annotations_gtf: "/sc/arion/projects/pintod02c/reference-databases/hg38-v41-ERCC/gencode.v41.annotation_no-mi-sn-sno-sca-RNAs.gtf"
 
 # A reference set of trusted transcription start sites and CAGE regions in BED format
-reference_tss_bed: "/sc/arion/work/pintod02/opt/isoseq_pipeline/data/combined_cage_Pitt-Fantom5-119FrontalLob_refTSS3.3_refseq_gencode_extended.merged.sorted_chr.bed"
+reference_tss_bed: "/sc/arion/projects/pintod02c/reference-databases/hg38-v41-ERCC/isopropeller/combined_cage_Pitt-Fantom5-119FrontalLob_refTSS3.3_refseq_gencode_extended.merged.sorted_chr.bed"
 
 # A reference set of trusted splice junctions (needed for transcriptclean step) in STAR SJ.out.tab format
-splice_junctions_file: "/sc/arion/work/pintod02/opt/isoseq_pipeline/data/merged-intropolis-PEC-GTEX.SJ.out.tab"
+splice_junctions_file: "/sc/arion/projects/pintod02c/reference-databases/hg38-v41-ERCC/isopropeller/merged-intropolis-PEC-GTEX.SJ.out.tab"
 
 # A reference set of repeat regions in the genome (e.g from repeatmasker) in BED format
 reference_repeat_regions_bed: "/sc/arion/projects/pintod02c/reference-databases/hg38-v41-ERCC/GRCh38.primary_assembly.genome_rmsk_nr.bed"
 
 # A reference set of pseudo-autosomal regions (PARS) in BED format
-reference_PAR_regions_bed: "/hpc/users/pintod02/opt/isoseq_pipeline/data/GRCh38.p13_PARs.bed"
+reference_PAR_regions_bed: "/sc/arion/projects/pintod02c/reference-databases/hg38-v41-ERCC/isopropeller/GRCh38.p13_PARs.bed"
 
 # A reference set of segmental duplication regions in BED Format
-reference_segdups_bed: "/sc/arion/work/pintod02/opt/isoseq_pipeline/data/SegDups_hg38.merged.bed"
+reference_segdups_bed: "/sc/arion/projects/pintod02c/reference-databases/hg38-v41-ERCC/isopropeller/SegDups_hg38.merged.bed"
 
 # An optional bed file with the position of all 3' terminal exons (+500 bp flanking region)
 # If provided, the isoPropeller intra-priming filter will be disabled in these regions

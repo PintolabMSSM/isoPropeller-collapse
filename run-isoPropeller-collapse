@@ -165,6 +165,7 @@ if [[ $? -eq 0 ]]; then
   snakemake \
     "${SNAKEMAKE_OPTS[@]}" \
     --snakefile "${GIT_REPODIR}/workflow/Snakefile" \
+    ${CONFIGFILE} \
     --config ${SAMPLES} \
     --dag | dot -Tpdf > "pipeline_${timestamp}_dag.pdf" 2>> "$logfile"
 

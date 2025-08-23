@@ -20,7 +20,7 @@ dependencies:
   - openjdk>=11
 
   # RNA-SeQC v2
-  - rnaseqc
+  - rna-seqc>=2.*
 
   # Filtlong
   - filtlong

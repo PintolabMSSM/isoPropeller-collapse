@@ -46,14 +46,17 @@ rule fastqc_part:
         r'''
         (
             echo "Running FastQC on {wildcards.sample} part {wildcards.part}"
-
+            
             fastqc --quiet --threads {threads} --outdir "$(dirname "{output.zip}")" "{input.fq}"
+            
             inbase=$(basename "{input.fq}" .fastq.gz)
-            mv -f "$(dirname "{output.zip}")/${inbase}_fastqc.zip" "{output.zip}"
-            mv -f "$(dirname "{output.zip}")/${inbase}_fastqc.html" "{output.html}"
+
+            mv -f "$(dirname "{output.zip}")/"$inbase"_fastqc.zip" "{output.zip}"
+            mv -f "$(dirname "{output.zip}")/"$inbase"_fastqc.html" "{output.html}"
 
         ) &> "{log}"
         '''
+
 
 #────────────────────────────────────────────────
 # Seqkit on FLNC bam
@@ -76,21 +79,22 @@ rule seqkit_stats_flnc_bam:
         r'''
         (
             echo "Running seqkit stats on merged FASTQs"
+
             tmp=$(mktemp)
             seqkit stats -a -T {input} > "$tmp"
-            
-            # Replace first column (file) with sample name (parent dir of flnc_merged.fastq.gz)
-            awk -F'\t' 'BEGIN{OFS="\t"}
-                NR==1 {$1="sample"; print; next}
-                {n=split($1, a, "/"); $1=a[n-1]; print}' "$tmp" > "{output.tsv}"
+
+            awk -F'\t' 'BEGIN{{OFS="\t"}}
+                NR==1 {{$1="sample"; print; next}}
+                {{n=split($1, a, "/"); $1=a[n-1]; print}}' "$tmp" > "{output.tsv}"
             rm -f "$tmp"
+
         ) &> "{log}"
         '''
 
 rule seqkit_stats_flnc_bam_parts:
     message: "SeqKit stats (cohort) on all FASTQ parts"
     input:
-        _all_parts()
+        lambda wc: _all_parts()
     output:
         tsv = "06_qc-reports/seqkit/cohort_parts.stats.tsv"
     log:
@@ -108,20 +112,20 @@ rule seqkit_stats_flnc_bam_parts:
             tmp=$(mktemp)
             seqkit stats -a -T {input} > "$tmp"
 
-            # Add sample and part columns parsed from path/filename
-            awk -F'\t' 'BEGIN{OFS="\t"}
-                NR==1 {print "sample","part",$0; next}
-                {
+            awk -F'\t' 'BEGIN{{OFS="\t"}}
+                NR==1 {{print "sample","part",$0; next}}
+                {{
                     n=split($1, a, "/");
                     s=a[n-2];
                     fn=a[n];
                     match(fn,/flnc_part([0-9]+)\.fastq(\.gz)?/,m);
                     p=(m[1] != "" ? m[1] : "NA");
                     print s, p, $0
-                }' "$tmp" > "{output.tsv}"
-                rm -f "$tmp"
+                }}' "$tmp" > "{output.tsv}"
+            rm -f "$tmp"
         ) &> "{log}"
         '''
+
 
 #────────────────────────────────────────────────
 # RNA-SeQC v2 (per-sample; then cohort aggregate)
@@ -135,7 +139,6 @@ rule rnaseqc_sample:
         gtf = REFGTF,
         ref = GENOMEFASTA
     output:
-        # Be specific: list the key output file(s) instead of the whole directory.
         metrics = "06_qc-reports/rnaseqc/{sample}/metrics.tsv"
     log:
         "logs/06_qc-reports/{sample}_rnaseqc.log"
@@ -145,7 +148,6 @@ rule rnaseqc_sample:
     conda:
         SNAKEDIR + "envs/qc-env.yaml"
     params:
-        # This part is correct: the tool still needs the directory path.
         outdir = "06_qc-reports/rnaseqc/{sample}"
     shell:
         r'''
@@ -176,13 +178,12 @@ rule rnaseqc_metrics_cohort:
             first=1
             for f in {input}
             do
-                # Extract sample name from path: .../rnaseqc/SAMPLE_NAME/metrics.tsv
                 s=$(basename $(dirname "$f"))
                 if [ $first -eq 1 ]; then
-                    awk -v S="$s" 'NR==1{print $0"\tsample"; next} {print $0"\t"S}' "$f" > "{output.tsv}"
+                    awk -v S="$s" 'NR==1{{print $0"\tsample"; next}} {{print $0"\t"S}}' "$f" > "{output.tsv}"
                     first=0
                 else
-                    awk -v S="$s" 'NR>1{print $0"\t"S}' "$f" >> "{output.tsv}"
+                    awk -v S="$s" 'NR>1{{print $0"\t"S}}' "$f" >> "{output.tsv}"
                 fi
             done
 
@@ -266,7 +267,7 @@ rule bam_stats:
         '''
 
 rule bam_chrM_count:
-    message: "chrM count: {wildcards.sample} (threshold={MAXCHRMREADS})"
+    message: "chrM count: {wildcards.sample} (threshold={params.chrm_threshold})"
     input:
         idx = "06_qc-reports/bamqc/{sample}/idxstats.txt"
     output:
@@ -276,23 +277,24 @@ rule bam_chrM_count:
         "logs/06_qc-reports/{sample}_chrM_count.log"
     benchmark:
         "benchmarks/06_qc-reports/{sample}_chrM_count.txt"
+    params:
+        chrm_threshold = MAXCHRMREADS
     threads: 1
     shell:
         r'''
         (
             echo "Counting chrM reads for {wildcards.sample}"
 
-            mt=$(awk '($1=="chrM"||$1=="MT"||$1=="M"||$1=="ChrM"){s+=$3} END{print (s==""?0:s)}' "{input.idx}")
+            mt=$(awk '($1=="chrM"||$1=="MT"||$1=="M"||$1=="ChrM"){{s+=$3}} END{{print (s==""?0:s)}}' "{input.idx}")
             echo "$mt" > "{output.count_txt}"
-
-            thr="{MAXCHRMREADS}"
-            if [ "$mt" -le "$thr" ]
-            then 
+            
+            thr="{params.chrm_threshold}"
+            
+            if [ "$mt" -le "$thr" ]; then
                 echo "PASS ($mt <= $thr)" > "{output.status}"; 
             else
                 echo "FAIL ($mt > $thr)" > "{output.status}"; 
             fi
-
         ) &> "{log}"
         '''
 
@@ -310,32 +312,35 @@ rule bam_qc_summary:
         "logs/06_qc-reports/{sample}_bam_qc_summary.log"
     benchmark:
         "benchmarks/06_qc-reports/{sample}_bam_qc_summary.txt"
+    params:
+        bam_choice     = BAM_CHOICE,
+        chrm_threshold = MAXCHRMREADS
     threads: 1
     shell:
         r'''
         (
             echo "Summarizing BAM QC for {wildcards.sample}"
 
-            total=$(awk '/in total/ {print $1; exit}' "{input.flagstat}")
-            mapped=$(awk '/mapped \(/ && !/supplementary/ {print $1; exit}' "{input.flagstat}")
-            primary=$(awk -F'\t' '$1=="SN" && $2=="reads mapped:" {print $3}' "{input.stats}")
-            dup=$(awk -F'\t' '$1=="SN" && $2=="reads duplicated:" {print $3}' "{input.stats}")
-            pct_mapped=$(awk -v m="$mapped" -v t="$total" 'BEGIN{if(t>0) printf "%.4f", (m/t)*100; else print "NA"}')
+            total=$(awk '/in total/ {{print $1; exit}}' "{input.flagstat}")
+            mapped=$(awk '/mapped \(/ && !/supplementary/ {{print $1; exit}}' "{input.flagstat}")
+            primary=$(awk -F'\t' '$1=="SN" && $2=="reads mapped:" {{print $3}}' "{input.stats}")
+            dup=$(awk -F'\t' '$1=="SN" && $2=="reads duplicated:" {{print $3}}' "{input.stats}")
+            pct_mapped=$(awk -v m="$mapped" -v t="$total" 'BEGIN{{if(t>0) printf "%.4f", (m/t)*100; else print "NA"}}')
             chrM=$(cat "{input.chrM_ct}")
             status=$(cat "{input.chrM_ok}")
-            {
+            
+            {{
                 echo -e "metric\tvalue"
-                echo -e "bam_choice\t{BAM_CHOICE}"
-                echo -e "total_reads\t${total}"
-                echo -e "mapped_reads\t${mapped}"
-                echo -e "primary_mapped_reads\t${primary}"
-                echo -e "duplicates\t${dup}"
-                echo -e "pct_mapped\t${pct_mapped}"
-                echo -e "chrM_mapped\t${chrM}"
-                echo -e "chrM_threshold\t{MAXCHRMREADS}"
-                echo -e "chrM_status\t${status}"
-            } > "{output.tsv}"
-
+                echo -e "bam_choice\t{params.bam_choice}"
+                echo -e "total_reads\t$total"
+                echo -e "mapped_reads\t$mapped"
+                echo -e "primary_mapped_reads\t$primary"
+                echo -e "duplicates\t$dup"
+                echo -e "pct_mapped\t$pct_mapped"
+                echo -e "chrM_mapped\t$chrM"
+                echo -e "chrM_threshold\t{params.chrm_threshold}"
+                echo -e "chrM_status\t$status"
+            }} > "{output.tsv}"
         ) &> "{log}"
         '''
 
@@ -358,9 +363,8 @@ rule bam_qc_summary_cohort:
             echo -e "sample\tmetric\tvalue" > "{output.tsv}"
             for f in {input};
             do
-                # Extract sample name from path: .../bamqc/SAMPLE_NAME/summary.tsv
                 s=$(basename $(dirname "$f"))
-                awk -v S="$s" 'NR>1{print S"\t"$1"\t"$2}' "$f" >> "{output.tsv}";
+                awk -v S="$s" 'NR>1{{print S"\t"$1"\t"$2}}' "$f" >> "{output.tsv}";
             done
 
         ) &> "{log}"
@@ -493,13 +497,13 @@ rule filtlong_filter:
                 | gzip -c > "{output.filt_fq}"
 
             pre=$(mktemp); post=$(mktemp)
-            seqkit stats -a -T "{input.fq}"       > "$pre"
+            seqkit stats -a -T "{input.fq}"      > "$pre"
             seqkit stats -a -T "{output.filt_fq}" > "$post"
-            {
+            {{
                 echo -e "sample\tstage\tfile\tnum_seqs\tsum_len\tmin_len\tavg_len\tmax_len\tQ1\tQ2\tQ3\tN50"
-                awk 'NR==1{next} {print S"\tpre\t"F"\t"$2"\t"$3"\t"$5"\t"$6"\t"$7"\t"$8"\t"$9"\t"$10"\t"$11}' S="{wildcards.sample}" F="{input.fq}"  "$pre"
-                awk 'NR==1{next} {print S"\tpost\t"F"\t"$2"\t"$3"\t"$5"\t"$6"\t"$7"\t"$8"\t"$9"\t"$10"\t"$11}' S="{wildcards.sample}" F="{output.filt_fq}" "$post"
-            } > "{output.report_tsv}"
+                awk 'NR==1{{next}} {{print S"\tpre\t"F"\t"$2"\t"$3"\t"$5"\t"$6"\t"$7"\t"$8"\t"$9"\t"$10"\t"$11}}' S="{wildcards.sample}" F="{input.fq}"  "$pre"
+                awk 'NR==1{{next}} {{print S"\tpost\t"F"\t"$2"\t"$3"\t"$5"\t"$6"\t"$7"\t"$8"\t"$9"\t"$10"\t"$11}}' S="{wildcards.sample}" F="{output.filt_fq}" "$post"
+            }} > "{output.report_tsv}"
             rm -f "$pre" "$post"
 
         ) &> "{log}"
@@ -698,3 +702,4 @@ rule iso_qc_cohort_report:
             out.write("table\tsample\tmetric\tvalue\tfilter\n")
             for r in rows:
                 out.write("\t".join(r) + "\n")
+

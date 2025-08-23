@@ -84,9 +84,6 @@ rule seqkit_stats_flnc_bam:
 # RNA-SeQC v2 (per-sample; then cohort aggregate)
 # ────────────────────────────────────────────────
 
-# ───────────────────────────────────────────────
-# Collapse reference GTF into unique regions for RNA-SeQC
-# ───────────────────────────────────────────────
 rule rnaseqc_collapse_gtf:
     message: "Collapse reference GTF into unique regions for RNA-SeQC"
     input:
@@ -132,13 +129,12 @@ rule rnaseqc_sample:
         SNAKEDIR + "envs/qc-env.yaml"
     params:
         outdir = "06_qc-reports/rnaseqc/{sample}",
-        extra  = config.get("rnaseqc_extra", "--stranded FR")
     shell:
         r'''
         (
             echo "Running RNA-SeQC for {wildcards.sample}"
 
-            rnaseqc --unpaired "{input.gtf}" "{input.bam}" "{params.outdir}" --fasta "{input.ref}" --sample "{wildcards.sample}" {params.extra}
+            rnaseqc "{input.gtf}" "{input.bam}" "{params.outdir}" --fasta "{input.ref}" --sample "{wildcards.sample}" --unpaired --stranded FR
 
         ) &> "{log}"
         '''
@@ -174,6 +170,7 @@ rule rnaseqc_metrics_cohort:
 
         ) &> "{log}"
         '''
+
 
 # ────────────────────────────────────────────────
 # BAM QC (per-sample) + cohort summary

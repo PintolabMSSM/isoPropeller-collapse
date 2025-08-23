@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
+
+# GTEx collapse annotation script
 # Author: Francois Aguet
+# Obtained from: https://github.com/broadinstitute/gtex-pipeline/tree/master/gene_model
 
 import numpy as np
 import pandas as pd

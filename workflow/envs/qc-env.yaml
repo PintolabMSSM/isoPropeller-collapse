@@ -1,0 +1,26 @@
+name: qc-env
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  # Core CLI tools
+  - samtools>=1.17
+  - gawk
+  - pigz
+  - coreutils
+
+  # FASTQ QC
+  - fastqc
+  - multiqc
+  - seqkit
+
+  # Genotyping
+  - varscan=2.4.*
+  - openjdk>=11
+
+  # RNA-SeQC v2
+  - rnaseqc
+
+  # Filtlong
+  - filtlong

@@ -176,6 +176,7 @@ if USE_TC:
 # Make final targets
 rule all:
     input:
+        # Original pipeline outputs
         expand("05_isoPropeller-filter/{prefix}_depth-gt1_" + FILTERTAG + "/{prefix}_depth-gt1_isoqc_pass.gtf", prefix=[MERGEDISOPREFIX]),
         expand("05_isoPropeller-filter/{prefix}_depth-gt1_" + FILTERTAG + "/{prefix}_depth-gt1_isoqc_pass_exp.txt", prefix=[MERGEDISOPREFIX]),
         expand("05_isoPropeller-filter/{prefix}_depth-gt1_" + FILTERTAG + "/{prefix}_depth-gt1_isoqc_pass_id.txt", prefix=[MERGEDISOPREFIX]),
@@ -183,3 +184,22 @@ rule all:
         expand("05_isoPropeller-filter/{prefix}_depth-gt1_" + FILTERTAG + "/{prefix}_depth-gt1_isoqc_pass_tts.bed", prefix=[MERGEDISOPREFIX]),
         expand("05_isoPropeller-filter/{prefix}_depth-gt1_" + FILTERTAG + "/{prefix}_depth-gt1_isoqc_pass.trackgroups", prefix=[MERGEDISOPREFIX]),
         expand("06_qc-reports/genotyping/{sample}.varscan.snp.tsv", sample=SAMPLES),
+        
+        # Cohort-first FASTQ stats
+        "06_qc-reports/seqkit/cohort_merged.stats.tsv",
+        "06_qc-reports/seqkit/cohort_parts.stats.tsv",
+
+        # Final RNA-SeQC cohort metrics table
+        # expand("06_qc-reports/rnaseqc/{sample}", sample=SAMPLES), #<-- THIS LINE IS REMOVED
+        "06_qc-reports/rnaseqc/cohort_metrics.tsv",
+
+        # BAM QC summaries (per-sample + cohort table)
+        expand("06_qc-reports/bamqc/{sample}/summary.tsv", sample=SAMPLES),
+        "06_qc-reports/bamqc/cohort_summary.tsv",
+
+        # MultiQC — single cohort report
+        "06_qc-reports/multiqc/cohort/multiqc_report.html",
+
+        # Filtlong reports
+        expand("06_qc-reports/filtlong/{sample}/report.tsv", sample=SAMPLES),
+        "06_qc-reports/filtlong/cohort_report.tsv",

@@ -187,10 +187,8 @@ rule all:
         
         # Cohort-first FASTQ stats
         "06_qc-reports/seqkit/cohort_merged.stats.tsv",
-        "06_qc-reports/seqkit/cohort_parts.stats.tsv",
 
         # Final RNA-SeQC cohort metrics table
-        # expand("06_qc-reports/rnaseqc/{sample}", sample=SAMPLES), #<-- THIS LINE IS REMOVED
         "06_qc-reports/rnaseqc/cohort_metrics.tsv",
 
         # BAM QC summaries (per-sample + cohort table)
@@ -200,6 +198,3 @@ rule all:
         # MultiQC — single cohort report
         "06_qc-reports/multiqc/cohort/multiqc_report.html",
 
-        # Filtlong reports
-        expand("06_qc-reports/filtlong/{sample}/report.tsv", sample=SAMPLES),
-        "06_qc-reports/filtlong/cohort_report.tsv",

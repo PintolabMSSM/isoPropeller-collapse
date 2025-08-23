@@ -6,7 +6,7 @@ latency-wait:       5
 rerun-incomplete:   true
 use-singularity:    true
 use-conda:          true
-retries:            1
+retries:            0
 
 # --- Define default resources for all rules --- #
 default-resources:

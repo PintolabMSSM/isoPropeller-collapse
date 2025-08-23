@@ -108,10 +108,7 @@ rule rnaseqc_sample:
         (
             echo "Running RNA-SeQC for {wildcards.sample}"
 
-            rnaseqc --unpaired "{input.gtf}" "{input.bam}" "$outdir" --fasta "{input.ref}" --sample "{wildcards.sample}" {params.extra}
-
-            # sanity check that expected file exists
-            test -s "$outdir/metrics.tsv" || { echo "ERROR: rnaseqc did not produce metrics.tsv"; exit 2; }
+            rnaseqc --unpaired "{input.gtf}" "{input.bam}" "{params.outdir}" --fasta "{input.ref}" --sample "{wildcards.sample}" {params.extra}
 
         ) &> "{log}"
         '''

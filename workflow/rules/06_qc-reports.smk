@@ -48,10 +48,10 @@ rule fastqc_merged:
 
 
 # ────────────────────────────────────────────────
-# Seqkit on FLNC bam
+# Seqkit on FLNC fastq
 # ────────────────────────────────────────────────
 
-rule seqkit_stats_flnc_bam:
+rule seqkit_stats_flnc:
     message: "SeqKit stats (cohort) on all merged FASTQs"
     input:
         expand("01_mapping/{sample}/flnc_merged.fastq.gz", sample=SAMPLES)

@@ -68,7 +68,7 @@ filt_par_min_ovlp_fract:            0
 filt_tpm_min_count:                 0.5
 filt_tpm_min_fract:                 0.05
 
-# Set up chunking parameters for transcriptcleain
+# Set up chunking parameters for transcriptclean
 transcriptclean_chunk_maxreads:  2000000
 transcripclean_chunk_threads:    8
 

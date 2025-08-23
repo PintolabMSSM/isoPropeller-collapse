@@ -19,8 +19,17 @@ dependencies:
   - varscan=2.4.*
   - openjdk>=11
 
-  # RNA-SeQC v2
+  # RNA-SeQC v2 (needs python libs for the collapse script)
+  - python>=3.10
+  - numpy
+  - pandas
+  - bx-python
   - rna-seqc>=2.*
 
-  # Filtlong
-  - filtlong
+  # FLNC size distribution plot
+  - r-base>=4.2
+  - r-ggplot2
+  - r-patchwork
+  - r-dplyr
+  - r-data.table
+  - r-argparse

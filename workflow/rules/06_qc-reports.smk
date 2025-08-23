@@ -84,12 +84,42 @@ rule seqkit_stats_flnc_bam:
 # RNA-SeQC v2 (per-sample; then cohort aggregate)
 # ────────────────────────────────────────────────
 
+# ───────────────────────────────────────────────
+# Collapse reference GTF into unique regions for RNA-SeQC
+# ───────────────────────────────────────────────
+rule rnaseqc_collapse_gtf:
+    message: "Collapse reference GTF into unique regions for RNA-SeQC"
+    input:
+        gtf = REFGTF
+    output:
+        collapsed = "06_qc-reports/rnaseqc/reference/collapsed_reference.gtf"
+    log:
+        "logs/06_qc-reports/rnaseqc_collapse_gtf.log"
+    benchmark:
+        "benchmarks/06_qc-reports/rnaseqc_collapse_gtf.txt"
+    threads: 1
+    conda:
+        SNAKEDIR + "envs/qc-env.yaml"
+    params:
+        script = SNAKEDIR + "scripts/gtex-pipeline_collapse_annotation.py",
+        extra  = config.get("rnaseqc_collapse_extra", "")
+    shell:
+        r'''
+        (
+            echo "Collapsing {input.gtf} → {output.collapsed}"
+
+            python "{params.script}" "{input.gtf}" "{output.collapsed}" {params.extra}
+
+        ) &> "{log}"
+        '''
+
+
 rule rnaseqc_sample:
     message: "RNA-SeQC: {wildcards.sample} (bam_choice={BAM_CHOICE})"
     input:
         bam = lambda wc: _bam_for(wc.sample),
         bai = lambda wc: _bai_for(wc.sample),
-        gtf = REFGTF,
+        gtf = "06_qc-reports/rnaseqc/reference/collapsed_reference.gtf",
         ref = GENOMEFASTA
     output:
         metrics = "06_qc-reports/rnaseqc/{sample}/metrics.tsv"

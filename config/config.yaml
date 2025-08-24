@@ -8,6 +8,9 @@ reference_genome_fasta: "/sc/arion/projects/pintod02c/reference-databases/hg38-v
 # Reference gene annotations (e.g. GENCODE) in GTF format
 reference_annotations_gtf: "/sc/arion/projects/pintod02c/reference-databases/hg38-v41-ERCC/gencode.v41.annotation_no-mi-sn-sno-sca-RNAs.gtf"
 
+# Reference gene annotations in RefFlat format (used by Picard RNAseq metrics)
+reference_annotations_refflat: "/hpc/users/pintod02/pintod02c/reference-databases/hg38-v41-ERCC/gencode.v41.annotation.refFlat.txt"
+
 # A reference set of trusted transcription start sites and CAGE regions in BED format
 reference_tss_bed: "/sc/arion/projects/pintod02c/reference-databases/hg38-v41-ERCC/isopropeller/combined_cage_Pitt-Fantom5-119FrontalLob_refTSS3.3_refseq_gencode_extended.merged.sorted_chr.bed"
 

@@ -33,3 +33,6 @@ dependencies:
   - r-dplyr
   - r-data.table
   - r-argparse
+
+  # Picard requirements
+  - picard

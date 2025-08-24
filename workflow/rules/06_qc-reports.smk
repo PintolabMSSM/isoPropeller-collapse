@@ -175,6 +175,48 @@ rule rnaseqc_metrics_cohort:
 
 
 # ────────────────────────────────────────────────
+# Picard CollectRnaSeqMetrics
+# ────────────────────────────────────────────────
+
+# Picard CollectRnaSeqMetrics per sample (uses refFlat from config)
+rule picard_collect_rnaseqmetrics:
+    message: "Picard CollectRnaSeqMetrics: {wildcards.sample}"
+    input:
+        bam     = lambda wc: _bam_for(wc.sample),
+        bai     = lambda wc: _bai_for(wc.sample),
+        refflat = lambda wc: config["reference_annotations_refflat"]  # <- from config.yaml
+    output:
+        metrics = "06_qc-reports/mapped-picard-RnaSeqMetrics/{sample}/{sample}.RnaSeqMetrics.txt",
+        chart   = "06_qc-reports/mapped-picard-RnaSeqMetrics/{sample}/{sample}.RnaSeqMetrics.pdf"
+    log:
+        "logs/06_qc-reports/mapped-picard-RnaSeqMetrics/{sample}_picard_rnaseqmetrics.log"
+    benchmark:
+        "benchmarks/06_qc-reports/mapped-picard-RnaSeqMetrics/{sample}_picard_rnaseqmetrics.txt"
+    threads: 2
+    conda:
+        SNAKEDIR + "envs/qc-env.yaml"
+    params:
+        strand = config.get("picard_strand", "SECOND_READ_TRANSCRIPTION_STRAND"),   # NONE | FIRST_READ_TRANSCRIPTION_STRAND | SECOND_READ_TRANSCRIPTION_STRAND
+        tmpdir = "06_qc-reports/picard/{sample}/tmp"
+    shell:
+        r'''
+        (
+            echo "Running Picard CollectRnaSeqMetrics for {wildcards.sample}"
+
+            picard -Xmx4g CollectRnaSeqMetrics \
+                I="{input.bam}" \
+                O="{output.metrics}" \
+                REF_FLAT="{input.refflat}" \
+                STRAND_SPECIFICITY="{params.strand}" \
+                CHART_OUTPUT="{output.chart}" \
+                VALIDATION_STRINGENCY=LENIENT \
+                TMP_DIR="{params.tmpdir}"
+
+        ) &> "{log}"
+        '''
+
+
+# ────────────────────────────────────────────────
 # BAM QC (per-sample) + cohort summary
 # ────────────────────────────────────────────────
 
@@ -403,7 +445,8 @@ rule multiqc_cohort:
     message: "MultiQC (cohort across all samples)"
     input:
         fastqc_zips     = expand("06_qc-reports/flnc-fastqc/{sample}/{sample}_fastqc.zip", sample=SAMPLES),
-        rnaseqc_metrics = expand("06_qc-reports/mapped-rnaseqc/{sample}/{sample}.metrics.tsv", sample=SAMPLES)
+        rnaseqc_metrics = expand("06_qc-reports/mapped-rnaseqc/{sample}/{sample}.metrics.tsv", sample=SAMPLES),
+        picard_metrics  = expand("06_qc-reports/mapped-picard-RnaSeqMetrics/{sample}/{sample}.RnaSeqMetrics.txt", sample=SAMPLES)
     output:
         report_html = "06_qc-reports/multiqc/multiqc_report.html",
         data        = "06_qc-reports/multiqc/multiqc_data/multiqc_data.json"

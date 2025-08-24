@@ -568,7 +568,13 @@ rule multiqc_cohort:
         (
             echo "Running MultiQC on cohort"
 
-            multiqc --quiet -f -o "{params.outdir}" "06_qc-reports/flnc-fastqc" "06_qc-reports/mapped-rnaseqc" "06_qc-reports/mapped-picard-RnaSeqMetrics"
+            multiqc --quiet -f \
+                -o "{params.outdir}" \
+                "06_qc-reports/flnc-fastqc" \
+                "06_qc-reports/mapped-rnaseqc" \
+                "06_qc-reports/mapped-picard-RnaSeqMetrics" \
+                "06_qc-reports/mapped-longreadsum-rnaseq-report" \
+                "06_qc-reports/flnc-longreadsum-fastq-report"
 
         ) &> "{log}"
         '''

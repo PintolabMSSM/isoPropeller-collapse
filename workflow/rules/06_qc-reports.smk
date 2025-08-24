@@ -26,8 +26,8 @@ rule fastqc_merged:
     input:
         fq = "01_mapping/{sample}/flnc_merged.fastq.gz"
     output:
-        zip  = temp("06_qc-reports/fastqc/{sample}/flnc_merged_fastqc.zip"),
-        html = temp("06_qc-reports/fastqc/{sample}/flnc_merged_fastqc.html")
+        zip  = "06_qc-reports/fastqc/{sample}/flnc_merged_fastqc.zip",
+        html = "06_qc-reports/fastqc/{sample}/flnc_merged_fastqc.html"
     log:
         "logs/06_qc-reports/{sample}_fastqc_merged.log"
     benchmark:
@@ -156,16 +156,11 @@ rule rnaseqc_metrics_cohort:
         (
             echo "Aggregating RNA-SeQC metrics across cohort"
 
-            first=1
+            echo -e "sample\tmetric\tvalue" > "{output.tsv}"
             for f in {input}
             do
                 s=$(basename $(dirname "$f"))
-                if [ $first -eq 1 ]; then
-                    awk -v S="$s" 'NR==1{{print $0"\tsample"; next}} {{print $0"\t"S}}' "$f" > "{output.tsv}"
-                    first=0
-                else
-                    awk -v S="$s" 'NR>1{{print $0"\t"S}}' "$f" >> "{output.tsv}"
-                fi
+                awk -v S="$s" 'NR>1{{print S"\t"$0}}' "$f" >> "{output.tsv}"
             done
 
         ) &> "{log}"
@@ -401,7 +396,7 @@ rule multiqc_cohort:
     message: "MultiQC (cohort across all samples)"
     input:
         fastqc_zips     = [f"06_qc-reports/fastqc/{s}/flnc_merged_fastqc.zip" for s in SAMPLES],
-        rnaseqc_metrics = expand("06_qc-reports/rnaseqc/{sample}/metrics.tsv", sample=SAMPLES)
+        rnaseqc_metrics = expand("06_qc-reports/rnaseqc/{sample}/{sample}.metrics.tsv", sample=SAMPLES)
     output:
         report_html = "06_qc-reports/multiqc/cohort/multiqc_report.html",
         data        = "06_qc-reports/multiqc/cohort/multiqc_data/multiqc_data.json"

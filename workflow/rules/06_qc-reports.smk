@@ -134,7 +134,7 @@ rule rnaseqc_sample:
         (
             echo "Running RNA-SeQC for {wildcards.sample}"
 
-            rnaseqc "{input.gtf}" "{input.bam}" "{params.outdir}" --fasta "{input.ref}" --sample "{wildcards.sample}" --unpaired
+            rnaseqc "{input.gtf}" "{input.bam}" "{params.outdir}" --fasta "{input.ref}" --sample "{wildcards.sample}" --unpaired --mapping-quality 0 --stranded FR
 
         ) &> "{log}"
         '''

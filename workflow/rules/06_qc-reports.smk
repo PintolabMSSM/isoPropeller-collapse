@@ -119,7 +119,7 @@ rule rnaseqc_sample:
         gtf = "06_qc-reports/rnaseqc/reference/collapsed_reference.gtf",
         ref = GENOMEFASTA
     output:
-        metrics = "06_qc-reports/rnaseqc/{sample}/metrics.tsv"
+        metrics = "06_qc-reports/rnaseqc/{sample}/{sample}.metrics.tsv"
     log:
         "logs/06_qc-reports/{sample}_rnaseqc.log"
     benchmark:
@@ -134,7 +134,7 @@ rule rnaseqc_sample:
         (
             echo "Running RNA-SeQC for {wildcards.sample}"
 
-            rnaseqc "{input.gtf}" "{input.bam}" "{params.outdir}" --fasta "{input.ref}" --sample "{wildcards.sample}" --unpaired --stranded FR
+            rnaseqc "{input.gtf}" "{input.bam}" "{params.outdir}" --fasta "{input.ref}" --sample "{wildcards.sample}" --unpaired
 
         ) &> "{log}"
         '''
@@ -143,7 +143,7 @@ rule rnaseqc_sample:
 rule rnaseqc_metrics_cohort:
     message: "Aggregate RNA-SeQC metrics (cohort)"
     input:
-        expand("06_qc-reports/rnaseqc/{sample}/metrics.tsv", sample=SAMPLES)
+        expand("06_qc-reports/rnaseqc/{sample}/{sample}.metrics.tsv", sample=SAMPLES)
     output:
         tsv = "06_qc-reports/rnaseqc/cohort_metrics.tsv"
     log:

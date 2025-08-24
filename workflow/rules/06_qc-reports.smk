@@ -196,7 +196,7 @@ rule picard_collect_rnaseqmetrics:
     conda:
         SNAKEDIR + "envs/qc-env.yaml"
     params:
-        strand = config.get("picard_strand", "SECOND_READ_TRANSCRIPTION_STRAND"),   # NONE | FIRST_READ_TRANSCRIPTION_STRAND | SECOND_READ_TRANSCRIPTION_STRAND
+        strand = config.get("picard_strand", "FIRST_READ_TRANSCRIPTION_STRAND"),   # NONE | FIRST_READ_TRANSCRIPTION_STRAND | SECOND_READ_TRANSCRIPTION_STRAND
         tmpdir = "06_qc-reports/mapped-picard-RnaSeqMetrics/{sample}/tmp"
     shell:
         r'''
@@ -236,27 +236,19 @@ rule longreadsum_fastq_cohort:
     shell:
         r'''
         (
-            echo "[INFO] Decompressing {input.fq} → FIFO and running LongReadSum for {wildcards.sample}"
-        
-            # Set up a file handle for streaming
-            # The 'rm -f' is included to proactively remove pipe from previous failed runs
-            fifo="{output.outdir}/longreadsum_{wildcards.sample}.fifo.fastq"
-            trap 'rm -f "$fifo"' EXIT
-            rm -f "$fifo"
-            mkfifo "$fifo"
+            echo "Running LongReadSum fastq stats for {wildcards.sample}"
+            mkdir -p "{output.outdir}"
+            tmp_fastq=$(mktemp -p "{output.outdir}" --suffix .fastq)
+            trap 'rm -f "$tmp_fastq"' EXIT
 
-            # Decompress in the background, writing to the pipe
-            gzip -cd "{input.fq}" > "$fifo" &
-            decomp_pid=$!
+            echo "[INFO] Decompressing {input.fq} to temporary file $tmp_fastq"
+            gzip -cd "{input.fq}" > "$tmp_fastq"
 
-            # Run the main tool, reading from the pipe
+            echo "[INFO] Running LongReadSum for {wildcards.sample}"
             longreadsum fq \
-                --input      "$fifo" \
-                --outputfolder "{output.outdir}"
-
-            # Wait for the background process, ignoring broken pipe errors
-            wait $decomp_pid || true
-            echo "[INFO] Done: {wildcards.sample}"
+                --input        "$tmp_fastq" \
+                --outputfolder "{output.outdir}" \
+                --log          "{output.outdir}/log.txt"
 
         ) &> "{log}"
         '''

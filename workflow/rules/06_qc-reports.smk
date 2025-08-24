@@ -292,7 +292,7 @@ rule longreadsum_rnaseq_bam_cohort:
         bam   = lambda wc: _bam_for(wc.sample),
         bed12 = "06_qc-reports/mapped-rnaseqc/reference/collapsed_reference.bed12"
     output:
-        outdir = directory("06_qc-reports/mapped-longreadsum-rnaseq-report/{sample}")
+        outdir = directory("06_qc-reports/mapped-longreadsum-rnaseq-report/{sample}"),
         log    = "06_qc-reports/mapped-longreadsum-rnaseq-report/{sample}/{sample}.log"
     log:
         "logs/06_qc-reports/mapped-longreadsum-rnaseq-report/{sample}.log"

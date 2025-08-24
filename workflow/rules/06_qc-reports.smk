@@ -26,22 +26,26 @@ rule fastqc_merged:
     input:
         fq = "01_mapping/{sample}/flnc_merged.fastq.gz"
     output:
-        zip  = "06_qc-reports/fastqc/{sample}/flnc_merged_fastqc.zip",
-        html = "06_qc-reports/fastqc/{sample}/flnc_merged_fastqc.html"
+        zip  = "06_qc-reports/flnc-fastqc/{sample}/{sample}_fastqc.zip",
+        html = "06_qc-reports/flnc-fastqc/{sample}/{sample}_fastqc.html"
     log:
-        "logs/06_qc-reports/{sample}_fastqc_merged.log"
+        "logs/06_qc-reports/flnc-fastqc/{sample}_flnc-fastqc.log"
     benchmark:
-        "benchmarks/06_qc-reports/{sample}_fastqc_merged.txt"
+        "benchmarks/06_qc-reports/flnc-fastqc/{sample}_flnc-fastqc.txt"
     threads: 1
+    params:
+        outdir = "06_qc-reports/flnc-fastqc/{sample}"
     conda:
         SNAKEDIR + "envs/qc-env.yaml"
     shell:
         r'''
         (
             echo "Running FastQC on merged FASTQ for {wildcards.sample}"
-            outdir="$(dirname "{output.zip}")"
 
-            fastqc --quiet --threads {threads} --outdir "$outdir" "{input.fq}"
+            fastqc --quiet --threads {threads} --outdir "{params.outdir}" "{input.fq}"
+            
+            mv -f "{params.outdir}/flnc_merged_fastqc.zip"  "{output.zip}"
+            mv -f "{params.outdir}/flnc_merged_fastqc.html" "{output.html}"
 
         ) &> "{log}"
         '''
@@ -56,11 +60,11 @@ rule seqkit_stats_flnc:
     input:
         expand("01_mapping/{sample}/flnc_merged.fastq.gz", sample=SAMPLES)
     output:
-        tsv = "06_qc-reports/seqkit/seqkit_flnc_wide.stats.tsv"
+        tsv = "06_qc-reports/flnc-seqkit-stats/seqkit_flnc_wide.stats.tsv"
     log:
-        "logs/06_qc-reports/seqkit_flnc.log"
+        "logs/06_qc-reports/flnc-seqkit-stats/flnc-seqkit-stats.log"
     benchmark:
-        "benchmarks/06_qc-reports/cohort_seqkit_merged.txt"
+        "benchmarks/06_qc-reports/flnc-seqkit-stats/flnc-seqkit-stats.txt"
     threads: 4
     conda:
         SNAKEDIR + "envs/qc-env.yaml"
@@ -89,11 +93,11 @@ rule rnaseqc_collapse_gtf:
     input:
         gtf = REFGTF
     output:
-        collapsed = "06_qc-reports/rnaseqc/reference/collapsed_reference.gtf"
+        collapsed = "06_qc-reports/mapped-rnaseqc/reference/collapsed_reference.gtf"
     log:
-        "logs/06_qc-reports/rnaseqc_collapse_gtf.log"
+        "logs/06_qc-reports/mapped-rnaseqc/rnaseqc_collapse_gtf.log"
     benchmark:
-        "benchmarks/06_qc-reports/rnaseqc_collapse_gtf.txt"
+        "benchmarks/06_qc-reports/mapped-rnaseqc/rnaseqc_collapse_gtf.txt"
     threads: 1
     conda:
         SNAKEDIR + "envs/qc-env.yaml"
@@ -116,25 +120,25 @@ rule rnaseqc_sample:
     input:
         bam = lambda wc: _bam_for(wc.sample),
         bai = lambda wc: _bai_for(wc.sample),
-        gtf = "06_qc-reports/rnaseqc/reference/collapsed_reference.gtf",
+        gtf = "06_qc-reports/mapped-rnaseqc/reference/collapsed_reference.gtf",
         ref = GENOMEFASTA
     output:
-        metrics = "06_qc-reports/rnaseqc/{sample}/{sample}.metrics.tsv"
+        metrics = "06_qc-reports/mapped-rnaseqc/{sample}/{sample}.metrics.tsv"
     log:
-        "logs/06_qc-reports/{sample}_rnaseqc.log"
+        "logs/06_qc-reports/mapped-rnaseqc/{sample}_rnaseqc.log"
     benchmark:
-        "benchmarks/06_qc-reports/{sample}_rnaseqc.txt"
+        "benchmarks/06_qc-reports/mapped-rnaseqc/{sample}_rnaseqc.txt"
     threads: 2
     conda:
         SNAKEDIR + "envs/qc-env.yaml"
     params:
-        outdir = "06_qc-reports/rnaseqc/{sample}",
+        outdir = "06_qc-reports/mapped-rnaseqc/{sample}",
     shell:
         r'''
         (
             echo "Running RNA-SeQC for {wildcards.sample}"
 
-            rnaseqc "{input.gtf}" "{input.bam}" "{params.outdir}" --fasta "{input.ref}" --sample "{wildcards.sample}" --unpaired --mapping-quality 0 --stranded FR
+            rnaseqc "{input.gtf}" "{input.bam}" "{params.outdir}" --fasta "{input.ref}" --sample "{wildcards.sample}" --unpaired --mapping-quality 0 --stranded RF --coverage
 
         ) &> "{log}"
         '''
@@ -143,13 +147,13 @@ rule rnaseqc_sample:
 rule rnaseqc_metrics_cohort:
     message: "Aggregate RNA-SeQC metrics (cohort)"
     input:
-        expand("06_qc-reports/rnaseqc/{sample}/{sample}.metrics.tsv", sample=SAMPLES)
+        expand("06_qc-reports/mapped-rnaseqc/{sample}/{sample}.metrics.tsv", sample=SAMPLES)
     output:
-        tsv = "06_qc-reports/rnaseqc/rna_seqc_summary_long.tsv"
+        tsv = "06_qc-reports/mapped-rnaseqc/rna_seqc_summary_long.tsv"
     log:
-        "logs/06_qc-reports/rna_seqc_summary.log"
+        "logs/06_qc-reports/mapped-rnaseqc/rna_seqc_summary.log"
     benchmark:
-        "benchmarks/06_qc-reports/cohort_rnaseqc_metrics.txt"
+        "benchmarks/06_qc-reports/mapped-rnaseqc/rna_seqc_summary.txt"
     threads: 1
     shell:
         r'''
@@ -177,11 +181,11 @@ rule bam_flagstat:
         bam = lambda wc: _bam_for(wc.sample),
         bai = lambda wc: _bai_for(wc.sample)
     output:
-        txt = "06_qc-reports/bamqc/{sample}/flagstat.txt"
+        txt = "06_qc-reports/mapped-bamqc/{sample}/flagstat.txt"
     log:
-        "logs/06_qc-reports/{sample}_flagstat.log"
+        "logs/06_qc-reports/mapped-bamqc/{sample}_flagstat.log"
     benchmark:
-        "benchmarks/06_qc-reports/{sample}_flagstat.txt"
+        "benchmarks/06_qc-reports/mapped-bamqc/{sample}_flagstat.txt"
     threads: 2
     conda:
         SNAKEDIR + "envs/qc-env.yaml"
@@ -201,11 +205,11 @@ rule bam_idxstats:
         bam = lambda wc: _bam_for(wc.sample),
         bai = lambda wc: _bai_for(wc.sample)
     output:
-        txt = "06_qc-reports/bamqc/{sample}/idxstats.txt"
+        txt = "06_qc-reports/mapped-bamqc/{sample}/idxstats.txt"
     log:
-        "logs/06_qc-reports/{sample}_idxstats.log"
+        "logs/06_qc-reports/mapped-bamqc/{sample}_idxstats.log"
     benchmark:
-        "benchmarks/06_qc-reports/{sample}_idxstats.txt"
+        "benchmarks/06_qc-reports/mapped-bamqc/{sample}_idxstats.txt"
     threads: 2
     conda:
         SNAKEDIR + "envs/qc-env.yaml"
@@ -225,11 +229,11 @@ rule bam_stats:
         bam = lambda wc: _bam_for(wc.sample),
         bai = lambda wc: _bai_for(wc.sample)
     output:
-        txt = "06_qc-reports/bamqc/{sample}/stats.txt"
+        txt = "06_qc-reports/mapped-bamqc/{sample}/stats.txt"
     log:
-        "logs/06_qc-reports/{sample}_stats.log"
+        "logs/06_qc-reports/mapped-bamqc/{sample}_stats.log"
     benchmark:
-        "benchmarks/06_qc-reports/{sample}_stats.txt"
+        "benchmarks/06_qc-reports/mapped-bamqc/{sample}_stats.txt"
     threads: 4
     conda:
         SNAKEDIR + "envs/qc-env.yaml"
@@ -246,14 +250,14 @@ rule bam_stats:
 rule bam_chrM_count:
     message: "chrM count: {wildcards.sample} (threshold={params.chrm_threshold})"
     input:
-        idx = "06_qc-reports/bamqc/{sample}/idxstats.txt"
+        idx = "06_qc-reports/mapped-bamqc/{sample}/idxstats.txt"
     output:
-        count_txt  = "06_qc-reports/bamqc/{sample}/chrM_count.txt",
-        status = "06_qc-reports/bamqc/{sample}/chrM_status.txt"
+        count_txt  = "06_qc-reports/mapped-bamqc/{sample}/chrM_count.txt",
+        status     = "06_qc-reports/mapped-bamqc/{sample}/chrM_status.txt"
     log:
-        "logs/06_qc-reports/{sample}_chrM_count.log"
+        "logs/06_qc-reports/mapped-bamqc/{sample}_chrM_count.log"
     benchmark:
-        "benchmarks/06_qc-reports/{sample}_chrM_count.txt"
+        "benchmarks/06_qc-reports/mapped-bamqc/{sample}_chrM_count.txt"
     params:
         chrm_threshold = MAXCHRMREADS
     threads: 1
@@ -279,17 +283,17 @@ rule bam_chrM_count:
 rule bam_qc_summary:
     message: "Aggregate BAM QC summary: {wildcards.sample}"
     input:
-        flagstat = "06_qc-reports/bamqc/{sample}/flagstat.txt",
-        idxstats = "06_qc-reports/bamqc/{sample}/idxstats.txt",
-        stats    = "06_qc-reports/bamqc/{sample}/stats.txt",
-        chrM_ct  = "06_qc-reports/bamqc/{sample}/chrM_count.txt",
-        chrM_ok  = "06_qc-reports/bamqc/{sample}/chrM_status.txt"
+        flagstat = "06_qc-reports/mapped-bamqc/{sample}/flagstat.txt",
+        idxstats = "06_qc-reports/mapped-bamqc/{sample}/idxstats.txt",
+        stats    = "06_qc-reports/mapped-bamqc/{sample}/stats.txt",
+        chrM_ct  = "06_qc-reports/mapped-bamqc/{sample}/chrM_count.txt",
+        chrM_ok  = "06_qc-reports/mapped-bamqc/{sample}/chrM_status.txt"
     output:
-        tsv = "06_qc-reports/bamqc/{sample}/summary.tsv"
+        tsv = "06_qc-reports/mapped-bamqc/{sample}/summary.tsv"
     log:
-        "logs/06_qc-reports/{sample}_bam_qc_summary.log"
+        "logs/06_qc-reports/mapped-bamqc/{sample}_bam_qc_summary.log"
     benchmark:
-        "benchmarks/06_qc-reports/{sample}_bam_qc_summary.txt"
+        "benchmarks/06_qc-reports/mapped-bamqc/{sample}_bam_qc_summary.txt"
     params:
         bam_choice     = BAM_CHOICE,
         chrm_threshold = MAXCHRMREADS
@@ -326,13 +330,13 @@ rule bam_qc_summary:
 rule bam_qc_summary_cohort:
     message: "Aggregate BAM QC summaries (cohort)"
     input:
-        expand("06_qc-reports/bamqc/{sample}/summary.tsv", sample=SAMPLES)
+        expand("06_qc-reports/mapped-bamqc/{sample}/summary.tsv", sample=SAMPLES)
     output:
-        tsv = "06_qc-reports/bamqc/bam_qc_summary_long.tsv"
+        tsv  = "06_qc-reports/mapped-bamqc/bam_qc_summary_long.tsv"
     log:
-        "logs/06_qc-reports/cohort_bam_qc_summary.log"
+        "logs/06_qc-reports/mapped-bamqc/cohort_bam_qc_summary.log"
     benchmark:
-        "benchmarks/06_qc-reports/cohort_bam_qc_summary.txt"
+        "benchmarks/06_qc-reports/mapped-bamqc/cohort_bam_qc_summary.txt"
     threads: 1
     shell:
         r'''
@@ -361,11 +365,11 @@ rule qc_genotyping_snps:
         bai = "01_mapping/{sample}/{sample}_mapped_labeled.bam.bai",
         ref = GENOMEFASTA
     output:
-        snp = "06_qc-reports/genotyping/{sample}.varscan.snp.tsv"
+        snp = "06_qc-reports/mapped-snp-genotypes/{sample}.varscan.snp.tsv"
     log:
-        "logs/06_qc-reports/{sample}_genotyping_varscan.log"
+        "logs/06_qc-reports/mapped-snp-genotypes/{sample}_genotyping_varscan.log"
     benchmark:
-        "benchmarks/06_qc-reports/{sample}_genotyping_varscan.txt"
+        "benchmarks/06_qc-reports/mapped-snp-genotypes/{sample}_genotyping_varscan.txt"
     threads: 4
     params:
         min_cov      = _as_int(VARSCAN_MIN_COV),
@@ -390,31 +394,31 @@ rule qc_genotyping_snps:
         """
 
 # ───────────────────────────────────────────────
-# MultiQC (single cohort report, merged-only)
+# MultiQC
 # ───────────────────────────────────────────────
 rule multiqc_cohort:
     message: "MultiQC (cohort across all samples)"
     input:
-        fastqc_zips     = [f"06_qc-reports/fastqc/{s}/flnc_merged_fastqc.zip" for s in SAMPLES],
-        rnaseqc_metrics = expand("06_qc-reports/rnaseqc/{sample}/{sample}.metrics.tsv", sample=SAMPLES)
+        fastqc_zips     = expand("06_qc-reports/flnc-fastqc/{sample}/{sample}_fastqc.zip", sample=SAMPLES),
+        rnaseqc_metrics = expand("06_qc-reports/mapped-rnaseqc/{sample}/{sample}.metrics.tsv", sample=SAMPLES)
     output:
-        report_html = "06_qc-reports/multiqc/cohort/multiqc_report.html",
-        data        = "06_qc-reports/multiqc/cohort/multiqc_data/multiqc_data.json"
+        report_html = "06_qc-reports/multiqc/multiqc_report.html",
+        data        = "06_qc-reports/multiqc/multiqc_data/multiqc_data.json"
     log:
-        "logs/06_qc-reports/cohort_multiqc.log"
+        "logs/06_qc-reports/multiqc/multiqc.log"
     benchmark:
-        "benchmarks/06_qc-reports/cohort_multiqc.txt"
+        "benchmarks/06_qc-reports/multiqc/multiqc.txt"
     threads: 1
     conda:
         SNAKEDIR + "envs/qc-env.yaml"
     params:
-        outdir = "06_qc-reports/multiqc/cohort"
+        outdir = "06_qc-reports/multiqc"
     shell:
         r'''
         (
             echo "Running MultiQC on cohort"
 
-            multiqc --quiet -f -o "{params.outdir}" "06_qc-reports/fastqc" "06_qc-reports/rnaseqc"
+            multiqc --quiet -f -o "{params.outdir}" "06_qc-reports/flnc-fastqc" "06_qc-reports/mapped-rnaseqc"
 
         ) &> "{log}"
         '''
@@ -456,13 +460,13 @@ rule iso_qc_cohort_report:
         pass_ids = "05_isoPropeller-filter/{prefix}_{suffix}_{filtertag}/{prefix}_{suffix}_isoqc_pass_id.txt",
         pass_exp = "05_isoPropeller-filter/{prefix}_{suffix}_{filtertag}/{prefix}_{suffix}_isoqc_pass_exp.txt",
         fail_ids = _active_filter_id_paths_wc,
-        seqkit_cohort = "06_qc-reports/seqkit/seqkit_flnc_wide.stats.tsv"
+        seqkit_cohort = "06_qc-reports/flnc-seqkit-stats/seqkit_flnc_wide.stats.tsv"
     output:
-        tsv = "06_qc-reports/isofilter/{prefix}_{suffix}_{filtertag}/cohort_iso_qc.tsv"
+        tsv = "06_qc-reports/isoform-filtering/{prefix}_{suffix}_{filtertag}/isoform-filter-stats.tsv"
     log:
-        "logs/06_qc-reports/{prefix}_{suffix}_{filtertag}_isofilter_cohort_qc.log"
+        "logs/06_qc-reports/isoform-filtering/{prefix}_{suffix}_{filtertag}_isoform-filter-stats.log"
     benchmark:
-        "benchmarks/06_qc-reports/{prefix}_{suffix}_{filtertag}_isofilter_cohort_qc.txt"
+        "benchmarks/06_qc-reports/isoform-filtering/{prefix}_{suffix}_{filtertag}_isoform-filter-stats.txt"
     threads: 1
     params:
         filtertag = FILTERTAG
@@ -550,7 +554,6 @@ rule iso_qc_cohort_report:
             out.write("table\tsample\tmetric\tvalue\tfilter\n")
             for r in rows:
                 out.write("\t".join(r) + "\n")
-
 
 
 

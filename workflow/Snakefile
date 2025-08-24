@@ -183,20 +183,22 @@ rule all:
         expand("05_isoPropeller-filter/{prefix}_depth-gt1_" + FILTERTAG + "/{prefix}_depth-gt1_isoqc_pass_tss.bed", prefix=[MERGEDISOPREFIX]),
         expand("05_isoPropeller-filter/{prefix}_depth-gt1_" + FILTERTAG + "/{prefix}_depth-gt1_isoqc_pass_tts.bed", prefix=[MERGEDISOPREFIX]),
         expand("05_isoPropeller-filter/{prefix}_depth-gt1_" + FILTERTAG + "/{prefix}_depth-gt1_isoqc_pass.trackgroups", prefix=[MERGEDISOPREFIX]),
-        expand("06_qc-reports/genotyping/{sample}.varscan.snp.tsv", sample=SAMPLES),
-        
-        # Cohort-first FASTQ stats
-        "06_qc-reports/seqkit/seqkit_flnc_wide.stats.tsv",
 
-        # Final RNA-SeQC cohort metrics table
-        "06_qc-reports/rnaseqc/rna_seqc_summary_long.tsv",
-        "06_qc-reports/rnaseqc/rna_seqc_summary_wide.tsv",
+        # QC Seqkit on FLNC fastq
+        "06_qc-reports/flnc-seqkit-stats/seqkit_flnc_wide.stats.tsv",
 
-        # BAM QC summaries (per-sample + cohort table)
-        expand("06_qc-reports/bamqc/{sample}/summary.tsv", sample=SAMPLES),
-        "06_qc-reports/bamqc/bam_qc_summary_long.tsv",
-        "06_qc-reports/bamqc/bam_qc_summary_wide.tsv",
+        # QC mapped BAM summaries (per-sample + cohort table)
+        expand("06_qc-reports/mapped-bamqc/{sample}/summary.tsv", sample=SAMPLES),
+        "06_qc-reports/mapped-bamqc/bam_qc_summary_long.tsv",
+        "06_qc-reports/mapped-bamqc/bam_qc_summary_wide.tsv",
 
-        # MultiQC — single cohort report
-        "06_qc-reports/multiqc/cohort/multiqc_report.html",
+        # QC mapped RNA-SeQC metrics table
+        "06_qc-reports/mapped-rnaseqc/rna_seqc_summary_long.tsv",
+        "06_qc-reports/mapped-rnaseqc/rna_seqc_summary_wide.tsv",
+
+        # QC mapped SNP genotypes
+        expand("06_qc-reports/mapped-snp-genotypes/{sample}.varscan.snp.tsv", sample=SAMPLES),
+
+        # QC MultiQC — single report
+        "06_qc-reports/multiqc/multiqc_report.html",
 

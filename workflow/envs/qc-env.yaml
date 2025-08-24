@@ -2,6 +2,7 @@ name: qc-env
 channels:
   - conda-forge
   - bioconda
+  - wglab
   - defaults
 dependencies:
   # Core CLI tools
@@ -36,8 +37,3 @@ dependencies:
 
   # Picard requirements
   - picard
-
-  # Longreadsum
-  - longreadsum
-  - ucsc-gtftogenepred
-  - ucsc-genepredtobed

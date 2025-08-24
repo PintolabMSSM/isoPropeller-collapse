@@ -232,7 +232,7 @@ rule longreadsum_fastq_cohort:
         "benchmarks/06_qc-reports/flnc-longreadsum-fastq-report/run.txt"
     threads: 2
     conda:
-        SNAKEDIR + "envs/qc-env.yaml"
+        SNAKEDIR + "envs/longreadsum.yaml"
     params:
         inlist = lambda wc, input: ",".join(map(str, input)),
         outdir = "06_qc-reports/flnc-longreadsum-fastq-report"
@@ -259,7 +259,7 @@ rule longreadsum_gtf_to_bed12:
         "benchmarks/06_qc-reports/mapped-longreadsum-rnaseq-report/gtf_to_bed12.txt"
     threads: 1
     conda:
-        SNAKEDIR + "envs/qc-env.yaml"
+        SNAKEDIR + "envs/longreadsum.yaml"
     shell:
         r'''
         (
@@ -285,7 +285,7 @@ rule longreadsum_rnaseq_bam_cohort:
         "benchmarks/06_qc-reports/mapped-longreadsum-rnaseq-report/run.txt"
     threads: 4
     conda:
-        SNAKEDIR + "envs/qc-env.yaml"
+        SNAKEDIR + "envs/longreadsum.yaml"
     params:
         inlist    = lambda wc, input: ",".join(map(str, input.bams)),
         outdir    = "06_qc-reports/mapped-longreadsum-rnaseq-report",

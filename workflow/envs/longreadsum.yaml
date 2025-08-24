@@ -1,0 +1,13 @@
+name: longreadsum
+channels:
+  - conda-forge
+  - wglab
+  - bioconda
+  - defaults
+dependencies:
+  - python=3.9
+  - longreadsum=1.5.*
+  - ucsc-gtftogenepred
+  - ucsc-genepredtobed
+  - pyarrow=20.0.*
+  - typing_extensions

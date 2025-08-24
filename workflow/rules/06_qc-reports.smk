@@ -56,9 +56,9 @@ rule seqkit_stats_flnc:
     input:
         expand("01_mapping/{sample}/flnc_merged.fastq.gz", sample=SAMPLES)
     output:
-        tsv = "06_qc-reports/seqkit/cohort_merged.stats.tsv"
+        tsv = "06_qc-reports/seqkit/seqkit_flnc_wide.stats.tsv"
     log:
-        "logs/06_qc-reports/cohort_seqkit_merged.log"
+        "logs/06_qc-reports/seqkit_flnc.log"
     benchmark:
         "benchmarks/06_qc-reports/cohort_seqkit_merged.txt"
     threads: 4
@@ -145,9 +145,9 @@ rule rnaseqc_metrics_cohort:
     input:
         expand("06_qc-reports/rnaseqc/{sample}/{sample}.metrics.tsv", sample=SAMPLES)
     output:
-        tsv = "06_qc-reports/rnaseqc/cohort_metrics.tsv"
+        tsv = "06_qc-reports/rnaseqc/rna_seqc_summary_long.tsv"
     log:
-        "logs/06_qc-reports/cohort_rnaseqc_metrics.log"
+        "logs/06_qc-reports/rna_seqc_summary.log"
     benchmark:
         "benchmarks/06_qc-reports/cohort_rnaseqc_metrics.txt"
     threads: 1
@@ -328,7 +328,7 @@ rule bam_qc_summary_cohort:
     input:
         expand("06_qc-reports/bamqc/{sample}/summary.tsv", sample=SAMPLES)
     output:
-        tsv = "06_qc-reports/bamqc/cohort_summary.tsv"
+        tsv = "06_qc-reports/bamqc/bam_qc_summary_long.tsv"
     log:
         "logs/06_qc-reports/cohort_bam_qc_summary.log"
     benchmark:
@@ -456,7 +456,7 @@ rule iso_qc_cohort_report:
         pass_ids = "05_isoPropeller-filter/{prefix}_{suffix}_{filtertag}/{prefix}_{suffix}_isoqc_pass_id.txt",
         pass_exp = "05_isoPropeller-filter/{prefix}_{suffix}_{filtertag}/{prefix}_{suffix}_isoqc_pass_exp.txt",
         fail_ids = _active_filter_id_paths_wc,
-        seqkit_cohort = "06_qc-reports/seqkit/cohort_merged.stats.tsv"
+        seqkit_cohort = "06_qc-reports/seqkit/seqkit_flnc_wide.stats.tsv"
     output:
         tsv = "06_qc-reports/isofilter/{prefix}_{suffix}_{filtertag}/cohort_iso_qc.tsv"
     log:
@@ -550,4 +550,58 @@ rule iso_qc_cohort_report:
             out.write("table\tsample\tmetric\tvalue\tfilter\n")
             for r in rows:
                 out.write("\t".join(r) + "\n")
+
+
+
+
+# ────────────────────────────────────────────────
+# Pivot any ..._long.tsv → ..._wide.tsv  (samples = rows, metrics = columns)
+# ────────────────────────────────────────────────
+
+rule pivot_long_to_wide:
+    message: "Pivot to wide: {wildcards.base}_long.tsv → {wildcards.base}_wide.tsv"
+    input:
+        long = "{base}_long.tsv"
+    output:
+        wide = "{base}_wide.tsv"
+    log:
+        "logs/pivot/{base}.wide.log"
+    benchmark:
+        "benchmarks/pivot/{base}.wide.txt"
+    threads: 1
+    conda:
+        SNAKEDIR + "envs/qc-env.yaml"   # must include python + pandas
+    run:
+        import os
+        import pandas as pd
+
+        # Read long table
+        df = pd.read_csv(input.long, sep="\t")
+
+        # Validate required columns
+        required = {"sample", "metric", "value"}
+        missing = required - set(df.columns)
+        if missing:
+            raise ValueError(f"Missing required columns in {input.long}: {missing}")
+
+        # Preserve first-seen order
+        sample_order = pd.unique(df["sample"])
+        metric_order = pd.unique(df["metric"])
+
+        # Coerce values to numeric where possible
+        df["value"] = pd.to_numeric(df["value"], errors="ignore")
+
+        # Aggregation strategy for duplicate (sample, metric) pairs
+        agg_name = str(config.get("pivot_long_to_wide_agg", "first")).lower()
+        aggfunc = {"first": "first", "sum": "sum", "mean": "mean"}.get(agg_name, "first")
+
+        # Pivot
+        wide = df.pivot_table(index="sample", columns="metric", values="value", aggfunc=aggfunc)
+        wide = wide.reindex(index=sample_order, columns=metric_order)
+
+        # Write
+        wide.index.name = "sample"
+        wide.reset_index(inplace=True)
+        os.makedirs(os.path.dirname(output.wide), exist_ok=True)
+        wide.to_csv(output.wide, sep="\t", index=False, na_rep="NA")
 

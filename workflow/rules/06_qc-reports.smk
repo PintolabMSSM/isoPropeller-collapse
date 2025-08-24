@@ -223,25 +223,40 @@ rule picard_collect_rnaseqmetrics:
 rule longreadsum_fastq_cohort:
     message: "LongReadSum FASTQ (cohort)"
     input:
-        expand("06_qc-reports/flnc-fastqc/{sample}/{sample}.fastq.gz", sample=SAMPLES)
+        fq = "01_mapping/{sample}/flnc_merged.fastq.gz"
     output:
-        outdir = directory("06_qc-reports/flnc-longreadsum-fastq-report")
+        outdir = directory("06_qc-reports/flnc-longreadsum-fastq-report/{sample}")
     log:
-        "logs/06_qc-reports/flnc-longreadsum-fastq-report/run.log"
+        "logs/06_qc-reports/flnc-longreadsum-fastq-report/{sample}.log"
     benchmark:
-        "benchmarks/06_qc-reports/flnc-longreadsum-fastq-report/run.txt"
+        "benchmarks/06_qc-reports/flnc-longreadsum-fastq-report/{sample}.txt"
     threads: 2
     conda:
         SNAKEDIR + "envs/longreadsum.yaml"
-    params:
-        inlist = lambda wc, input: ",".join(map(str, input)),
-        outdir = "06_qc-reports/flnc-longreadsum-fastq-report"
     shell:
         r'''
         (
-            echo "Running longreadsum fastq report"
+            echo "[INFO] Decompressing {input.fq} → FIFO and running LongReadSum for {wildcards.sample}"
+        
+            # Set up a file handle for streaming
+            # The 'rm -f' is included to proactively remove pipe from previous failed runs
+            fifo="{output.outdir}/longreadsum_{wildcards.sample}.fifo.fastq"
+            trap 'rm -f "$fifo"' EXIT
+            rm -f "$fifo"
+            mkfifo "$fifo"
 
-            longreadsum fq -I "{params.inlist}" -o "{params.outdir}"
+            # Decompress in the background, writing to the pipe
+            gzip -cd "{input.fq}" > "$fifo" &
+            decomp_pid=$!
+
+            # Run the main tool, reading from the pipe
+            longreadsum fq \
+                --input      "$fifo" \
+                --outputfolder "{output.outdir}"
+
+            # Wait for the background process, ignoring broken pipe errors
+            wait $decomp_pid || true
+            echo "[INFO] Done: {wildcards.sample}"
 
         ) &> "{log}"
         '''
@@ -271,25 +286,23 @@ rule longreadsum_gtf_to_bed12:
         ) &> "{log}"
         '''
 
-
 rule longreadsum_rnaseq_bam_cohort:
     message: "LongReadSum RNA-Seq BAM (cohort)"
     input:
-        bams  = lambda wc: [_bam_for(s) for s in SAMPLES],
+        bam   = lambda wc: _bam_for(wc.sample),
         bed12 = "06_qc-reports/mapped-rnaseqc/reference/collapsed_reference.bed12"
     output:
-        outdir = directory("06_qc-reports/mapped-longreadsum-rnaseq-report")
+        outdir = directory("06_qc-reports/mapped-longreadsum-rnaseq-report/{sample}")
+        log    = "06_qc-reports/mapped-longreadsum-rnaseq-report/{sample}/{sample}.log"
     log:
-        "logs/06_qc-reports/mapped-longreadsum-rnaseq-report/run.log"
+        "logs/06_qc-reports/mapped-longreadsum-rnaseq-report/{sample}.log"
     benchmark:
-        "benchmarks/06_qc-reports/mapped-longreadsum-rnaseq-report/run.txt"
+        "benchmarks/06_qc-reports/mapped-longreadsum-rnaseq-report/{sample}.txt"
     threads: 4
     conda:
         SNAKEDIR + "envs/longreadsum.yaml"
     params:
-        inlist    = lambda wc, input: ",".join(map(str, input.bams)),
-        outdir    = "06_qc-reports/mapped-longreadsum-rnaseq-report",
-        min_cov   = int(config.get("longreadsum_min_coverage", 1)),
+        min_cov   = int(config.get("longreadsum_min_coverage", 5)),
         sample_sz = int(config.get("longreadsum_sample_size", 1000000))
     shell:
         r'''
@@ -297,15 +310,15 @@ rule longreadsum_rnaseq_bam_cohort:
             echo "LongReadSum RNA-Seq BAM"
 
             longreadsum bam \
-                -I             "{params.inlist}" \
-                -o             "{params.outdir}" \
+                --input        "{input.bam}" \
+                --outputfolder "{output.outdir}" \
+                --log          "{output.log}" \
                 --genebed      "{input.bed12}" \
                 --min-coverage {params.min_cov} \
                 --sample-size  {params.sample_sz}
 
         ) &> "{log}"
         '''
-
 
 # ────────────────────────────────────────────────
 # BAM QC (per-sample) + cohort summary

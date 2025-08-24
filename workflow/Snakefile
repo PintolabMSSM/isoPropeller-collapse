@@ -203,8 +203,8 @@ rule all:
         "06_qc-reports/multiqc/multiqc_report.html",
 
         # QC longreasum, FASTQ report
-        "06_qc-reports/flnc-longreadsum-fastq-report",
+        expand("06_qc-reports/flnc-longreadsum-fastq-report/{sample}", sample=SAMPLES),
 
         # QC longreadsum, RNA-seq BAM report
-        "06_qc-reports/mapped-longreadsum-rnaseq-report",
+        expand("06_qc-reports/mapped-longreadsum-rnaseq-report/{sample}", sample=SAMPLES),
 

@@ -206,5 +206,5 @@ rule all:
         "06_qc-reports/flnc-longreadsum-fastq-report",
 
         # QC longreadsum, RNA-seq BAM report
-        "06_qc-reports/flnc-longreadsum-rnaseq-report",
+        "06_qc-reports/mapped-longreadsum-rnaseq-report",
 

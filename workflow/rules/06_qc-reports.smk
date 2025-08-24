@@ -254,9 +254,9 @@ rule longreadsum_gtf_to_bed12:
     output:
         bed12 = "06_qc-reports/mapped-rnaseqc/reference/collapsed_reference.bed12"
     log:
-        "logs/06_qc-reports/flnc-longreadsum-rnaseq-report/gtf_to_bed12.log"
+        "logs/06_qc-reports/mapped-longreadsum-rnaseq-report/gtf_to_bed12.log"
     benchmark:
-        "benchmarks/06_qc-reports/flnc-longreadsum-rnaseq-report/gtf_to_bed12.txt"
+        "benchmarks/06_qc-reports/mapped-longreadsum-rnaseq-report/gtf_to_bed12.txt"
     threads: 1
     conda:
         SNAKEDIR + "envs/qc-env.yaml"
@@ -275,8 +275,7 @@ rule longreadsum_gtf_to_bed12:
 rule longreadsum_rnaseq_bam_cohort:
     message: "LongReadSum RNA-Seq BAM (cohort)"
     input:
-        bam   = lambda wc: _bam_for(wc.sample),
-        bai   = lambda wc: _bai_for(wc.sample),
+        bams  = lambda wc: [_bam_for(s) for s in SAMPLES],
         bed12 = "06_qc-reports/mapped-rnaseqc/reference/collapsed_reference.bed12"
     output:
         outdir = directory("06_qc-reports/mapped-longreadsum-rnaseq-report")
@@ -288,7 +287,7 @@ rule longreadsum_rnaseq_bam_cohort:
     conda:
         SNAKEDIR + "envs/qc-env.yaml"
     params:
-        inlist    = lambda wc, input: ",".join(map(str, input.bam)),
+        inlist    = lambda wc, input: ",".join(map(str, input.bams)),
         outdir    = "06_qc-reports/mapped-longreadsum-rnaseq-report",
         min_cov   = int(config.get("longreadsum_min_coverage", 1)),
         sample_sz = int(config.get("longreadsum_sample_size", 1000000))
@@ -556,7 +555,7 @@ rule multiqc_cohort:
         (
             echo "Running MultiQC on cohort"
 
-            multiqc --quiet -f -o "{params.outdir}" "06_qc-reports/flnc-fastqc" "06_qc-reports/mapped-rnaseqc"
+            multiqc --quiet -f -o "{params.outdir}" "06_qc-reports/flnc-fastqc" "06_qc-reports/mapped-rnaseqc" "06_qc-reports/mapped-picard-RnaSeqMetrics"
 
         ) &> "{log}"
         '''

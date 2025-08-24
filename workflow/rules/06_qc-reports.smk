@@ -197,7 +197,7 @@ rule picard_collect_rnaseqmetrics:
         SNAKEDIR + "envs/qc-env.yaml"
     params:
         strand = config.get("picard_strand", "SECOND_READ_TRANSCRIPTION_STRAND"),   # NONE | FIRST_READ_TRANSCRIPTION_STRAND | SECOND_READ_TRANSCRIPTION_STRAND
-        tmpdir = "06_qc-reports/picard/{sample}/tmp"
+        tmpdir = "06_qc-reports/mapped-picard-RnaSeqMetrics/{sample}/tmp"
     shell:
         r'''
         (
@@ -211,6 +211,98 @@ rule picard_collect_rnaseqmetrics:
                 CHART_OUTPUT="{output.chart}" \
                 VALIDATION_STRINGENCY=LENIENT \
                 TMP_DIR="{params.tmpdir}"
+
+        ) &> "{log}"
+        '''
+
+
+# ───────────────────────────────────────────────
+# LongReadSum stats
+# ───────────────────────────────────────────────
+
+rule longreadsum_fastq_cohort:
+    message: "LongReadSum FASTQ (cohort)"
+    input:
+        expand("06_qc-reports/flnc-fastqc/{sample}/{sample}.fastq.gz", sample=SAMPLES)
+    output:
+        outdir = directory("06_qc-reports/flnc-longreadsum-fastq-report")
+    log:
+        "logs/06_qc-reports/flnc-longreadsum-fastq-report/run.log"
+    benchmark:
+        "benchmarks/06_qc-reports/flnc-longreadsum-fastq-report/run.txt"
+    threads: 2
+    conda:
+        SNAKEDIR + "envs/qc-env.yaml"
+    params:
+        inlist = lambda wc, input: ",".join(map(str, input)),
+        outdir = "06_qc-reports/flnc-longreadsum-fastq-report"
+    shell:
+        r'''
+        (
+            echo "Running longreadsum fastq report"
+
+            longreadsum fq -I "{params.inlist}" -o "{params.outdir}"
+
+        ) &> "{log}"
+        '''
+
+
+rule longreadsum_gtf_to_bed12:
+    message: "GTF→BED12 for LongReadSum (RNA-Seq)"
+    input:
+        gtf   = "06_qc-reports/mapped-rnaseqc/reference/collapsed_reference.gtf"
+    output:
+        bed12 = "06_qc-reports/mapped-rnaseqc/reference/collapsed_reference.bed12"
+    log:
+        "logs/06_qc-reports/flnc-longreadsum-rnaseq-report/gtf_to_bed12.log"
+    benchmark:
+        "benchmarks/06_qc-reports/flnc-longreadsum-rnaseq-report/gtf_to_bed12.txt"
+    threads: 1
+    conda:
+        SNAKEDIR + "envs/qc-env.yaml"
+    shell:
+        r'''
+        (
+            echo "converting GTF→BED12 for LongReadSum (RNA-Seq)"
+
+            gtfToGenePred -genePredExt -geneNameAsName2 "{input.gtf}" stdout \
+                | genePredToBed stdin "{output.bed12}"
+        
+        ) &> "{log}"
+        '''
+
+
+rule longreadsum_rnaseq_bam_cohort:
+    message: "LongReadSum RNA-Seq BAM (cohort)"
+    input:
+        bam   = lambda wc: _bam_for(wc.sample),
+        bai   = lambda wc: _bai_for(wc.sample),
+        bed12 = "06_qc-reports/mapped-rnaseqc/reference/collapsed_reference.bed12"
+    output:
+        outdir = directory("06_qc-reports/mapped-longreadsum-rnaseq-report")
+    log:
+        "logs/06_qc-reports/mapped-longreadsum-rnaseq-report/run.log"
+    benchmark:
+        "benchmarks/06_qc-reports/mapped-longreadsum-rnaseq-report/run.txt"
+    threads: 4
+    conda:
+        SNAKEDIR + "envs/qc-env.yaml"
+    params:
+        inlist    = lambda wc, input: ",".join(map(str, input.bam)),
+        outdir    = "06_qc-reports/mapped-longreadsum-rnaseq-report",
+        min_cov   = int(config.get("longreadsum_min_coverage", 1)),
+        sample_sz = int(config.get("longreadsum_sample_size", 1000000))
+    shell:
+        r'''
+        (
+            echo "LongReadSum RNA-Seq BAM"
+
+            longreadsum bam \
+                -I             "{params.inlist}" \
+                -o             "{params.outdir}" \
+                --genebed      "{input.bed12}" \
+                --min-coverage {params.min_cov} \
+                --sample-size  {params.sample_sz}
 
         ) &> "{log}"
         '''

@@ -202,3 +202,9 @@ rule all:
         # QC MultiQC — single report
         "06_qc-reports/multiqc/multiqc_report.html",
 
+        # QC longreasum, FASTQ report
+        "06_qc-reports/flnc-longreadsum-fastq-report",
+
+        # QC longreadsum, RNA-seq BAM report
+        "06_qc-reports/flnc-longreadsum-rnaseq-report",
+

@@ -9,7 +9,7 @@ rule merge_flnc_fastqs:
             for i in range(len(PARTS[wc.sample]))
         ]
     output:
-        fastq = temp("01_mapping/{sample}/flnc_merged.fastq.gz")
+        fastq = "01_mapping/{sample}/flnc_merged.fastq.gz"
     log:
         "logs/01_mapping/{sample}_merge_fastq.log"
     threads: 1

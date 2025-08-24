@@ -26,6 +26,7 @@ rule fastqc_merged:
     input:
         fq = "01_mapping/{sample}/flnc_merged.fastq.gz"
     output:
+        fq   = "06_qc-reports/flnc-fastqc/{sample}/{sample}.fastq.gz",
         zip  = "06_qc-reports/flnc-fastqc/{sample}/{sample}_fastqc.zip",
         html = "06_qc-reports/flnc-fastqc/{sample}/{sample}_fastqc.html"
     log:
@@ -42,10 +43,12 @@ rule fastqc_merged:
         (
             echo "Running FastQC on merged FASTQ for {wildcards.sample}"
 
-            fastqc --quiet --threads {threads} --outdir "{params.outdir}" "{input.fq}"
-            
-            mv -f "{params.outdir}/flnc_merged_fastqc.zip"  "{output.zip}"
-            mv -f "{params.outdir}/flnc_merged_fastqc.html" "{output.html}"
+            # Fastqc derives the sample name from the input file
+            # We create a symlink here to include the sample name in the fastq.gz file
+            ln -s "../../../{input.fq}" "{output.fq}"
+
+            # Run fastqc on the fastq.gz symlink
+            fastqc --quiet --threads {threads} --outdir "{params.outdir}" "{output.fq}"
 
         ) &> "{log}"
         '''

@@ -602,7 +602,7 @@ def _active_filter_id_paths_wc(wc):
     return _active_filter_id_paths(wc.prefix, wc.suffix)
 
 rule iso_qc_cohort_report:
-    message: "Isoform filtering QC report: {wildcards.prefix}_{wildcards.suffix} ({FILTERTAG})"
+    message: "Isoform filtering QC report: {wildcards.prefix}_{wildcards.suffix}"
     input:
         orig_ids = "04_isoPropeller-merge/{prefix}_{suffix}_id.txt",
         pass_ids = "05_isoPropeller-filter/{prefix}_{suffix}_{filtertag}/{prefix}_{suffix}_isoqc_pass_id.txt",

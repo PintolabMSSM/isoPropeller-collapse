@@ -463,11 +463,11 @@ rule filter_aggregate_final_outputs:
             fail_id_files_quoted = " ".join([shlex.quote(str(f)) for f in input.fail_ids])
             
             shell("""
-                sort -u {fail_id_files_quoted}                              > "{output.qcf}" 2>> "{log}"
-                gtf-filter-attributes.pl -m "{output.qcf}" -v "{input.gtf}" > "{output.gtf}" 2>> "{log}"
-                diff-by-ids -ff "{input.ids}" -if "{output.qcf}" -fc 1      > "{output.ids}" 2>> "{log}"
-                diff-by-ids -ff "{input.tss}" -if "{output.qcf}" -fc 4      > "{output.tss}" 2>> "{log}"
-                diff-by-ids -ff "{input.tts}" -if "{output.qcf}" -fc 4      > "{output.tts}" 2>> "{log}"
+                sort -u {fail_id_files_quoted}                                > "{output.qcf}" 2>> "{log}"
+                gtf-filter-attributes.pl -m "{output.qcf}" -v "{input.gtf}"   > "{output.gtf}" 2>> "{log}"
+                diff-by-ids -ff "{input.ids}" -fc 4 -if "{output.qcf}"        > "{output.ids}" 2>> "{log}"
+                diff-by-ids -ff "{input.tss}" -fc 4 -if "{output.qcf}"        > "{output.tss}" 2>> "{log}"
+                diff-by-ids -ff "{input.tts}" -fc 4 -if "{output.qcf}"        > "{output.tts}" 2>> "{log}"
                 
                 # Reprocess the header of the expression matrix to be compatible with the isoPropeller-annotate pipeline
                 diff-by-ids -ff "{input.exp}" -if "{output.qcf}" -fc 1  \

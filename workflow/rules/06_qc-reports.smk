@@ -573,7 +573,7 @@ rule multiqc_cohort:
 
 
 # ────────────────────────────────────────────────
-# Isoform Filtering QC — single cohort report
+# Isoform Filtering QC — totals + per-sample wide
 # ────────────────────────────────────────────────
 
 def _active_filter_id_paths(prefix, suffix):
@@ -610,7 +610,8 @@ rule iso_qc_cohort_report:
         fail_ids = _active_filter_id_paths_wc,
         seqkit_cohort = "06_qc-reports/flnc-seqkit-stats/seqkit_flnc_wide.stats.tsv"
     output:
-        tsv = "06_qc-reports/isoform-filtering/{prefix}_{suffix}_{filtertag}/isoform-filter-stats.tsv"
+        totals = "06_qc-reports/isoform-filtering/{prefix}_{suffix}_{filtertag}/isoform-filter-stats.totals.tsv",
+        per_sample_wide = "06_qc-reports/isoform-filtering/{prefix}_{suffix}_{filtertag}/isoform-filter-stats.per-sample-wide.tsv"
     log:
         "logs/06_qc-reports/isoform-filtering/{prefix}_{suffix}_{filtertag}_isoform-filter-stats.log"
     benchmark:
@@ -622,8 +623,16 @@ rule iso_qc_cohort_report:
         SNAKEDIR + "envs/qc-env.yaml"
     run:
         import os, re
-
-        os.makedirs(os.path.dirname(output.tsv), exist_ok=True)
+        from pathlib import Path
+    
+        # make sure output + log dirs exist
+        Path(output.totals).parent.mkdir(parents=True, exist_ok=True)
+        Path(output.per_sample_wide).parent.mkdir(parents=True, exist_ok=True)
+    
+        # `log` may be a Log object or a sequence; normalize and ensure parent dirs
+        log_paths = list(log) if hasattr(log, "__iter__") and not isinstance(log, (str, bytes)) else [log]
+        for lp in log_paths:
+            Path(str(lp)).parent.mkdir(parents=True, exist_ok=True)
 
         def uniq_count(path):
             if not os.path.exists(path) or os.path.getsize(path) == 0:
@@ -632,7 +641,8 @@ rule iso_qc_cohort_report:
                 ids = {ln.strip() for ln in fh if ln.strip()}
             return len(ids)
 
-        rows = []
+        # ---------- totals (metric, value, filter) ----------
+        totals_rows = []
         active_fail_files = list(input.fail_ids)
         filt_name_re = re.compile(r"/(filt_[^/]+)/")
         for f in active_fail_files:
@@ -641,10 +651,12 @@ rule iso_qc_cohort_report:
             m = filt_name_re.search(f)
             filt = m.group(1) if m else "unknown_filter"
             n = uniq_count(f)
-            rows.append(("filter_counts", "-", "removed", str(n), filt))
+            totals_rows.append(("removed", str(n), filt))  # per-filter removed
 
         original_total = uniq_count(input.orig_ids)
         remaining_pass = uniq_count(input.pass_ids)
+
+        # union of all removed
         removed_union = set()
         for f in active_fail_files:
             if not os.path.exists(f):
@@ -654,10 +666,18 @@ rule iso_qc_cohort_report:
                     ln = ln.strip()
                     if ln:
                         removed_union.add(ln)
-        rows.append(("filter_totals", "-", "unique_removed", str(len(removed_union)), "-"))
-        rows.append(("filter_totals", "-", "original_total", str(original_total), "-"))
-        rows.append(("filter_totals", "-", "remaining_pass", str(remaining_pass), "-"))
 
+        totals_rows.append(("unique_removed", str(len(removed_union)), "-"))
+        totals_rows.append(("original_total", str(original_total), "-"))
+        totals_rows.append(("remaining_pass", str(remaining_pass), "-"))
+
+        with open(output.totals, "w") as out:
+            out.write("metric\tvalue\tfilter\n")
+            for r in totals_rows:
+                out.write("\t".join(r) + "\n")
+
+        # ---------- per-sample wide (sample rows; metrics columns) ----------
+        # Sum assigned reads per sample from pass_exp
         assigned_by_sample = {}
         with open(input.pass_exp) as fh:
             header = fh.readline().rstrip("\n").split("\t")
@@ -673,6 +693,7 @@ rule iso_qc_cohort_report:
             for i, s in enumerate(samples):
                 assigned_by_sample[s] = sums[i]
 
+        # Raw reads per sample from SeqKit cohort table
         raw_by_sample = {}
         with open(input.seqkit_cohort) as fh:
             header = fh.readline().rstrip("\n").split("\t")
@@ -690,19 +711,15 @@ rule iso_qc_cohort_report:
                     continue
                 raw_by_sample[s] = n
 
-        for s in sorted(assigned_by_sample.keys()):
-            raw = raw_by_sample.get(s, 0.0)
-            asg = assigned_by_sample.get(s, 0.0)
-            pct = (asg / raw * 100.0) if raw > 0 else 0.0
-            rows.append(("per_sample", s, "raw_reads",      f"{int(raw)}", "-"))
-            rows.append(("per_sample", s, "assigned_reads", f"{int(asg)}", "-"))
-            rows.append(("per_sample", s, "retained_pct",   f"{pct:.4f}", "-"))
-
-        with open(output.tsv, "w") as out:
-            out.write("table\tsample\tmetric\tvalue\tfilter\n")
-            for r in rows:
-                out.write("\t".join(r) + "\n")
-
+        # Write wide table
+        metrics = ["raw_reads", "assigned_reads", "retained_pct"]
+        with open(output.per_sample_wide, "w") as out:
+            out.write("sample\t" + "\t".join(metrics) + "\n")
+            for s in sorted(assigned_by_sample.keys()):
+                raw = raw_by_sample.get(s, 0.0)
+                asg = assigned_by_sample.get(s, 0.0)
+                pct = (asg / raw * 100.0) if raw > 0 else 0.0
+                out.write(f"{s}\t{int(raw)}\t{int(asg)}\t{pct:.4f}\n")
 
 
 # ────────────────────────────────────────────────

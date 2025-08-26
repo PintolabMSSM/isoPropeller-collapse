@@ -208,10 +208,17 @@ rule all:
         # QC longreadsum, RNA-seq BAM report
         expand("06_qc-reports/mapped-longreadsum-rnaseq-report/{sample}", sample=SAMPLES),
 
-        # QC isoform filtering report
+        # QC isoform filtering reports
         expand(
-            "06_qc-reports/isoform-filtering/{prefix}_{suffix}_{filtertag}/isoform-filter-stats.tsv",
+            "06_qc-reports/isoform-filtering/{prefix}_{suffix}_{filtertag}/isoform-filter-stats.totals.tsv",
             prefix=[MERGEDISOPREFIX],
             suffix=["depth-gt1"],
             filtertag=[FILTERTAG],
         ),
+        expand(
+            "06_qc-reports/isoform-filtering/{prefix}_{suffix}_{filtertag}/isoform-filter-stats.per-sample-wide.tsv",
+            prefix=[MERGEDISOPREFIX],
+            suffix=["depth-gt1"],
+            filtertag=[FILTERTAG],
+        ),
+    

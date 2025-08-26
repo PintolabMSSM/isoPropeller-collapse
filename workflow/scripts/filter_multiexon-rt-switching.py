@@ -105,7 +105,9 @@ def check_for_repeat_pat(seq_exon, seq_intron, min_match, allow_mismatch):
         allow_mismatch (bool): Whether to allow one mismatch in extended region
 
     Returns:
-        (bool, int, str, int): Match flag, length, pattern, mismatch count
+        # Return start indices to enable boundary-aware filtering:
+        (bool, int, str, int, int, int)
+        -> (match flag, length, pattern, mismatch count, exon_start_idx, intron_start_idx)
     """
     seedsize = min_match // 2
     n = len(seq_exon)
@@ -124,12 +126,15 @@ def check_for_repeat_pat(seq_exon, seq_intron, min_match, allow_mismatch):
             if i + k + m <= n and j + k + m <= len(seq_intron):
                 flag, mismatch = seq_match(seq_exon[i + k:i + k + m], seq_intron[j + k:j + k + m], allow_mismatch)
                 if flag:
-                    return True, k + m, seq_exon[i:i + k + m], mismatch
+                    # Include start indices for right-extension case
+                    return True, k + m, seq_exon[i:i + k + m], mismatch, i, j
             if i - m >= 0 and j - m >= 0:
                 flag, mismatch = seq_match(seq_exon[i - m:i], seq_intron[j - m:j], allow_mismatch)
                 if flag:
-                    return True, k + m, seq_exon[i - m:i + k], mismatch
-    return False, None, None, None
+                    # Include start indices for left-extension case
+                    return True, k + m, seq_exon[i - m:i + k], mismatch, i - m, j - m
+    # Extend the return tuple with None placeholders for indices
+    return False, None, None, None, None, None
 
 
 def detect_rt_switching(entry, genome, min_match, wiggle, allow_mismatch):
@@ -166,19 +171,42 @@ def detect_rt_switching(entry, genome, min_match, wiggle, allow_mismatch):
             seq_exon = str(seq[ex_start:ex_start + cnt].reverse_complement()).upper()
         if not seq_exon or not seq_intron:
             continue
-        flag, matchLen, matchPat, mismatch = check_for_repeat_pat(seq_exon, seq_intron, min_match, allow_mismatch)
+
+        # Run matcher and capture start indices for boundary-aware filtering
+        flag, matchLen, matchPat, mismatch, i_ex, j_in = check_for_repeat_pat(
+            seq_exon, seq_intron, min_match, allow_mismatch
+        )
+
         if flag:
-            results.append({
-                'isoform': entry.name,
-                'junction_number': jnum,
-                'chrom': chrom,
-                'strand': strand,
-                'donor_pos': donor,
-                'acceptor_pos': acceptor,
-                'match_len': matchLen,
-                'match_pat': matchPat,
-                'mismatch': mismatch
-            })
+            # Perform boundary-aware post-filtering:
+            # Define the maximum core index that a match is allowed to reach (exclusive end index).
+            # The last 'wiggle' bases on the right of each window are overhang and must not be used.
+            core_right = len(seq_exon) - wiggle  # same length for both windows
+
+            right_edge_ex = i_ex + matchLen   # exclusive end in exon window
+            right_edge_in = j_in + matchLen   # exclusive end in intron window
+
+            # Accept if both ends stay within the core (can end exactly at the core boundary).
+            if right_edge_ex <= core_right and right_edge_in <= core_right:
+                results.append({
+                    'isoform': entry.name,
+                    'junction_number': jnum,
+                    'chrom': chrom,
+                    'strand': strand,
+                    'donor_pos': donor,
+                    'acceptor_pos': acceptor,
+                    'match_len': matchLen,
+                    'match_pat': matchPat,
+                    'mismatch': mismatch
+                })
+            else:
+                # Provide verbose diagnostics on filtered hits
+                logging.debug(
+                    f"Filtered overhang match at {entry.name} j{jnum}: "
+                    f"ex_right={right_edge_ex}, in_right={right_edge_in}, core_right={core_right}"
+                )
+                pass
+
     return results
 
 ########

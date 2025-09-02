@@ -115,10 +115,10 @@ FILT_MONOEXON_MIN_INTRON_OVLP_BP  = config.get("filt_monoexon_min_intron_ovlp_bp
 FILT_RMSK_MIN_OVLP_FRACT          = config.get("filt_rmsk_min_ovlp_fract", 0.9)
 FILT_PAR_MIN_OVLP_FRACT           = config.get("filt_par_min_ovlp_fract", 0)
 FILT_TPM_MIN_COUNT                = config.get("filt_tpm_min_count", 10)
-FILT_TPM_MIN_FRACT                = config.get("filt_tpm_min_fract", 0.5)
+FILT_TPM_MIN_SAMPLES              = config.get("filt_tpm_min_samples", 3)
 
 # Define the filter tag used to mark subdirectories and group outputs
-FILTERTAG = f"tpm{FILT_TPM_MIN_COUNT}f{FILT_TPM_MIN_FRACT}"
+FILTERTAG = f"tpm{FILT_TPM_MIN_COUNT}s{FILT_TPM_MIN_SAMPLES}"
 
 # Define local variables: Choose whether or not to run certain rules
 REMOVE_MONOEXONS_NO_TSS       = as_bool(config.get("remove_monoexons_without_cage_support", True))

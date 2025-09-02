@@ -69,7 +69,7 @@ filt_monoexon_min_intron_ovlp_bp:   10
 filt_rmsk_min_ovlp_fract:           0.9
 filt_par_min_ovlp_fract:            0
 filt_tpm_min_count:                 0.5
-filt_tpm_min_fract:                 0.05
+filt_tpm_min_samples:               3
 
 # Set up chunking parameters for transcriptclean
 transcriptclean_chunk_maxreads:  2000000

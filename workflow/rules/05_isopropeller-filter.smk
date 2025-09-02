@@ -312,7 +312,7 @@ rule filter_tpm_expression:
         fail_bed = "05_isoPropeller-filter/{prefix}_{suffix}_{filtertag}/filt_min_tpm/isoqc_fail_{prefix}_{suffix}_min-TPM.bed"
     params:
         min_tpm    = FILT_TPM_MIN_COUNT,
-        min_frac   = FILT_TPM_MIN_FRACT,
+        min_frac   = FILT_TPM_MIN_SAMPLES,
         filtertag  = FILTERTAG,
         snakedir   = SNAKEDIR
     log:
@@ -326,12 +326,12 @@ rule filter_tpm_expression:
         """
         mkdir -p "$(dirname "{output.fail_bed}")"
         python "{params.snakedir}scripts/filter_TPM-fraction.py" \
-            --count_matrix         "{input.count_matrix}" \
-            --isoform_bed12        "{input.isoform_bed}" \
-            --min_tpm              {params.min_tpm} \
-            --min_fraction_samples {params.min_frac} \
-            --out_ids              "{output.fail_ids}" \
-            --out_bed              "{output.fail_bed}" \
+            --count_matrix   "{input.count_matrix}" \
+            --isoform_bed12  "{input.isoform_bed}" \
+            --min_tpm        {params.min_tpm} \
+            --min_samples    {params.min_frac} \
+            --out_ids        "{output.fail_ids}" \
+            --out_bed        "{output.fail_bed}" \
             2>> "{log}"
         """
 

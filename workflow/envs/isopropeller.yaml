@@ -5,4 +5,4 @@ channels:
   - hvbakel
   - defaults
 dependencies:
-  - isopropeller>=1.8.7
+  - isopropeller>=1.8.8

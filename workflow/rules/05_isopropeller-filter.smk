@@ -70,6 +70,8 @@ rule filter_monoexon_tss_overlap:
     benchmark:
         "benchmarks/05_isoPropeller-filter/{prefix}_{suffix}_{filtertag}/filt_monoexon_tss/filter_monoexon_tss_overlap.txt"
     threads: 4
+    resources:
+        tmpdir = "05_isoPropeller-filter/{prefix}_{suffix}_{filtertag}/filt_monoexon_tss/.tmp"
     conda:
         SNAKEDIR + "envs/isoform-filter.yaml"
     shell:
@@ -107,6 +109,8 @@ rule filter_monoexon_premrna_fragments:
     benchmark:
         "benchmarks/05_isoPropeller-filter/{prefix}_{suffix}_{filtertag}/filt_monoexon_premrna/filter_monoexon_premrna_fragments.txt"
     threads: 4
+    resources:
+        tmpdir = "05_isoPropeller-filter/{prefix}_{suffix}_{filtertag}/filt_monoexon_premrna/.tmp"
     conda:
         SNAKEDIR + "envs/isoform-filter.yaml"
     shell:
@@ -142,6 +146,8 @@ rule filter_noncanonical_splice_junctions:
     benchmark:
         "benchmarks/05_isoPropeller-filter/{prefix}_{suffix}_{filtertag}/filt_noncanonical_splice/filter_noncanonical_splice_junctions.txt"
     threads: 4
+    resources:
+        tmpdir = "05_isoPropeller-filter/{prefix}_{suffix}_{filtertag}/filt_noncanonical_splice/.tmp"
     conda:
         SNAKEDIR + "envs/isoform-filter.yaml"
     shell:
@@ -177,6 +183,8 @@ rule filter_template_switching_artifacts:
     benchmark:
         "benchmarks/05_isoPropeller-filter/{prefix}_{suffix}_{filtertag}/filt_template_switch/filter_template_switching_artifacts.txt"
     threads: 4
+    resources:
+        tmpdir = "05_isoPropeller-filter/{prefix}_{suffix}_{filtertag}/filt_template_switch/.tmp"
     conda:
         SNAKEDIR + "envs/isoform-filter.yaml"
     shell:
@@ -211,6 +219,8 @@ rule filter_antisense_splicechain_match:
     benchmark:
         "benchmarks/05_isoPropeller-filter/{prefix}_{suffix}_{filtertag}/filt_antisense_match/filter_antisense_splicechain_match.txt"
     threads: 4
+    resources:
+        tmpdir = "05_isoPropeller-filter/{prefix}_{suffix}_{filtertag}/filt_antisense_match/.tmp"
     conda:
         SNAKEDIR + "envs/isoform-filter.yaml"
     shell:
@@ -246,6 +256,8 @@ rule filter_repeat_region_overlap:
     benchmark:
         "benchmarks/05_isoPropeller-filter/{prefix}_{suffix}_{filtertag}/filt_repeat_overlap/filter_repeat_region_overlap.txt"
     threads: 4
+    resources:
+        tmpdir = "05_isoPropeller-filter/{prefix}_{suffix}_{filtertag}/filt_repeat_overlap/.tmp"
     conda:
         SNAKEDIR + "envs/isoform-filter.yaml"
     shell:
@@ -283,6 +295,8 @@ rule filter_par_region_overlap:
     benchmark:
         "benchmarks/05_isoPropeller-filter/{prefix}_{suffix}_{filtertag}/filt_par_overlap/filter_par_region_overlap.txt"
     threads: 4
+    resources:
+        tmpdir = "05_isoPropeller-filter/{prefix}_{suffix}_{filtertag}/filt_par_overlap/.tmp"
     conda:
         SNAKEDIR + "envs/isoform-filter.yaml"
     shell:
@@ -320,6 +334,8 @@ rule filter_tpm_expression:
     benchmark:
         "benchmarks/05_isoPropeller-filter/{prefix}_{suffix}_{filtertag}/filt_min_tpm/filter_tpm_expression.txt"
     threads: 4
+    resources:
+        tmpdir = "05_isoPropeller-filter/{prefix}_{suffix}_{filtertag}/filt_min_tpm/.tmp"
     conda:
         SNAKEDIR + "envs/isoform-filter.yaml"
     shell:
@@ -356,6 +372,8 @@ rule filter_terminal_exons_in_segdup:
     benchmark:
         "benchmarks/05_isoPropeller-filter/{prefix}_{suffix}_{filtertag}/filt_terminal_exon_segdup/filter_terminal_exons_in_segdup.txt"
     threads: 4
+    resources:
+        tmpdir = "05_isoPropeller-filter/{prefix}_{suffix}_{filtertag}/filt_terminal_exon_segdup/.tmp"
     conda:
         SNAKEDIR + "envs/omics-toolkit.yaml"
     shell:

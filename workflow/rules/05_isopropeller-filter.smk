@@ -147,7 +147,7 @@ rule filter_noncanonical_splice_junctions:
         "benchmarks/05_isoPropeller-filter/{prefix}_{suffix}_{filtertag}/filt_noncanonical_splice/filter_noncanonical_splice_junctions.txt"
     threads: 4
     resources:
-        tmpdir = "05_isoPropeller-filter/{prefix}_{suffix}_{filtertag}/filt_noncanonical_splice/.tmp"
+        tmpdir = lambda wildcards: f"05_isoPropeller-filter/{wildcards.prefix}_{wildcards.suffix}_{wildcards.filtertag}/filt_noncanonical_splice/.tmp"
     conda:
         SNAKEDIR + "envs/isoform-filter.yaml"
     shell:
@@ -184,7 +184,7 @@ rule filter_template_switching_artifacts:
         "benchmarks/05_isoPropeller-filter/{prefix}_{suffix}_{filtertag}/filt_template_switch/filter_template_switching_artifacts.txt"
     threads: 4
     resources:
-        tmpdir = "05_isoPropeller-filter/{prefix}_{suffix}_{filtertag}/filt_template_switch/.tmp"
+        tmpdir = lambda wildcards: f"05_isoPropeller-filter/{wildcards.prefix}_{wildcards.suffix}_{wildcards.filtertag}/filt_template_switch/.tmp"
     conda:
         SNAKEDIR + "envs/isoform-filter.yaml"
     shell:
@@ -220,7 +220,7 @@ rule filter_antisense_splicechain_match:
         "benchmarks/05_isoPropeller-filter/{prefix}_{suffix}_{filtertag}/filt_antisense_match/filter_antisense_splicechain_match.txt"
     threads: 4
     resources:
-        tmpdir = "05_isoPropeller-filter/{prefix}_{suffix}_{filtertag}/filt_antisense_match/.tmp"
+        tmpdir = lambda wildcards: f"05_isoPropeller-filter/{wildcards.prefix}_{wildcards.suffix}_{wildcards.filtertag}/filt_antisense_match/.tmp"
     conda:
         SNAKEDIR + "envs/isoform-filter.yaml"
     shell:
@@ -257,7 +257,7 @@ rule filter_repeat_region_overlap:
         "benchmarks/05_isoPropeller-filter/{prefix}_{suffix}_{filtertag}/filt_repeat_overlap/filter_repeat_region_overlap.txt"
     threads: 4
     resources:
-        tmpdir = "05_isoPropeller-filter/{prefix}_{suffix}_{filtertag}/filt_repeat_overlap/.tmp"
+        tmpdir = lambda wildcards: f"05_isoPropeller-filter/{wildcards.prefix}_{wildcards.suffix}_{wildcards.filtertag}/filt_repeat_overlap/.tmp"
     conda:
         SNAKEDIR + "envs/isoform-filter.yaml"
     shell:
@@ -296,7 +296,7 @@ rule filter_par_region_overlap:
         "benchmarks/05_isoPropeller-filter/{prefix}_{suffix}_{filtertag}/filt_par_overlap/filter_par_region_overlap.txt"
     threads: 4
     resources:
-        tmpdir = "05_isoPropeller-filter/{prefix}_{suffix}_{filtertag}/filt_par_overlap/.tmp"
+        tmpdir = lambda wildcards: f"05_isoPropeller-filter/{wildcards.prefix}_{wildcards.suffix}_{wildcards.filtertag}/filt_par_overlap/.tmp"
     conda:
         SNAKEDIR + "envs/isoform-filter.yaml"
     shell:
@@ -335,7 +335,7 @@ rule filter_tpm_expression:
         "benchmarks/05_isoPropeller-filter/{prefix}_{suffix}_{filtertag}/filt_min_tpm/filter_tpm_expression.txt"
     threads: 4
     resources:
-        tmpdir = "05_isoPropeller-filter/{prefix}_{suffix}_{filtertag}/filt_min_tpm/.tmp"
+        tmpdir = lambda wildcards: f"05_isoPropeller-filter/{wildcards.prefix}_{wildcards.suffix}_{wildcards.filtertag}/filt_min_tpm/.tmp"
     conda:
         SNAKEDIR + "envs/isoform-filter.yaml"
     shell:
@@ -373,7 +373,7 @@ rule filter_terminal_exons_in_segdup:
         "benchmarks/05_isoPropeller-filter/{prefix}_{suffix}_{filtertag}/filt_terminal_exon_segdup/filter_terminal_exons_in_segdup.txt"
     threads: 4
     resources:
-        tmpdir = "05_isoPropeller-filter/{prefix}_{suffix}_{filtertag}/filt_terminal_exon_segdup/.tmp"
+        tmpdir = lambda wildcards: f"05_isoPropeller-filter/{wildcards.prefix}_{wildcards.suffix}_{wildcards.filtertag}/filt_terminal_exon_segdup/.tmp"
     conda:
         SNAKEDIR + "envs/omics-toolkit.yaml"
     shell:

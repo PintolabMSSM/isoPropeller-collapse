@@ -71,7 +71,7 @@ rule filter_monoexon_tss_overlap:
         "benchmarks/05_isoPropeller-filter/{prefix}_{suffix}_{filtertag}/filt_monoexon_tss/filter_monoexon_tss_overlap.txt"
     threads: 4
     resources:
-        tmpdir = "05_isoPropeller-filter/{prefix}_{suffix}_{filtertag}/filt_monoexon_tss/.tmp"
+        tmpdir = lambda wildcards: f"05_isoPropeller-filter/{wildcards.prefix}_{wildcards.suffix}_{wildcards.filtertag}/filt_monoexon_tss/.tmp"
     conda:
         SNAKEDIR + "envs/isoform-filter.yaml"
     shell:
@@ -110,7 +110,7 @@ rule filter_monoexon_premrna_fragments:
         "benchmarks/05_isoPropeller-filter/{prefix}_{suffix}_{filtertag}/filt_monoexon_premrna/filter_monoexon_premrna_fragments.txt"
     threads: 4
     resources:
-        tmpdir = "05_isoPropeller-filter/{prefix}_{suffix}_{filtertag}/filt_monoexon_premrna/.tmp"
+        tmpdir = lambda wildcards: f"05_isoPropeller-filter/{wildcards.prefix}_{wildcards.suffix}_{wildcards.filtertag}/filt_monoexon_premrna/.tmp"
     conda:
         SNAKEDIR + "envs/isoform-filter.yaml"
     shell:

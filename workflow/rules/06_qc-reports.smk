@@ -34,6 +34,8 @@ rule fastqc_merged:
     benchmark:
         "benchmarks/06_qc-reports/flnc-fastqc/{sample}_flnc-fastqc.txt"
     threads: 1
+    resources:
+        mem_mb = 8000
     params:
         outdir = "06_qc-reports/flnc-fastqc/{sample}"
     conda:
@@ -48,7 +50,7 @@ rule fastqc_merged:
             ln -s "../../../{input.fq}" "{output.fq}"
 
             # Run fastqc on the fastq.gz symlink
-            fastqc --quiet --threads {threads} --outdir "{params.outdir}" "{output.fq}"
+            fastqc --quiet --threads {threads} --memory {resources.mem_mb} --outdir "{params.outdir}" "{output.fq}"
 
         ) &> "{log}"
         '''

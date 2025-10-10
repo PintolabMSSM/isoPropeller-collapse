@@ -12,7 +12,7 @@ dependencies:
   - coreutils
 
   # FASTQ QC
-  - fastqc
+  - fastqc>=0.12.1
   - multiqc
   - seqkit
 

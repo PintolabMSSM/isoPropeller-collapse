@@ -3,32 +3,32 @@
 samples: "samples.csv"
 
 # Full path to the reference genome fasta file for isoform mapping
-reference_genome_fasta: "/sc/arion/projects/pintod02c/reference-databases/hg38-v41-ERCC/GRCh38.primary_assembly.genome.sirvs4.fa"
+reference_genome_fasta: "/home/harm/mm39-v38/GRCm39.primary_assembly.genome.fa"
 
 # Reference gene annotations (e.g. GENCODE) in GTF format
-reference_annotations_gtf: "/sc/arion/projects/pintod02c/reference-databases/hg38-v41-ERCC/gencode.v41.annotation_no-mi-sn-sno-sca-RNAs_sirvs4.gtf"
+reference_annotations_gtf: "/home/harm/mm39-v38/gencode.vM38.annotation.gtf"
 
 # Reference gene annotations in RefFlat format (used by Picard RNAseq metrics)
-reference_annotations_refflat: "/hpc/users/pintod02/pintod02c/reference-databases/hg38-v41-ERCC/gencode.v41.annotation.refFlat.txt"
+reference_annotations_refflat: "/home/harm/mm39-v38/gencode.vM38.annotation.refFlat.txt"
 
 # A reference set of trusted transcription start sites and CAGE regions in BED format
-reference_tss_bed: "/sc/arion/projects/pintod02c/reference-databases/hg38-v41-ERCC/isopropeller/combined_cage_Pitt-Fantom5-119FrontalLob_refTSS3.3_refseq_gencode_extended.merged.sorted_chr.bed"
+reference_tss_bed: "/home/harm/mm39-v38/GRCm39_mouse-tss-from-gtf-and-fantom5-CAGE-peaks.bed"
 
 # A reference set of trusted splice junctions (needed for transcriptclean step) in STAR SJ.out.tab format
-splice_junctions_file: "/sc/arion/projects/pintod02c/reference-databases/hg38-v41-ERCC/isopropeller/merged-intropolis-PEC-GTEX_sirvs4.SJ.out.tab"
+splice_junctions_file: "/home/harm/mm39-v38/GRCm39_introns-from-gtf-annotations_sjout.tab"
 
 # A reference set of repeat regions in the genome (e.g from repeatmasker) in BED format
-reference_repeat_regions_bed: "/sc/arion/projects/pintod02c/reference-databases/hg38-v41-ERCC/GRCh38.primary_assembly.genome_rmsk_nr.bed"
+reference_repeat_regions_bed: "/home/harm/mm39-v38/GRCm39_repeatmasker_sorted_nr.bed"
 
 # A reference set of pseudo-autosomal regions (PARS) in BED format
-reference_PAR_regions_bed: "/sc/arion/projects/pintod02c/reference-databases/hg38-v41-ERCC/isopropeller/GRCh38.p13_PARs.bed"
+reference_PAR_regions_bed: "/home/harm/mm39-v38/GRCm39_mouse-PAR.bed"
 
 # A reference set of segmental duplication regions in BED Format
-reference_segdups_bed: "/sc/arion/projects/pintod02c/reference-databases/hg38-v41-ERCC/isopropeller/SegDups_hg38.merged.bed"
+reference_segdups_bed: "/home/harm/mm39-v38/GRCm39_mouse-segdups-liftover-from-mm10.bed"
 
 # An optional bed file with the position of all 3' terminal exons (+500 bp flanking region)
 # If provided, the isoPropeller intra-priming filter will be disabled in these regions
-reference_intrapriming_exclude_regions_bed: "/sc/arion/projects/pintod02c/reference-databases/hg38-v41-ERCC/gencode.v41.annotation_500bp_terminal.bed"
+reference_intrapriming_exclude_regions_bed: "/home/harm/mm39-v38/gencode.vM38.annotation_500bp_terminal.bed"
 
 # The maximum allowed intron length when mapping reads to the reference genome with minimap2
 # This is set to 1.25 Mb by default, which is the maximum known intron size in the human genome

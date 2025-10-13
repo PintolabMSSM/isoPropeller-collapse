@@ -120,6 +120,11 @@ FILT_TPM_MIN_SAMPLES              = config.get("filt_tpm_min_samples", 3)
 # Define the filter tag used to mark subdirectories and group outputs
 FILTERTAG = f"tpm{FILT_TPM_MIN_COUNT}s{FILT_TPM_MIN_SAMPLES}"
 
+# Parameters for merging fully contained splicechains
+CONSOLIDATE_CONTAINED_SPLICECHAINS  = as_bool(config.get("consolidate_contained_splicechains", True))
+CONSOLIDATE_PROTECT_WINDOW          = int(config.get("consolidate_protect_window", 75))
+CONSOLIDATE_ROUND_MODE              = config.get("consolidate_round_mode","nearest")
+
 # Define local variables: Choose whether or not to run certain rules
 REMOVE_MONOEXONS_NO_TSS       = as_bool(config.get("remove_monoexons_without_cage_support", True))
 REMOVE_MONOEXON_PRE_MRNAS     = as_bool(config.get("remove_monoexon_premRNA_fragments", True))

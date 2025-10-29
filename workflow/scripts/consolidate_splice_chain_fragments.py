@@ -159,6 +159,117 @@ def is_contiguous_subsequence(subseq: List[Tuple[int, int]], seq: List[Tuple[int
     return False
 
 
+# -------------------------------------------------------------------------------------
+# NEW: Isoform dominance and long-tail profiling helper (runs by default)
+# -------------------------------------------------------------------------------------
+
+def summarize_isoform_dominance_with_tail(expr_df: pd.DataFrame,
+                                          tx2gene: Dict[str, str],
+                                          tx2locus: Dict[str, str],
+                                          per_locus: bool = True,
+                                          tail_thresholds: Tuple[float, ...] = (0.10, 0.05, 0.01),
+                                          out_prefix: Optional[str] = None):
+    """Summarize isoform dominance and the 'long tail' per gene or (gene,locus)."""
+    import matplotlib.pyplot as plt
+
+    expr_cols = [c for c in expr_df.columns if c != "transcript_id"]
+    key_name = "gene,locus" if per_locus else "gene"
+
+    key_series = expr_df["transcript_id"].map(
+        lambda t: (tx2gene.get(t), tx2locus.get(t)) if per_locus else tx2gene.get(t)
+    )
+    dfg = expr_df.assign(_key=key_series)
+    dfg = dfg[~dfg["_key"].isna()].copy()
+
+    grp_totals = dfg.groupby("_key")[expr_cols].sum()
+    merged = dfg.merge(grp_totals.rename(columns={c: f"{c}__tot" for c in expr_cols}),
+                       left_on="_key", right_index=True)
+
+    top_fracs_all: List[float] = []
+    counts_records = []
+
+    for col in expr_cols:
+        total_col = f"{col}__tot"
+        tmp = merged[["_key", "transcript_id", col, total_col]].copy()
+        tmp["frac"] = np.divide(tmp[col], tmp[total_col],
+                                out=np.zeros_like(tmp[col], dtype=float),
+                                where=(tmp[total_col] > 0))
+
+        top_fracs = tmp.groupby("_key")["frac"].max().to_numpy()
+        top_fracs_all.extend(top_fracs)
+
+        grouped = tmp.groupby("_key")["frac"].apply(list)
+        for gkey, fracs in grouped.items():
+            rec = {"_key": gkey, "column": col, "top_isoform_frac": max(fracs) if fracs else 0.0}
+            for t in tail_thresholds:
+                rec[f"n_ge_{int(t*100)}"] = int(sum(f >= t for f in fracs))
+            counts_records.append(rec)
+
+    top_fracs_all = np.asarray(top_fracs_all, dtype=float)
+    counts_df = pd.DataFrame(counts_records)
+
+    mean_frac, median_frac = float(np.mean(top_fracs_all)) if len(top_fracs_all) else 0.0, \
+                             float(np.median(top_fracs_all)) if len(top_fracs_all) else 0.0
+    p90 = float(np.percentile(top_fracs_all, 90)) if len(top_fracs_all) else 0.0
+    p95 = float(np.percentile(top_fracs_all, 95)) if len(top_fracs_all) else 0.0
+
+    print(f"[INFO {ts()}] Isoform dominance per {key_name}:")
+    print(f"  Median top-isoform fraction: {median_frac:.2f}")
+    print(f"  Mean top-isoform fraction:   {mean_frac:.2f}")
+    print(f"  90th percentile:             {p90:.2f}")
+    print(f"  95th percentile:             {p95:.2f}")
+
+    print(f"[INFO {ts()}] Number of isoforms per {key_name} above thresholds (aggregated):")
+    tail_rows = []
+    for t in tail_thresholds:
+        colname = f"n_ge_{int(t*100)}"
+        arr = counts_df[colname].to_numpy()
+        if arr.size == 0:
+            arr = np.array([0])
+        mean_n = float(np.mean(arr))
+        median_n = float(np.median(arr))
+        p90_n, p95_n = float(np.percentile(arr, 90)), float(np.percentile(arr, 95))
+        one = float(np.mean(arr == 1))*100.0
+        two = float(np.mean(arr == 2))*100.0
+        three = float(np.mean(arr == 3))*100.0
+        ge4 = float(np.mean(arr >= 4))*100.0
+        print(f"  ≥{int(t*100)}%: median={median_n:.1f}, mean={mean_n:.2f}, p90={p90_n:.1f}, p95={p95_n:.1f} "
+              f"| % with 1: {one:.1f}%, 2: {two:.1f}%, 3: {three:.1f}%, ≥4: {ge4:.1f}%")
+        tail_rows.append({
+            "threshold": t, "median_n_ge_t": median_n, "mean_n_ge_t": mean_n,
+            "p90_n_ge_t": p90_n, "p95_n_ge_t": p95_n,
+            "pct_with_1": one, "pct_with_2": two, "pct_with_3": three, "pct_with_ge4": ge4
+        })
+
+    tail_summary_df = pd.DataFrame(tail_rows)
+
+    if out_prefix:
+        pd.DataFrame({"top_isoform_frac": top_fracs_all}).to_csv(f"{out_prefix}_top_isoform_frac.csv", index=False)
+        counts_df.to_csv(f"{out_prefix}_n_ge_thresholds_per_group_col.csv", index=False)
+        tail_summary_df.to_csv(f"{out_prefix}_n_ge_thresholds_summary.csv", index=False)
+
+        import matplotlib.pyplot as plt
+        plt.figure()
+        plt.hist(top_fracs_all, bins=50, range=(0,1), edgecolor="black")
+        plt.xlabel("Top isoform fraction of group total")
+        plt.ylabel("Count (group × column)")
+        plt.title(f"Isoform dominance per {key_name}")
+        plt.tight_layout()
+        plt.savefig(f"{out_prefix}_top_isoform_frac.png", dpi=150)
+
+        plt.figure()
+        x = np.arange(len(tail_thresholds))
+        plt.bar(x, tail_summary_df["median_n_ge_t"].values)
+        plt.xticks(x, [f"≥{int(t*100)}%" for t in tail_thresholds])
+        plt.ylabel("Median # isoforms per group")
+        plt.title(f"Median isoform count above thresholds per {key_name}")
+        plt.tight_layout()
+        plt.savefig(f"{out_prefix}_n_ge_thresholds_median.png", dpi=150)
+        print(f"[INFO {ts()}] Saved isoform-dominance summary CSVs/PNGs with prefix: {out_prefix}_*")
+
+    return {"top_fracs_all": top_fracs_all, "tail_summary_df": tail_summary_df}
+
+
 # ---- Multiprocessing helpers ----
 _G_tx2chain = None
 _G_tx2_tss_tes = None
@@ -346,13 +457,13 @@ def find_supersets_with_filters_and_logging(
                 supers = sorted(set([tx for tx, _ in cand]))
                 tx_supersets[a] = supers
                 if supers:
-                    contained_tx_count += 1
+                    contained += 1
 
             if log_every > 0 and (processed_genes % log_every == 0 or processed_genes == total_genes):
                 pct = 100.0 * processed_genes / max(1, total_genes)
                 print(f"[INFO {ts()}] Processed {processed_genes} / {total_genes} genes ({pct:.1f}%) — {processed_tx_running} transcripts scanned; {contained_tx_count} contained so far")
 
-    return tx_supersets, total_genes, contained_tx_count
+    return tx_supersets, total_genes, contained
 
 
 def load_expression_table(path: Path,
@@ -391,10 +502,7 @@ def _cascade_per_column(col_values: Dict[str, float],
                         protected_tx: Optional[Set[str]],
                         proportional: bool) -> Dict[str, float]:
     """
-    Propagate mass upward from contained transcripts to their supersets in a DAG,
-    processing from smallest junction-chain to largest.
-
-    NEW: Skip donation entirely for transcripts in 'protected_tx' (decided across samples per (gene,locus)).
+    Cascade redistribution with protection: skip donation for transcripts in 'protected_tx'.
     """
     mass = dict(col_values)
     donors = [t for t, supers in tx2supersets.items() if supers]
@@ -404,8 +512,7 @@ def _cascade_per_column(col_values: Dict[str, float],
 
     for t in nodes_sorted:
         if protected_tx and t in protected_tx:
-            # protected across the sample set → never donate in any column
-            continue
+            continue  # never donate if protected
 
         amt = mass.get(t, 0.0)
         supers = tx2supersets.get(t, [])
@@ -438,11 +545,8 @@ def redistribute_expression(
     proportional: bool = True,
 ) -> pd.DataFrame:
     """
-    Cascade redistribution is the default behavior:
-    for each expression column, propagate mass upward from contained transcripts
-    to their minimal supersets in ascending junction-chain order.
-
-    NEW: 'protected_tx' (computed across samples per (gene,locus)) never donate mass.
+    For each expression column, propagate mass upward from contained transcripts
+    to their supersets. 'protected_tx' never donate.
     """
     all_tx = set(expr_df["transcript_id"])
     expr_cols = [c for c in expr_df.columns if c != "transcript_id"]
@@ -518,7 +622,7 @@ def write_containment_map(path: Path,
 
 def main():
     ap = argparse.ArgumentParser(
-        description="Merge contained transcripts by redistributing expression to isoforms that contain their splice chain (cascade redistribution), with long-read safeguards, logging, multiprocessing, multi-sample support, cross-sample protection, and counts rounding."
+        description="Merge contained transcripts by redistributing expression to isoforms that contain their splice chain (cascade redistribution), with long-read safeguards, logging, multiprocessing, multi-sample support, cross-sample protection, isoform-dominance profiling, and counts rounding."
     )
     ap.add_argument("--gtf", required=True, type=Path, help="Input GTF (optionally .gz) with exon features.")
     ap.add_argument("--expr", required=True, type=Path, help="Expression table (CSV/TSV). Must contain transcript IDs.")
@@ -561,6 +665,17 @@ def main():
     expr_df = load_expression_table(args.expr, args.tx_col, args.expr_col)
     n_cols = len([c for c in expr_df.columns if c != "transcript_id"])
     print(f"[INFO {ts()}] Parsed {len(tx2chain)} transcripts from GTF; expression table has {n_cols} expression column(s)")
+
+    # --- Run isoform dominance profiling automatically (per (gene,locus)) ---
+    print(f"[INFO {ts()}] Profiling isoform dominance and long tail per (gene,locus)...")
+    summarize_isoform_dominance_with_tail(
+        expr_df=expr_df,
+        tx2gene=tx2gene,
+        tx2locus=tx2locus,
+        per_locus=True,
+        tail_thresholds=(0.10, 0.05, 0.01),
+        out_prefix=str(args.out.with_suffix(""))
+    )
 
     # Load protected regions
     tss_regions = parse_bed_regions(args.protect_tss_bed) if args.protect_tss_bed else {}
@@ -652,7 +767,7 @@ if __name__ == "__main__":
         print("""\
 Usage examples:
 
-# Multi-sample counts with (gene,locus) protection:
+# Multi-sample counts with (gene,locus) protection and automatic dominance profiling:
   python redistribute_splice_chain_expression.py \\
     --gtf transcripts.gtf \\
     --expr counts.tsv \\
@@ -666,14 +781,14 @@ Usage examples:
     --out adjusted_counts.csv \\
     --map-out containment_map.tsv
 
-# Abundances (e.g., TPM) across selected columns, with protection:
+# Abundances (e.g., TPM) across selected columns (profiling runs automatically):
   python redistribute_splice_chain_expression.py \\
     --gtf transcripts.gtf \\
     --expr abundances.tsv \\
     --tx-col transcript_id \\
     --expr-col TPM,FPKM \\
     --protect-tss-bed known_TSS_clusters.bed --protect-window 75 \\
-    --merge-min-frac 0.05 --merge-min-samples 2 \\
+    --merge-min-frac 0.10 --merge-min-samples 2 \\
     --proportional \\
     --out adjusted_expression.csv
 """)

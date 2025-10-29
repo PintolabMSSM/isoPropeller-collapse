@@ -124,6 +124,9 @@ FILTERTAG = f"tpm{FILT_TPM_MIN_COUNT}s{FILT_TPM_MIN_SAMPLES}"
 CONSOLIDATE_CONTAINED_SPLICECHAINS  = as_bool(config.get("consolidate_contained_splicechains", True))
 CONSOLIDATE_PROTECT_WINDOW          = int(config.get("consolidate_protect_window", 75))
 CONSOLIDATE_ROUND_MODE              = config.get("consolidate_round_mode","nearest")
+CONSOLIDATE_MERGE_MIN_FRAC          = config.get("consolidate_merge_min_frac",0.1)
+CONSOLIDATE_MERGE_MIN_SAMPLES       = config.get("consolidate_merge_min_samples",2)
+
 
 # Define local variables: Choose whether or not to run certain rules
 REMOVE_MONOEXONS_NO_TSS       = as_bool(config.get("remove_monoexons_without_cage_support", True))

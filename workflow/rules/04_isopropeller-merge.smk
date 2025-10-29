@@ -49,8 +49,8 @@ rule merge_isopropeller_gtfs:
         prefix_val  = MERGEDISOPREFIX,
         consolidate = CONSOLIDATE_CONTAINED_SPLICECHAINS,
         redist_py   = SNAKEDIR + "scripts/consolidate_splice_chain_fragments.py",
-        tss_bed     = REFTSS,
-        protect_win = CONSOLIDATE_PROTECT_WINDOW,
+        min_frac    = CONSOLIDATE_MERGE_MIN_FRAC,
+        min_samples = CONSOLIDATE_MERGE_MIN_SAMPLES,
         round_mode  = CONSOLIDATE_ROUND_MODE,
         tmp_prefix  = "04_isoPropeller-merge/{prefix}_{suffix}_before-consolidate-splice-fragments"
     shell:
@@ -78,8 +78,7 @@ rule merge_isopropeller_gtfs:
             --expr-col '*' \
             --terminal-only \
             --minimal-superset \
-            --protect-tss-bed "{params.tss_bed}" \
-            --protect-window {params.protect_win} \
+            --merge-min-frac {params.min_frac} --merge-min-samples {params.min_samples} \
             --proportional \
             --drop-contained \
             --counts --round-counts {params.round_mode} \

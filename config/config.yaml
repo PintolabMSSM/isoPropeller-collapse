@@ -12,7 +12,8 @@ reference_annotations_gtf: "/sc/arion/projects/pintod02c/reference-databases/hg3
 reference_annotations_refflat: "/hpc/users/pintod02/pintod02c/reference-databases/hg38-v41-ERCC/gencode.v41.annotation.refFlat.txt"
 
 # A reference set of trusted transcription start sites and CAGE regions in BED format
-reference_tss_bed: "/sc/arion/projects/pintod02c/reference-databases/hg38-v41-ERCC/isopropeller/combined_cage_Pitt-Fantom5-119FrontalLob_refTSS3.3_refseq_gencode_extended.merged.sorted_chr.bed"
+# reference_tss_bed: "/sc/arion/projects/pintod02c/reference-databases/hg38-v41-ERCC/isopropeller/combined_cage_Pitt-Fantom5-119FrontalLob_refTSS3.3_refseq_gencode_extended.merged.sorted_chr.bed"
+reference_tss_bed: "/sc/arion/projects/pintod02c/reference-databases/hg38-v41-ERCC/refseq_2025-10-06_gencode_v41_TSS-coordinates.bed"
 
 # A reference set of trusted splice junctions (needed for transcriptclean step) in STAR SJ.out.tab format
 splice_junctions_file: "/sc/arion/projects/pintod02c/reference-databases/hg38-v41-ERCC/isopropeller/merged-intropolis-PEC-GTEX_sirvs4.SJ.out.tab"
@@ -54,11 +55,13 @@ merged_isoform_prefix:  "ISOP"
 # After the merge step, optionally consolidate smaller splice chains into longer splice chains
 # if they are fully contiguous and contained in a longer splicechain but are missing terminal exons
 # (these are likely incomplete transcript fragments). Reads from the shorter splice chains are
-# proportionally redistributed across the longer splice chains. Isoforms with 5' ends overlapping
-# known CAGE or TSS regions within the 'consolidate_protect_window' distance are protected from merging.
+# proportionally redistributed across the longer splice chains. Dominant isoforms that account for at 
+# least 10% or more of the transcript output per gene (consolidate_merge_min_frac) in at least 2 or 
+# more samples (consolidate_merge_min_samples) will never be merged into larger transcripts.
 consolidate_contained_splicechains:                 True
-consolidate_protect_window:                         75
-consolidate_round_mode:                             "nearest"  # nearest|floor|ceil|none
+consolidate_merge_min_frac:                         0.1
+consolidate_merge_min_samples:                      2
+
 
 # After the isoPropeller merging steps, optionally perform the following filtering steps to reduce
 # technical and biological noise.

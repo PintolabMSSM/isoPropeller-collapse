@@ -6,7 +6,7 @@ from datetime import datetime
 from collections import defaultdict
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, List, Tuple, Optional
+from typing import Dict, List, Tuple, Optional, Set
 
 import numpy as np
 import pandas as pd
@@ -388,18 +388,25 @@ def load_expression_table(path: Path,
 def _cascade_per_column(col_values: Dict[str, float],
                         tx2supersets: Dict[str, List[str]],
                         tx2chain: Dict[str, List[Tuple[int, int]]],
+                        protected_tx: Optional[Set[str]],
                         proportional: bool) -> Dict[str, float]:
     """
     Propagate mass upward from contained transcripts to their supersets in a DAG,
     processing from smallest junction-chain to largest.
+
+    NEW: Skip donation entirely for transcripts in 'protected_tx' (decided across samples per (gene,locus)).
     """
     mass = dict(col_values)
-    nodes = [t for t, supers in tx2supersets.items() if supers]
+    donors = [t for t, supers in tx2supersets.items() if supers]
 
     def size(t): return len(tx2chain.get(t, []))
-    nodes_sorted = sorted(nodes, key=size)
+    nodes_sorted = sorted(donors, key=size)
 
     for t in nodes_sorted:
+        if protected_tx and t in protected_tx:
+            # protected across the sample set → never donate in any column
+            continue
+
         amt = mass.get(t, 0.0)
         supers = tx2supersets.get(t, [])
         if not supers or amt <= 0:
@@ -426,13 +433,16 @@ def redistribute_expression(
     expr_df: pd.DataFrame,
     tx2supersets: Dict[str, List[str]],
     tx2chain: Dict[str, List[Tuple[int, int]]],
+    protected_tx: Optional[Set[str]] = None,
     drop_contained: bool = True,
     proportional: bool = True,
 ) -> pd.DataFrame:
     """
-    Cascade redistribution is the default (and only) behavior:
+    Cascade redistribution is the default behavior:
     for each expression column, propagate mass upward from contained transcripts
     to their minimal supersets in ascending junction-chain order.
+
+    NEW: 'protected_tx' (computed across samples per (gene,locus)) never donate mass.
     """
     all_tx = set(expr_df["transcript_id"])
     expr_cols = [c for c in expr_df.columns if c != "transcript_id"]
@@ -441,14 +451,19 @@ def redistribute_expression(
     adjusted_frames = []
     for col in expr_cols:
         col_base = base[col].to_dict()
-        mass = _cascade_per_column(col_base, tx2supersets, tx2chain, proportional)
+        mass = _cascade_per_column(col_base, tx2supersets, tx2chain,
+                                   protected_tx=protected_tx,
+                                   proportional=proportional)
         series = pd.Series(mass, name=col)
         adjusted_frames.append(series)
 
     out = pd.concat(adjusted_frames, axis=1).reset_index().rename(columns={"index": "transcript_id"})
 
     if drop_contained:
+        # Do not drop protected transcripts even if they are technically "contained"
         contained_ids = {t for t, supers in tx2supersets.items() if supers and t in all_tx}
+        if protected_tx:
+            contained_ids -= set(protected_tx)
         out = out[~out["transcript_id"].isin(contained_ids)].reset_index(drop=True)
 
     out = out.sort_values("transcript_id").reset_index(drop=True)
@@ -503,13 +518,13 @@ def write_containment_map(path: Path,
 
 def main():
     ap = argparse.ArgumentParser(
-        description="Merge contained transcripts by redistributing expression to isoforms that contain their splice chain (cascade redistribution), with long-read safeguards, logging, multiprocessing, multi-sample support, and counts rounding."
+        description="Merge contained transcripts by redistributing expression to isoforms that contain their splice chain (cascade redistribution), with long-read safeguards, logging, multiprocessing, multi-sample support, cross-sample protection, and counts rounding."
     )
     ap.add_argument("--gtf", required=True, type=Path, help="Input GTF (optionally .gz) with exon features.")
     ap.add_argument("--expr", required=True, type=Path, help="Expression table (CSV/TSV). Must contain transcript IDs.")
     ap.add_argument("--tx-col", default="transcript_id", help="Column name in expression table for transcript IDs (default: transcript_id).")
     ap.add_argument("--expr-col", default="expression", help="Expression columns: single name, comma-separated list, or '*' for all non-ID columns (default: 'expression').")
-    ap.add_argument("--drop-contained", action="store_true", help="Drop contained transcripts from output (default: keep zeroed unless flag set).")
+    ap.add_argument("--drop-contained", action="store_true", help="Drop contained transcripts from output (default: keep zeroed unless flag set). Protected transcripts are never dropped.")
     ap.add_argument("--proportional", action="store_true", help="Redistribute proportional to supersets' expression (default: equal split unless flag set).")
 
     # Long-read specific controls
@@ -518,6 +533,12 @@ def main():
     ap.add_argument("--protect-tss-bed", type=Path, default=None, help="BED file with known CAGE/TSS regions; enforces TSS proximity within --protect-window.")
     ap.add_argument("--protect-tes-bed", type=Path, default=None, help="BED file with known PAS/TES regions; enforces TES proximity within --protect-window.")
     ap.add_argument("--protect-window", type=int, default=50, help="Window (bp) to consider TSS/TES proximity (default: 50bp).")
+
+    # Cross-sample protection per (gene,locus)
+    ap.add_argument("--merge-min-frac", type=float, default=None,
+                    help="Protect any transcript that reaches at least this fraction of its (gene,locus) total in enough samples (e.g., 0.05).")
+    ap.add_argument("--merge-min-samples", type=int, default=1,
+                    help="Protect a transcript if it meets --merge-min-frac in at least this many samples (columns).")
 
     # Logging & parallelism
     ap.add_argument("--log-every", type=int, default=1000, help="Print progress every N genes (default: 1000).")
@@ -550,6 +571,7 @@ def main():
     if args.protect_tes_bed:
         print(f"[INFO {ts()}] Loaded TES protection regions from {args.protect_tes_bed}")
 
+    # Find containment relationships (per (gene,locus))
     tx2supersets, total_genes, contained_tx_count = find_supersets_with_filters_and_logging(
         tx2chain=tx2chain,
         tx2gene=tx2gene,
@@ -564,11 +586,40 @@ def main():
         threads=max(1, args.threads) if mp is not None else 1,
     )
 
+    # Cross-sample protection per (gene,locus)
+    expr_cols = [c for c in expr_df.columns if c != "transcript_id"]
+    protected_tx: Set[str] = set()
+    if args.merge_min_frac is not None and args.merge_min_samples > 0 and expr_cols:
+        dfg = expr_df.copy()
+        dfg["__gene__"]  = dfg["transcript_id"].map(lambda t: tx2gene.get(t, None))
+        dfg["__locus__"] = dfg["transcript_id"].map(lambda t: tx2locus.get(t, None))
+        dfg = dfg[~dfg["__gene__"].isna() & ~dfg["__locus__"].isna()].copy()
+
+        group_totals = dfg.groupby(["__gene__", "__locus__"])[expr_cols].sum()
+        dfg = dfg.join(group_totals, on=["__gene__", "__locus__"], rsuffix="__tot")
+
+        meet_counts = np.zeros(len(dfg), dtype=int)
+        thresh = float(args.merge_min_frac)
+        for col in expr_cols:
+            val = dfg[col].to_numpy(dtype=float)
+            tot = dfg[f"{col}__tot"].to_numpy(dtype=float)
+            frac = np.divide(val, tot, out=np.zeros_like(val, dtype=float), where=(tot > 0))
+            meet_counts += (frac >= thresh).astype(int)
+
+        dfg["__meet__"] = meet_counts
+        protected_tx = set(
+            dfg.loc[dfg["__meet__"] >= int(args.merge_min_samples), "transcript_id"].astype(str)
+        )
+        print(f"[INFO {ts()}] Protection per (gene,locus): {len(protected_tx)} transcript(s) will be preserved across all samples")
+    else:
+        print(f"[INFO {ts()}] No cross-sample protection rule active (all contained transcripts eligible to merge)")
+
     print(f"[INFO {ts()}] Redistributing expression across {n_cols} column(s) with cascade...")
     adjusted_df = redistribute_expression(
         expr_df,
         tx2supersets,
         tx2chain,
+        protected_tx=protected_tx,
         drop_contained=args.drop_contained,
         proportional=args.proportional,
     )
@@ -601,27 +652,29 @@ if __name__ == "__main__":
         print("""\
 Usage examples:
 
-# Multi-sample counts (cascade redistribution is always on):
-  python redistribute_splice_chain_expression.py \
-    --gtf transcripts.gtf \
-    --expr counts.tsv \
-    --tx-col '#TranscriptID' \
-    --expr-col '*' \
-    --terminal-only --minimal-superset \
-    --proportional --drop-contained \
-    --counts --round-counts nearest \
-    --threads 8 --log-every 1000 \
-    --out adjusted_counts.csv \
+# Multi-sample counts with (gene,locus) protection:
+  python redistribute_splice_chain_expression.py \\
+    --gtf transcripts.gtf \\
+    --expr counts.tsv \\
+    --tx-col '#TranscriptID' \\
+    --expr-col '*' \\
+    --terminal-only --minimal-superset \\
+    --merge-min-frac 0.05 --merge-min-samples 3 \\
+    --proportional --drop-contained \\
+    --counts --round-counts nearest \\
+    --threads 8 --log-every 1000 \\
+    --out adjusted_counts.csv \\
     --map-out containment_map.tsv
 
-# Abundances (e.g., TPM) across selected columns:
-  python redistribute_splice_chain_expression.py \
-    --gtf transcripts.gtf \
-    --expr abundances.tsv \
-    --tx-col transcript_id \
-    --expr-col TPM,FPKM \
-    --protect-tss-bed known_TSS_clusters.bed --protect-window 75 \
-    --proportional \
+# Abundances (e.g., TPM) across selected columns, with protection:
+  python redistribute_splice_chain_expression.py \\
+    --gtf transcripts.gtf \\
+    --expr abundances.tsv \\
+    --tx-col transcript_id \\
+    --expr-col TPM,FPKM \\
+    --protect-tss-bed known_TSS_clusters.bed --protect-window 75 \\
+    --merge-min-frac 0.05 --merge-min-samples 2 \\
+    --proportional \\
     --out adjusted_expression.csv
 """)
     else:

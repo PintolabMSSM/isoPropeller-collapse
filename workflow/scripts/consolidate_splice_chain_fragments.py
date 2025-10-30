@@ -170,7 +170,6 @@ def summarize_isoform_dominance_with_tail(expr_df: pd.DataFrame,
                                           tail_thresholds: Tuple[float, ...] = (0.10, 0.05, 0.01),
                                           out_prefix: Optional[str] = None):
     """Summarize isoform dominance and the 'long tail' per gene or (gene,locus)."""
-    import matplotlib.pyplot as plt
 
     expr_cols = [c for c in expr_df.columns if c != "transcript_id"]
     key_name = "gene,locus" if per_locus else "gene"
@@ -248,24 +247,24 @@ def summarize_isoform_dominance_with_tail(expr_df: pd.DataFrame,
         counts_df.to_csv(f"{out_prefix}_n_ge_thresholds_per_group_col.csv", index=False)
         tail_summary_df.to_csv(f"{out_prefix}_n_ge_thresholds_summary.csv", index=False)
 
-        import matplotlib.pyplot as plt
-        plt.figure()
-        plt.hist(top_fracs_all, bins=50, range=(0,1), edgecolor="black")
-        plt.xlabel("Top isoform fraction of group total")
-        plt.ylabel("Count (group × column)")
-        plt.title(f"Isoform dominance per {key_name}")
-        plt.tight_layout()
-        plt.savefig(f"{out_prefix}_top_isoform_frac.png", dpi=150)
+        #import matplotlib.pyplot as plt
+        #plt.figure()
+        #plt.hist(top_fracs_all, bins=50, range=(0,1), edgecolor="black")
+        #plt.xlabel("Top isoform fraction of group total")
+        #plt.ylabel("Count (group × column)")
+        #plt.title(f"Isoform dominance per {key_name}")
+        #plt.tight_layout()
+        #plt.savefig(f"{out_prefix}_top_isoform_frac.png", dpi=150)
 
-        plt.figure()
-        x = np.arange(len(tail_thresholds))
-        plt.bar(x, tail_summary_df["median_n_ge_t"].values)
-        plt.xticks(x, [f"≥{int(t*100)}%" for t in tail_thresholds])
-        plt.ylabel("Median # isoforms per group")
-        plt.title(f"Median isoform count above thresholds per {key_name}")
-        plt.tight_layout()
-        plt.savefig(f"{out_prefix}_n_ge_thresholds_median.png", dpi=150)
-        print(f"[INFO {ts()}] Saved isoform-dominance summary CSVs/PNGs with prefix: {out_prefix}_*")
+        #plt.figure()
+        #x = np.arange(len(tail_thresholds))
+        #plt.bar(x, tail_summary_df["median_n_ge_t"].values)
+        #plt.xticks(x, [f"≥{int(t*100)}%" for t in tail_thresholds])
+        #plt.ylabel("Median # isoforms per group")
+        #plt.title(f"Median isoform count above thresholds per {key_name}")
+        #plt.tight_layout()
+        #plt.savefig(f"{out_prefix}_n_ge_thresholds_median.png", dpi=150)
+        print(f"[INFO {ts()}] Saved isoform-dominance summary CSVs with prefix: {out_prefix}_*")
 
     return {"top_fracs_all": top_fracs_all, "tail_summary_df": tail_summary_df}
 

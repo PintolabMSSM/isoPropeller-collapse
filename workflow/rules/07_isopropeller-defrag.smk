@@ -60,7 +60,7 @@ rule isopropeller_defrag:
           --map-out "{output.ctm}"
 
         # Filter the 
-        gtf-filter-attributes.pl -m "{output.red}" -v "{input.gtf}"   > "{output.gtf}"
+        gtf-filter-attributes.pl -m "{output.red}" "{input.gtf}"      > "{output.gtf}"
         intersect-by-ids -ff "{input.exp}" -fc 1 -if "{output.red}"   > "{output.exp}"
         intersect-by-ids -ff "{input.ids}" -fc 4 -if "{output.red}"   > "{output.ids}"
         intersect-by-ids -ff "{input.tss}" -fc 4 -if "{output.red}"   > "{output.tss}"

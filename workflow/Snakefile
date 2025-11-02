@@ -167,6 +167,7 @@ include: "rules/03_isopropeller.smk"
 include: "rules/04_isopropeller-merge.smk"
 include: "rules/05_isopropeller-filter.smk"
 include: "rules/06_qc-reports.smk"
+include: "rules/07_isopropeller-defrag.smk"
 
 # Import conditional rules
 if MODE == "bam":
@@ -229,4 +230,12 @@ rule all:
             suffix=["depth-gt1"],
             filtertag=[FILTERTAG],
         ),
-    
+
+        # Defragmented pipeline outputs
+        expand("07_isoPropeller-defrag/{prefix}_depth-gt1_" + FILTERTAG + "/{prefix}_depth-gt1_isoqc_pass_defrag_exp_redist.txt", prefix=[MERGEDISOPREFIX]),
+        expand("07_isoPropeller-defrag/{prefix}_depth-gt1_" + FILTERTAG + "/{prefix}_depth-gt1_isoqc_pass_defrag.gtf", prefix=[MERGEDISOPREFIX]),
+        expand("07_isoPropeller-defrag/{prefix}_depth-gt1_" + FILTERTAG + "/{prefix}_depth-gt1_isoqc_pass_defrag_exp.txt", prefix=[MERGEDISOPREFIX]),
+        expand("07_isoPropeller-defrag/{prefix}_depth-gt1_" + FILTERTAG + "/{prefix}_depth-gt1_isoqc_pass_defrag_id.txt", prefix=[MERGEDISOPREFIX]),
+        expand("07_isoPropeller-defrag/{prefix}_depth-gt1_" + FILTERTAG + "/{prefix}_depth-gt1_isoqc_pass_defrag_tss.bed", prefix=[MERGEDISOPREFIX]),
+        expand("07_isoPropeller-defrag/{prefix}_depth-gt1_" + FILTERTAG + "/{prefix}_depth-gt1_isoqc_pass_defrag_tts.bed", prefix=[MERGEDISOPREFIX]),
+        expand("07_isoPropeller-defrag/{prefix}_depth-gt1_" + FILTERTAG + "/{prefix}_depth-gt1_isoqc_pass_defrag.trackgroups", prefix=[MERGEDISOPREFIX]),

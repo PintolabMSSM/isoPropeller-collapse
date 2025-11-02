@@ -427,6 +427,7 @@ rule filter_terminal_exons_in_segdup:
 # ───────────────────────────────────────────────
 # Rule: Aggregate Filtered Final Outputs 
 # ───────────────────────────────────────────────
+ruleorder: filter_aggregate_final_outputs > gff_to_bed
 rule filter_aggregate_final_outputs:
     message: "Aggregating final isoform outputs after filtering ({wildcards.prefix}_{wildcards.suffix})"
     input:

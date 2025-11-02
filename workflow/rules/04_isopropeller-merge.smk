@@ -28,10 +28,10 @@ rule prepare_gtf_list:
         """
 
 # ───────────────────────────────────────────────
-# One rule: merge to a temp prefix, then either consolidate or move to final outputs
+# Rule: Merge the GTF files together into a single output file
 # ───────────────────────────────────────────────
 rule merge_isopropeller_gtfs:
-    message: "Merging isoPropeller GTFs"
+    message: "Merging isoPropeller GTFs ({wildcards.suffix})"
     input:
         gtf_list = "04_isoPropeller-merge/gtf_list_{suffix}.txt"
     output:
@@ -46,69 +46,22 @@ rule merge_isopropeller_gtfs:
     conda:
         SNAKEDIR + "envs/isopropeller.yaml"
     params:
-        prefix_val  = MERGEDISOPREFIX,
-        consolidate = CONSOLIDATE_CONTAINED_SPLICECHAINS,
-        redist_py   = SNAKEDIR + "scripts/consolidate_splice_chain_fragments.py",
-        min_frac    = CONSOLIDATE_MERGE_MIN_FRAC,
-        min_samples = CONSOLIDATE_MERGE_MIN_SAMPLES,
-        round_mode  = CONSOLIDATE_ROUND_MODE,
-        tmp_prefix  = "04_isoPropeller-merge/{prefix}_{suffix}_before-consolidate-splice-fragments"
+        prefix_val = MERGEDISOPREFIX
     shell:
         r"""
         (
-        set -euo pipefail
-
-        echo "[merge] Running isoPropeller_merge to temp prefix"
-
+        echo "Merging isoPropeller GTFs"
+        
         isoPropeller_merge \
-          -i "{input.gtf_list}" \
-          -o "{params.tmp_prefix}" \
-          -p "{params.prefix_val}" \
-          -e depth \
-          -t {threads}
-
-        if [[ "{params.consolidate}" == "True" || "{params.consolidate}" == "true" ]]; then
-          echo "[consolidate] Cascade redistribution + GTF filtering"
-
-          # Run consolidation; output expression is **TSV**
-          python "{params.redist_py}" \
-            --gtf  "{params.tmp_prefix}.gtf"     \
-            --expr "{params.tmp_prefix}_exp.txt" \
-            --tx-col 'transcript_id' \
-            --expr-col '*' \
-            --terminal-only \
-            --minimal-superset \
-            --merge-min-frac {params.min_frac} --merge-min-samples {params.min_samples} \
-            --proportional \
-            --drop-contained \
-            --counts --round-counts {params.round_mode} \
-            --threads {threads} \
-            --log-every 1000 \
-            --out "{output.exp}.tmp.tsv" \
-            --map-out "04_isoPropeller-merge/{params.prefix_val}_{wildcards.suffix}_before-consolidate-splice-fragments_containment_map.tsv"
-
-          # Final expression: TSV -> overwrite declared output name
-          mv "{output.exp}.tmp.tsv" "{output.exp}"
-
-          # Final ID list: first column of TSV
-          intersect-by-ids -ff "{params.tmp_prefix}_id.txt" -fc 4 -if  "{output.exp}" > "{output.ids}"
-
-          # Filter GTF to surviving transcripts using the consolidated IDs
-          echo "[consolidate] Filtering GTF by consolidated IDs"
-          gtf-filter-attributes.pl -a transcript_id -m "{output.ids}" "{params.tmp_prefix}.gtf" > "{output.gtf}"
-
-          echo "[consolidate] Done"
-
-        else
-          echo "[merge] Consolidation disabled — moving temp files to final outputs"
-          mv "{params.tmp_prefix}.gtf"     "{output.gtf}"
-          mv "{params.tmp_prefix}_exp.txt" "{output.exp}"
-          mv "{params.tmp_prefix}_id.txt"  "{output.ids}"
-        fi
-
+            -i "{input.gtf_list}" \
+            -o "04_isoPropeller-merge/{params.prefix_val}_{wildcards.suffix}" \
+            -p "{params.prefix_val}" \
+            -e depth \
+            -t {threads} 
+        
+        echo "Finished merging isoPropeller GTFs"
         ) &> "{log}"
         """
-
 
 # ───────────────────────────────────────────────
 # Rule: Similar to what we did for the GTF list, we also prepare and end dist listing for all input files

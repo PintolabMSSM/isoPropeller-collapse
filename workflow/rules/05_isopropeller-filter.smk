@@ -432,6 +432,7 @@ rule filter_aggregate_final_outputs:
     message: "Aggregating final isoform outputs after filtering ({wildcards.prefix}_{wildcards.suffix})"
     input:
         gtf = "04_isoPropeller-merge/{prefix}_{suffix}.gtf",
+        mod = "04_isoPropeller-merge/{prefix}_{suffix}_modal_ends.gtf",
         exp = "04_isoPropeller-merge/{prefix}_{suffix}_exp.txt",
         ids = "04_isoPropeller-merge/{prefix}_{suffix}_id.txt",
         tss = "04_isoPropeller-merge/{prefix}_{suffix}_tss.bed",
@@ -439,6 +440,7 @@ rule filter_aggregate_final_outputs:
         fail_ids = lambda wc: [func(wc) for func in FILTER_FAIL_ID_PATHS]
     output:
         gtf = "05_isoPropeller-filter/{prefix}_{suffix}_{filtertag}/{prefix}_{suffix}_isoqc_pass.gtf",
+        mod = "05_isoPropeller-filter/{prefix}_{suffix}_{filtertag}/{prefix}_{suffix}_isoqc_pass_modal_ends.gtf",
         exp = "05_isoPropeller-filter/{prefix}_{suffix}_{filtertag}/{prefix}_{suffix}_isoqc_pass_exp.txt",
         ids = "05_isoPropeller-filter/{prefix}_{suffix}_{filtertag}/{prefix}_{suffix}_isoqc_pass_id.txt",
         tss = "05_isoPropeller-filter/{prefix}_{suffix}_{filtertag}/{prefix}_{suffix}_isoqc_pass_tss.bed",
@@ -484,6 +486,7 @@ rule filter_aggregate_final_outputs:
             shell("""
                 sort -u {fail_id_files_quoted}                                > "{output.qcf}" 2>> "{log}"
                 gtf-filter-attributes.pl -m "{output.qcf}" -v "{input.gtf}"   > "{output.gtf}" 2>> "{log}"
+                gtf-filter-attributes.pl -m "{output.qcf}" -v "{input.mod}"   > "{output.mod}" 2>> "{log}"
                 diff-by-ids -ff "{input.ids}" -fc 4 -if "{output.qcf}"        > "{output.ids}" 2>> "{log}"
                 diff-by-ids -ff "{input.tss}" -fc 4 -if "{output.qcf}"        > "{output.tss}" 2>> "{log}"
                 diff-by-ids -ff "{input.tts}" -fc 4 -if "{output.qcf}"        > "{output.tts}" 2>> "{log}"

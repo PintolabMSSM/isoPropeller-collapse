@@ -6,6 +6,7 @@ rule isopropeller_defrag:
     message: "Defragmenting isoPropeller outputs"
     input:
         gtf = "05_isoPropeller-filter/{prefix}_{suffix}_{filtertag}/{prefix}_{suffix}_isoqc_pass.gtf",
+        mod = "05_isoPropeller-filter/{prefix}_{suffix}_{filtertag}/{prefix}_{suffix}_isoqc_pass_modal_ends.gtf",
         exp = "05_isoPropeller-filter/{prefix}_{suffix}_{filtertag}/{prefix}_{suffix}_isoqc_pass_exp.txt",
         ids = "05_isoPropeller-filter/{prefix}_{suffix}_{filtertag}/{prefix}_{suffix}_isoqc_pass_id.txt",
         tss = "05_isoPropeller-filter/{prefix}_{suffix}_{filtertag}/{prefix}_{suffix}_isoqc_pass_tss.bed",
@@ -16,6 +17,7 @@ rule isopropeller_defrag:
         ctm = "07_isoPropeller-defrag/{prefix}_{suffix}_{filtertag}/{prefix}_{suffix}_isoqc_pass_containment_map.tsv",
         red = "07_isoPropeller-defrag/{prefix}_{suffix}_{filtertag}/{prefix}_{suffix}_isoqc_pass_defrag_exp_redist.txt",
         gtf = "07_isoPropeller-defrag/{prefix}_{suffix}_{filtertag}/{prefix}_{suffix}_isoqc_pass_defrag.gtf",
+        mod = "07_isoPropeller-defrag/{prefix}_{suffix}_{filtertag}/{prefix}_{suffix}_isoqc_pass_defrag_modal_ends.gtf",
         exp = "07_isoPropeller-defrag/{prefix}_{suffix}_{filtertag}/{prefix}_{suffix}_isoqc_pass_defrag_exp.txt",
         ids = "07_isoPropeller-defrag/{prefix}_{suffix}_{filtertag}/{prefix}_{suffix}_isoqc_pass_defrag_id.txt",
         tss = "07_isoPropeller-defrag/{prefix}_{suffix}_{filtertag}/{prefix}_{suffix}_isoqc_pass_defrag_tss.bed",
@@ -61,6 +63,7 @@ rule isopropeller_defrag:
 
         # Filter the 
         gtf-filter-attributes.pl -m "{output.red}" "{input.gtf}"      > "{output.gtf}"
+        gtf-filter-attributes.pl -m "{output.red}" "{input.mod}"      > "{output.mod}"
         intersect-by-ids -ff "{input.exp}" -fc 1 -if "{output.red}"   > "{output.exp}"
         intersect-by-ids -ff "{input.ids}" -fc 4 -if "{output.red}"   > "{output.ids}"
         intersect-by-ids -ff "{input.tss}" -fc 4 -if "{output.red}"   > "{output.tss}"

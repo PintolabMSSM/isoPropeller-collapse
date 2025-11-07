@@ -102,10 +102,14 @@ rule analyze_end_regions:
     message: "Analyzing end regions for suffix {wildcards.suffix}"
     input:
         dist_list = "04_isoPropeller-merge/temp_end_dist_list.txt",
-        id_list   = "04_isoPropeller-merge/{prefix}_{suffix}_id.txt"
+        id_list   = "04_isoPropeller-merge/{prefix}_{suffix}_id.txt",
+        gtf = "04_isoPropeller-merge/{prefix}_{suffix}.gtf",
     output:
-        tss = "04_isoPropeller-merge/{prefix}_{suffix}_tss.bed",
-        tts = "04_isoPropeller-merge/{prefix}_{suffix}_tts.bed"
+        tss       = "04_isoPropeller-merge/{prefix}_{suffix}_tss.bed",
+        tts       = "04_isoPropeller-merge/{prefix}_{suffix}_tts.bed",
+        tsscount  = "04_isoPropeller-merge/{prefix}_{suffix}_tss_count.txt",
+        ttscount  = "04_isoPropeller-merge/{prefix}_{suffix}_tts_count.txt",
+        gtf_modal = "04_isoPropeller-merge/{prefix}_{suffix}_modal_ends.gtf",
     log:
         "logs/04_isoPropeller-merge/analyze_end_regions_{prefix}_{suffix}.log"
     benchmark:
@@ -120,10 +124,33 @@ rule analyze_end_regions:
         (
         echo "Analyzing end regions"
         
+        # Generate tts and tss bed files
         isoPropeller_end_region \
             -i "{input.dist_list}" \
             -o "04_isoPropeller-merge/{params.prefix_val}_{wildcards.suffix}" \
             -d "{input.id_list}" \
+            -t {threads}
+
+        # TSS clustering and quantification
+        isoPropeller_TSS_quantification.pl \
+            -i "{input.dist_list}" \
+            -o "{output.tsscount}" \
+            -d "{input.id_list}" \
+            -t {threads}
+
+        # TTS clustering and qantification
+        isoPropeller_TTS_quantification.pl \
+            -i "{input.dist_list}" \
+            -o "{output.ttscount}" \
+            -d "{input.id_list}" \
+            -t {threads}
+
+        # Update GTF file with modal ends
+        isoPropeller_end_update.pl \
+            -i "{input.gtf}" \
+            -o "{output.gtf_modal}" \
+            -a "{output.tsscount}" \
+            -b "{output.ttscount}" \
             -t {threads}
 
         echo "Finished analyzing end regions"

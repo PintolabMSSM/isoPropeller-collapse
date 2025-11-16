@@ -128,18 +128,21 @@ rule analyze_end_regions:
             -d "{input.id_list}" \
             -t {threads}
 
+        # TSS clustering and quantification
         isoPropeller_TSS_quantification \
             -i "{input.dist_list}" \
             -o "{output.tsscount}" \
             -d "{input.id_list}" \
             -t {threads}
 
+        # TTS clustering and qantification
         isoPropeller_TTS_quantification \
             -i "{input.dist_list}" \
             -o "{output.ttscount}" \
             -d "{input.id_list}" \
             -t {threads}
 
+        # Update GTF file with modal ends
         isoPropeller_end_update \
             -i "{input.gtf}" \
             -o "{output.gtf_modal}" \

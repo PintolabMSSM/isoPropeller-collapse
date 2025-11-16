@@ -35,13 +35,13 @@ rule merge_isopropeller_gtfs:
     input:
         gtf_list = "04_isoPropeller-merge/gtf_list_{suffix}.txt"
     output:
-        gtf = "04_isoPropeller-merge/{prefix}_{suffix}.gtf",
-        exp = "04_isoPropeller-merge/{prefix}_{suffix}_exp.txt",
-        ids = "04_isoPropeller-merge/{prefix}_{suffix}_id.txt"
+        gtf = f"04_isoPropeller-merge/{MERGEDISOPREFIX}_{{suffix}}.gtf",
+        exp = f"04_isoPropeller-merge/{MERGEDISOPREFIX}_{{suffix}}_exp.txt",
+        ids = f"04_isoPropeller-merge/{MERGEDISOPREFIX}_{{suffix}}_id.txt"
     log:
-        "logs/04_isoPropeller-merge/merge_{prefix}_{suffix}.log"
+        f"logs/04_isoPropeller-merge/merge_{MERGEDISOPREFIX}_{{suffix}}.log"
     benchmark:
-        "benchmarks/04_isoPropeller-merge/merge_{prefix}_{suffix}.txt"
+        f"benchmarks/04_isoPropeller-merge/merge_{MERGEDISOPREFIX}_{{suffix}}.txt"
     threads: 24
     conda:
         SNAKEDIR + "envs/isopropeller.yaml"
@@ -51,14 +51,12 @@ rule merge_isopropeller_gtfs:
         r"""
         (
         echo "Merging isoPropeller GTFs"
-        
         isoPropeller_merge \
             -i "{input.gtf_list}" \
             -o "04_isoPropeller-merge/{params.prefix_val}_{wildcards.suffix}" \
             -p "{params.prefix_val}" \
             -e depth \
-            -t {threads} 
-        
+            -t {threads}
         echo "Finished merging isoPropeller GTFs"
         ) &> "{log}"
         """
@@ -98,22 +96,23 @@ rule prepare_end_dist_list:
 # to select the TSS and TTS regions to accompany the main isoform gtf file
 # ───────────────────────────────────────────────
 ruleorder: analyze_end_regions > gff_to_bed
+ruleorder: analyze_end_regions > merge_isopropeller_gtfs
 rule analyze_end_regions:
     message: "Analyzing end regions for suffix {wildcards.suffix}"
     input:
         dist_list = "04_isoPropeller-merge/temp_end_dist_list.txt",
-        id_list   = "04_isoPropeller-merge/{prefix}_{suffix}_id.txt",
-        gtf = "04_isoPropeller-merge/{prefix}_{suffix}.gtf",
+        id_list   = f"04_isoPropeller-merge/{MERGEDISOPREFIX}_{{suffix}}_id.txt",
+        gtf       = f"04_isoPropeller-merge/{MERGEDISOPREFIX}_{{suffix}}.gtf",
     output:
-        tss       = "04_isoPropeller-merge/{prefix}_{suffix}_tss.bed",
-        tts       = "04_isoPropeller-merge/{prefix}_{suffix}_tts.bed",
-        tsscount  = "04_isoPropeller-merge/{prefix}_{suffix}_tss_count.txt",
-        ttscount  = "04_isoPropeller-merge/{prefix}_{suffix}_tts_count.txt",
-        gtf_modal = "04_isoPropeller-merge/{prefix}_{suffix}_modal_ends.gtf",
+        tss       = f"04_isoPropeller-merge/{MERGEDISOPREFIX}_{{suffix}}_tss.bed",
+        tts       = f"04_isoPropeller-merge/{MERGEDISOPREFIX}_{{suffix}}_tts.bed",
+        tsscount  = f"04_isoPropeller-merge/{MERGEDISOPREFIX}_{{suffix}}_tss_count.txt",
+        ttscount  = f"04_isoPropeller-merge/{MERGEDISOPREFIX}_{{suffix}}_tts_count.txt",
+        gtf_modal = f"04_isoPropeller-merge/{MERGEDISOPREFIX}_{{suffix}}_modal_ends.gtf",
     log:
-        "logs/04_isoPropeller-merge/analyze_end_regions_{prefix}_{suffix}.log"
+        f"logs/04_isoPropeller-merge/analyze_end_regions_{MERGEDISOPREFIX}_{{suffix}}.log"
     benchmark:
-        "benchmarks/04_isoPropeller-merge/analyze_end_regions_{prefix}_{suffix}.txt"
+        f"benchmarks/04_isoPropeller-merge/analyze_end_regions_{MERGEDISOPREFIX}_{{suffix}}.txt"
     threads: 24
     params:
         prefix_val = MERGEDISOPREFIX
@@ -123,36 +122,30 @@ rule analyze_end_regions:
         r"""
         (
         echo "Analyzing end regions"
-        
-        # Generate tts and tss bed files
         isoPropeller_end_region \
             -i "{input.dist_list}" \
             -o "04_isoPropeller-merge/{params.prefix_val}_{wildcards.suffix}" \
             -d "{input.id_list}" \
             -t {threads}
 
-        # TSS clustering and quantification
-        isoPropeller_TSS_quantification.pl \
+        isoPropeller_TSS_quantification \
             -i "{input.dist_list}" \
             -o "{output.tsscount}" \
             -d "{input.id_list}" \
             -t {threads}
 
-        # TTS clustering and qantification
-        isoPropeller_TTS_quantification.pl \
+        isoPropeller_TTS_quantification \
             -i "{input.dist_list}" \
             -o "{output.ttscount}" \
             -d "{input.id_list}" \
             -t {threads}
 
-        # Update GTF file with modal ends
-        isoPropeller_end_update.pl \
+        isoPropeller_end_update \
             -i "{input.gtf}" \
             -o "{output.gtf_modal}" \
             -a "{output.tsscount}" \
             -b "{output.ttscount}" \
             -t {threads}
-
         echo "Finished analyzing end regions"
         ) &> "{log}"
         """

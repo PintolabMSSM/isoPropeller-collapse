@@ -50,3 +50,13 @@ set-resources:
     lsf_queue:  "premium"
     mem_mb:     90000
     runtime:    1440
+
+  analyze_end_regions:
+    lsf_queue:  "express"
+    mem_mb:     90000
+    runtime:    720
+
+  qc_genotyping_snps:
+    lsf_queue:  "premium"
+    mem_mb:     25000
+    runtime:    1440

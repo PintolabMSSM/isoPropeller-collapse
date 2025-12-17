@@ -127,6 +127,10 @@ CONSOLIDATE_ROUND_MODE              = config.get("consolidate_round_mode","neare
 CONSOLIDATE_MERGE_MIN_FRAC          = config.get("consolidate_merge_min_frac",0.1)
 CONSOLIDATE_MERGE_MIN_SAMPLES       = config.get("consolidate_merge_min_samples",2)
 
+# Parameters for pruning low-expressed isoforms
+PRUNE_LOW_EXPRESSED_ISOFORMS_RETAIN_PCT = config.get("prune_low_expressed_isoforms_retain_pct",97)
+PRUNE_LOW_EXPRESSED_ISFORMS_MATCH_MODE  = config.get("prune_low_expressed_isforms_match_mode","any_shared")
+
 
 # Define local variables: Choose whether or not to run certain rules
 REMOVE_MONOEXONS_NO_TSS       = as_bool(config.get("remove_monoexons_without_cage_support", True))
@@ -168,6 +172,8 @@ include: "rules/04_isopropeller-merge.smk"
 include: "rules/05_isopropeller-filter.smk"
 include: "rules/06_qc-reports.smk"
 include: "rules/07_isopropeller-defrag.smk"
+include: "rules/08_isopropeller-defrag-prune.smk"
+
 
 # Import conditional rules
 if MODE == "bam":
@@ -239,3 +245,14 @@ rule all:
         expand("07_isoPropeller-defrag/{prefix}_depth-gt1_" + FILTERTAG + "/{prefix}_depth-gt1_isoqc_pass_defrag_tss.bed", prefix=[MERGEDISOPREFIX]),
         expand("07_isoPropeller-defrag/{prefix}_depth-gt1_" + FILTERTAG + "/{prefix}_depth-gt1_isoqc_pass_defrag_tts.bed", prefix=[MERGEDISOPREFIX]),
         expand("07_isoPropeller-defrag/{prefix}_depth-gt1_" + FILTERTAG + "/{prefix}_depth-gt1_isoqc_pass_defrag.trackgroups", prefix=[MERGEDISOPREFIX]),
+
+        # Defrag-pruned pipeline outputs
+        expand("08_isoPropeller-defrag-pruned/{prefix}_depth-gt1_" + FILTERTAG + "/{prefix}_depth-gt1_isoqc_pass_defrag_pruned.gtf", prefix=[MERGEDISOPREFIX]),
+        expand("08_isoPropeller-defrag-pruned/{prefix}_depth-gt1_" + FILTERTAG + "/{prefix}_depth-gt1_isoqc_pass_defrag_pruned_modal_ends.gtf", prefix=[MERGEDISOPREFIX]),
+        expand("08_isoPropeller-defrag-pruned/{prefix}_depth-gt1_" + FILTERTAG + "/{prefix}_depth-gt1_isoqc_pass_defrag_pruned_exp.txt", prefix=[MERGEDISOPREFIX]),
+        expand("08_isoPropeller-defrag-pruned/{prefix}_depth-gt1_" + FILTERTAG + "/{prefix}_depth-gt1_isoqc_pass_defrag_pruned_id.txt", prefix=[MERGEDISOPREFIX]),
+        expand("08_isoPropeller-defrag-pruned/{prefix}_depth-gt1_" + FILTERTAG + "/{prefix}_depth-gt1_isoqc_pass_defrag_pruned_tss.bed", prefix=[MERGEDISOPREFIX]),
+        expand("08_isoPropeller-defrag-pruned/{prefix}_depth-gt1_" + FILTERTAG + "/{prefix}_depth-gt1_isoqc_pass_defrag_pruned_tts.bed", prefix=[MERGEDISOPREFIX]),
+        expand("08_isoPropeller-defrag-pruned/{prefix}_depth-gt1_" + FILTERTAG + "/{prefix}_depth-gt1_isoqc_pass_defrag_pruned.trackgroups", prefix=[MERGEDISOPREFIX]),
+        expand("08_isoPropeller-defrag-pruned/{prefix}_depth-gt1_" + FILTERTAG + "/{prefix}_depth-gt1_isoqc_pass_defrag_pruned_clusters.txt", prefix=[MERGEDISOPREFIX]),
+        expand("08_isoPropeller-defrag-pruned/{prefix}_depth-gt1_" + FILTERTAG + "/{prefix}_depth-gt1_isoqc_pass_defrag_pruned_dropped.txt", prefix=[MERGEDISOPREFIX]),

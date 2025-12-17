@@ -52,17 +52,6 @@ max_chrM_reads: 50000
 # Prefix to use for the merged isoform file and final merged isoforms
 merged_isoform_prefix:  "ISOP"
 
-# After the merge step, optionally consolidate smaller splice chains into longer splice chains
-# if they are fully contiguous and contained in a longer splicechain but are missing terminal exons
-# (these are likely incomplete transcript fragments). Reads from the shorter splice chains are
-# proportionally redistributed across the longer splice chains. Dominant isoforms that account for at 
-# least 10% or more of the transcript output per gene (consolidate_merge_min_frac) in at least 2 or 
-# more samples (consolidate_merge_min_samples) will never be merged into larger transcripts.
-consolidate_contained_splicechains:                 True
-consolidate_merge_min_frac:                         0.1
-consolidate_merge_min_samples:                      2
-
-
 # After the isoPropeller merging steps, optionally perform the following filtering steps to reduce
 # technical and biological noise.
 remove_monoexons_without_cage_support:              True
@@ -82,6 +71,23 @@ filt_rmsk_min_ovlp_fract:           0.9
 filt_par_min_ovlp_fract:            0
 filt_tpm_min_count:                 0.5
 filt_tpm_min_samples:               3
+
+# After the merge step, optionally consolidate smaller splice chains into longer splice chains
+# if they are fully contiguous and contained in a longer splicechain but are missing terminal exons
+# (these are likely incomplete transcript fragments). Reads from the shorter splice chains are
+# proportionally redistributed across the longer splice chains. Dominant isoforms that account for at 
+# least 10% or more of the transcript output per gene (consolidate_merge_min_frac) in at least 2 or 
+# more samples (consolidate_merge_min_samples) will never be merged into larger transcripts.
+consolidate_contained_splicechains:                 True
+consolidate_merge_min_frac:                         0.1
+consolidate_merge_min_samples:                      2
+
+
+# Set parameters for pruning isoforms from overlapping isoform clusters, retaining only the top
+# percentile of expressed isoforms.
+prune_low_expressed_isoforms_retain_pct:            97
+prune_low_expressed_isforms_match_mode:             "any_shared"
+
 
 # Set up chunking parameters for transcriptclean
 transcriptclean_chunk_maxreads:  2000000

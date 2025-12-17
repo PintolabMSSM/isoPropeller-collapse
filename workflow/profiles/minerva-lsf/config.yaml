@@ -1,7 +1,7 @@
 # --- Define basic settings --- #
 executor:           lsf
 scheduler:          greedy
-jobs:               500
+jobs:               200
 latency-wait:       5
 rerun-incomplete:   true
 use-singularity:    true
@@ -53,7 +53,7 @@ set-resources:
 
   analyze_end_regions:
     lsf_queue:  "express"
-    mem_mb:     90000
+    mem_mb:     180000
     runtime:    720
 
   qc_genotyping_snps:

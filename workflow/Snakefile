@@ -130,7 +130,7 @@ CONSOLIDATE_MERGE_MIN_SAMPLES       = config.get("consolidate_merge_min_samples"
 # Parameters for pruning low-expressed isoforms
 PRUNE_LOW_EXPRESSED_ISOFORMS_RETAIN_PCT = config.get("prune_low_expressed_isoforms_retain_pct",97)
 PRUNE_LOW_EXPRESSED_ISFORMS_MATCH_MODE  = config.get("prune_low_expressed_isforms_match_mode","any_shared")
-
+PRUNE_LOW_EXPRESSED_ISFORMS_MIN_SAMPLES = config.get("prune_low_expressed_isforms_min_samples",2)
 
 # Define local variables: Choose whether or not to run certain rules
 REMOVE_MONOEXONS_NO_TSS       = as_bool(config.get("remove_monoexons_without_cage_support", True))

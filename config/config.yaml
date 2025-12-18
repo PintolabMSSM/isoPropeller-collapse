@@ -87,7 +87,7 @@ consolidate_merge_min_samples:                      2
 # percentile of expressed isoforms.
 prune_low_expressed_isoforms_retain_pct:            97
 prune_low_expressed_isforms_match_mode:             "any_shared"
-
+prune_low_expressed_isforms_min_samples:            2
 
 # Set up chunking parameters for transcriptclean
 transcriptclean_chunk_maxreads:  2000000

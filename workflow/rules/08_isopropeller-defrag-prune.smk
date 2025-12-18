@@ -34,6 +34,7 @@ rule isopropeller_defrag_prune:
         prefix_val  = MERGEDISOPREFIX,
         prune_py    = SNAKEDIR + "scripts/prune_rare_isoforms_from_clusters.py",
         retain_pct  = PRUNE_LOW_EXPRESSED_ISOFORMS_RETAIN_PCT,
+        min_samples = PRUNE_LOW_EXPRESSED_ISFORMS_MIN_SAMPLES,
         match_mode  = PRUNE_LOW_EXPRESSED_ISFORMS_MATCH_MODE,
     shell:
         r"""
@@ -48,10 +49,12 @@ rule isopropeller_defrag_prune:
           --expr "{input.exp}" \
           --tx-col '#TranscriptID' \
           --expr-col '*' \
-          --match-mode {params.match_mode} \
-          --retain-top-pct {params.retain_pct} \
-          --score sum \
-          --out "{output.exp}" \
+          --match-mode "{params.match_mode}" \
+          --sample-support-filter \
+          --retain-locus-expr-pct-per-sample {retain_pct} \
+          --min-support-samples {min_samples} \
+          --min-keep 1 \
+          --out filtered.tsv \
           --clusters-out "{output.cls}" \
           --dropped-out "{output.drp}"
         

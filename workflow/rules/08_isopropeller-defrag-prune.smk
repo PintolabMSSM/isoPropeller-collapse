@@ -2,7 +2,8 @@
 # ───────────────────────────────────────────────
 # Prune low-expressed isoforms from isoform clusters
 # ───────────────────────────────────────────────
-rule isopropeller_defrag:
+ruleorder: isopropeller_defrag_prune > gff_to_bed
+rule isopropeller_defrag_prune:
     message: "Defragmenting isoPropeller outputs"
     input:
         gtf = "07_isoPropeller-defrag/{prefix}_{suffix}_{filtertag}/{prefix}_{suffix}_isoqc_pass_defrag.gtf",

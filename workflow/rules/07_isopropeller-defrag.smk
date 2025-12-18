@@ -2,6 +2,7 @@
 # ───────────────────────────────────────────────
 # Remove transcript fragments from isopropeller outputs
 # ───────────────────────────────────────────────
+ruleorder: isopropeller_defrag > gff_to_bed
 rule isopropeller_defrag:
     message: "Defragmenting isoPropeller outputs"
     input:

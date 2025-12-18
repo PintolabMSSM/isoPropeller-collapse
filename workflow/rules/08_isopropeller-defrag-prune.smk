@@ -54,7 +54,7 @@ rule isopropeller_defrag_prune:
           --retain-locus-expr-pct-per-sample {params.retain_pct} \
           --min-support-samples {params.min_samples} \
           --min-keep 1 \
-          --out filtered.tsv \
+          --out "{output.exp}" \
           --clusters-out "{output.cls}" \
           --dropped-out "{output.drp}"
         

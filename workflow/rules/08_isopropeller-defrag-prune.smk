@@ -51,8 +51,8 @@ rule isopropeller_defrag_prune:
           --expr-col '*' \
           --match-mode "{params.match_mode}" \
           --sample-support-filter \
-          --retain-locus-expr-pct-per-sample {retain_pct} \
-          --min-support-samples {min_samples} \
+          --retain-locus-expr-pct-per-sample {params.retain_pct} \
+          --min-support-samples {params.min_samples} \
           --min-keep 1 \
           --out filtered.tsv \
           --clusters-out "{output.cls}" \

@@ -32,9 +32,9 @@ set-resources:
     mem_mb:     32000
 
   run_transcriptclean:
-    lsf_queue:  "express"
+    lsf_queue:  "premium"
     mem_mb:     350000
-    runtime:    720
+    runtime:    1440
 
   run_transcriptclean_on_chunk:
     lsf_queue:  "express"

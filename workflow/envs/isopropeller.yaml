@@ -2,6 +2,7 @@ name: isopropeller_env
 channels:
   - conda-forge
   - bioconda
+  - pintod02
   - hvbakel
   - defaults
 dependencies:

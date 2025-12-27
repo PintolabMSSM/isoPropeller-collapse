@@ -106,7 +106,7 @@ rule run_pbfusion:
         
         mkdir -p "$(dirname "{params.out_prefix}")"
         
-        pbfusion \
+        pbfusion discover \
            --threads        {threads} \
            --gtf            "{input.cache}" \
            --output-prefix  "{params.out_prefix}" \

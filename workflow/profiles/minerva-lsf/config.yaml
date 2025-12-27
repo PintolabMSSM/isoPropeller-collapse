@@ -60,3 +60,6 @@ set-resources:
     lsf_queue:  "premium"
     mem_mb:     25000
     runtime:    1440
+
+  mapping_pbfusion:
+    mem_mb:     64000

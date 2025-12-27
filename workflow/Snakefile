@@ -98,6 +98,7 @@ MAXINTRONLEN    = config.get("max_intron_length", 1250000)
 USE_TC          = as_bool(config.get("use_transcriptclean", True))
 ONLYCHR         = as_bool(config.get("limit_output_to_chrNXY", True))
 MAXCHRMREADS    = config.get("max_chrM_reads", 50000)
+RUN_PBFUSION    = as_bool(config.get("run_pbfusion", True))
 
 # Define local variables: Reference files
 GENOMEFASTA     = config.get("reference_genome_fasta")
@@ -174,7 +175,6 @@ include: "rules/06_qc-reports.smk"
 include: "rules/07_isopropeller-defrag.smk"
 include: "rules/08_isopropeller-defrag-prune.smk"
 
-
 # Import conditional rules
 if MODE == "bam":
     print("[INFO] Loading BAM→FASTQ staging rules.", file=sys.stderr)
@@ -186,6 +186,20 @@ else:
 if USE_TC:
     print("[INFO] Loading conditional transcriptclean rules.", file=sys.stderr)
     include: "rules/02_transcriptclean.smk"
+
+PBFUSION_TARGETS = []
+if RUN_PBFUSION:
+    print("[INFO] Loading conditional pbfusion rules.", file=sys.stderr)
+    include: "rules/09_pbfusion.smk"
+    
+    # Include all final pbfusion targets
+    PBFUSION_TARGETS = expand([
+        "09_pbfusion/{sample}/{sample}.breakpoints.bed",
+        "09_pbfusion/{sample}/{sample}.transcripts",
+        "09_pbfusion/{sample}/{sample}.breakpoints.groups",
+        "09_pbfusion/{sample}/{sample}.unannotated.bed",
+        "09_pbfusion/{sample}/{sample}.unannotated.clusters.bed"
+    ], sample=SAMPLES)
 
 
 # Make final targets
@@ -256,3 +270,6 @@ rule all:
         expand("08_isoPropeller-defrag-pruned/{prefix}_depth-gt1_" + FILTERTAG + "/{prefix}_depth-gt1_isoqc_pass_defrag_pruned.trackgroups", prefix=[MERGEDISOPREFIX]),
         expand("08_isoPropeller-defrag-pruned/{prefix}_depth-gt1_" + FILTERTAG + "/{prefix}_depth-gt1_isoqc_pass_defrag_pruned_clusters.txt", prefix=[MERGEDISOPREFIX]),
         expand("08_isoPropeller-defrag-pruned/{prefix}_depth-gt1_" + FILTERTAG + "/{prefix}_depth-gt1_isoqc_pass_defrag_pruned_dropped.txt", prefix=[MERGEDISOPREFIX]),
+
+        # Conditional PBfusion targets
+        PBFUSION_TARGETS

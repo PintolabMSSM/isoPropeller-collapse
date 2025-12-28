@@ -19,7 +19,8 @@ rule mapping_pbfusion:
         SNAKEDIR + "envs/pbfusion.yaml"
     params:
         read_group = lambda wildcards: (
-            f"@RG\\t{wildcards.sample}\\t"
+            f"@RG\\t"
+            f"ID:{wildcards.sample}\\t"
             f"PL:PACBIO\\t"
             f"DS:READTYPE=CCS\\t"
             f"PM:SEQUELII\\t"

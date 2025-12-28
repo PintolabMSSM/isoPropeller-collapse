@@ -134,7 +134,7 @@ rule run_pbfusion:
            --min-fusion-read-fraction  {params.min_fusion_read_fraction} \
            --max-variability           {params.max_variability} \
            --max-readthrough           {params.max_readthrough} \
-           --max-genes-in_event        {params.max_genes_in_event} \
+           --max-genes-in-event        {params.max_genes_in_event} \
            --min-fusion-fraction       {params.min_fusion_fraction} \
            --prom-filter               {params.prom_filter} \
            --verbose \

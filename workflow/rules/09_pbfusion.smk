@@ -91,8 +91,8 @@ rule run_pbfusion:
         cache  = "09_pbfusion/reference_cache/gtf.bin"
     output:
         out_breakp       = "09_pbfusion/{sample}/{sample}.breakpoints.bed",
+        out_breakpgrp    = "09_pbfusion/{sample}/{sample}.breakpoints.groups.bed",
         out_transcr      = "09_pbfusion/{sample}/{sample}.transcripts",
-        out_breakpgrp    = "09_pbfusion/{sample}/{sample}.breakpoints.groups",
         out_unannot      = "09_pbfusion/{sample}/{sample}.unannotated.bed",
         out_unannot_clst = "09_pbfusion/{sample}/{sample}.unannotated.clusters.bed",
     log:
@@ -103,7 +103,8 @@ rule run_pbfusion:
     conda:
         SNAKEDIR + "envs/pbfusion.yaml"
     params:
-        out_prefix                 = "09_pbfusion/{sample}/{sample}",
+        out_dir                    = "09_pbfusion/{sample}",
+        out_prefix                 = "{sample}",
         min_fusion_quality         = PBFUSION_MIN_FUSION_QUALITY,
         min_coverage               = PBFUSION_MIN_COVERAGE,
         min_mean_identity          = PBFUSION_MIN_MEAN_IDENTITY,
@@ -121,11 +122,18 @@ rule run_pbfusion:
         
         echo "Running pbfusion"
         
-        mkdir -p "$(dirname "{params.out_prefix}")"
+        # Get ABSOLUTE paths for inputs
+        BAM_ABS=$(readlink -f "{input.bam}")
+        GTF_ABS=$(readlink -f "{input.cache}")
         
+        # Create and cd into the out_dir
+        mkdir -p "$(dirname "{params.out_dir}")"
+        cd "{params.out_dir}"
+        
+        # Run pbfusion
         pbfusion discover \
            --threads                  {threads} \
-           --gtf                      "{input.cache}" \
+           --gtf                      "$GTF_ABS" \
            --output-prefix            "{params.out_prefix}" \
            --min-fusion-quality       "{params.min_fusion_quality}" \
            --min-coverage              {params.min_coverage} \
@@ -138,7 +146,7 @@ rule run_pbfusion:
            --min-fusion-fraction       {params.min_fusion_fraction} \
            --prom-filter               {params.prom_filter} \
            --verbose \
-           "{input.bam}"
+           "$BAM_ABS"
         
         echo "Finished running pbfusion"
         ) &> "{log}"

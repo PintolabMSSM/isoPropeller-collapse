@@ -45,9 +45,6 @@ use_transcriptclean: true
 # custom contigs
 limit_output_to_chrNXY: true
 
-# Set this to true to also run a pbfusion analysis on the mapped reads
-run_pbfusion: true
-
 # If the mitochondrial read count is very high (>500k reads), it will take a long time to run
 # the isoPropeller collapsing. By default the pipeline will therefore downsample mitochondrial reads
 max_chrM_reads: 50000
@@ -98,3 +95,18 @@ transcripclean_chunk_threads:    8
 # QC analysis parameters
 varscan_min_coverage:  20
 varscan_min_reads2:    4
+
+# Options for a pbfusion analysis
+# IMPORTANT: The pbfusion application expects read names to have this format: m64077_200218_133802/7/ccs
+#            You must reformat read names when e.g. downloading fastq data from the sequence read archive
+run_pbfusion:                        true       # True: run pbfusion step. False: Do not run pbfusion step
+pbfusion_min_fusion_quality:         "MEDIUM"   # Determine the minimum fusion quality to emit. Choices: must be LOW or MEDIUM
+pbfusion_min_coverage:               2          # Real-cell filtering for single-cell data. Iso-Seq reads annotated with zero "rc" tag value will be filtered. Assigns "low confidence" to fusion calls below threshold
+pbfusion_min_mean_identity:          0.93       # Assigns "low confidence" to fusion calls where the mean alignment identity is below the threshold
+pbfusion_min_mean_mapq:              10         # Assigns "low confidence" to fusion calls where the mean mapq is below the threshold
+pbfusion_min_fusion_read_fraction:   0.25       # Remove breakpoint pairs from groups if they have gene alignments which fewer than [arg] reads in group have
+pbfusion_max_variability:            1000       # Assigns "low confidence" to fusion calls with the mean breakpoint distance is above the threshold
+pbfusion_max_readthrough:            100000     # Assigns "low confidence" to fusion calls spanning two genes below the readthrough threshold.
+pbfusion_max_genes_in_event:         3          # Mark fusion groups involving > [arg] genes as low quality. This is a common source of false positives 
+pbfusion_min_fusion_fraction:        0.01       # Minimum fusion fraction relative to transcript count
+pbfusion_prom_filter:                8          # Filter rarer events involving genes with high numbers of fusion partners. These are a common source of false positives. Disable by setting `--prom-filter 0`.

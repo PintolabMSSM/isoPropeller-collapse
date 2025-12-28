@@ -13,30 +13,36 @@ rule mapping_pbfusion:
     log:
         "logs/09_pbfusion/{sample}_mapping.log"
     threads: 24
-    params:
-        max_intron_length = MAXINTRONLEN,
-        minimap_flags     = "--eqx -ax splice:hq --MD -uf --secondary=no"
     benchmark: 
-        "benchmarks/09_pbfusion/{sample}_minimap2-mapping.txt"
+        "benchmarks/09_pbfusion/{sample}_pbmm2-mapping.txt"
     conda:
         SNAKEDIR + "envs/pbfusion.yaml"
+    params:
+        read_group = lambda wildcards: (
+            f"@RG\\t{wildcards.sample}\\t"
+            f"PL:PACBIO\\t"
+            f"DS:READTYPE=CCS\\t"
+            f"PM:SEQUELII\\t"
+            f"SM:{wildcards.sample}"
+        )
     shell:
         r"""
         (
-        set -euo pipefail
-        
-        echo "Mapping FLNC fastq with modified CIGAR string for pbfusion"
-        
-        mkdir -p "$(dirname {output.bam})"
-        minimap2 {params.minimap_flags} \
-            -G {params.max_intron_length} \
-            -t {threads} \
-               "{input.ref}" \
-               "{input.fastq}" \
-            | samtools sort -@ {threads} -o "{output.bam}"
-        samtools index "{output.bam}"
-        
-        echo "Finished mapping FLNC fastq"
+          set -euo pipefail
+
+          echo "Mapping Iso-Seq / polished transcripts with pbmm2 (ISOSEQ preset, --sort)"
+
+          mkdir -p "$(dirname "{output.bam}")"
+
+          pbmm2 align "{input.ref}" "{input.fastq}" "{output.bam}" \
+            --preset ISOSEQ \
+            --sort \
+            --rg '{params.read_group}' \
+            -j {threads}
+
+          samtools index "{output.bam}"
+
+          echo "Finished mapping with pbmm2"
         ) &> "{log}"
         """
 
@@ -96,7 +102,17 @@ rule run_pbfusion:
     conda:
         SNAKEDIR + "envs/pbfusion.yaml"
     params:
-        out_prefix  = "09_pbfusion/{sample}/{sample}"
+        out_prefix                 = "09_pbfusion/{sample}/{sample}",
+        min_fusion_quality         = PBFUSION_MIN_FUSION_QUALITY,
+        min_coverage               = PBFUSION_MIN_COVERAGE,
+        min_mean_identity          = PBFUSION_MIN_MEAN_IDENTITY,
+        min_mean_mapq              = PBFUSION_MIN_MEAN_MAPQ,
+        min_fusion_read_fraction   = PBFUSION_MIN_FUSION_READ_FRACTION,
+        max_variability            = PBFUSION_MAX_VARIABILITY,
+        max_readthrough            = PBFUSION_MAX_READTHROUGH,
+        max_genes_in_event         = PBFUSION_MAX_GENES_IN_EVENT,
+        min_fusion_fraction        = PBFUSION_MIN_FUSION_FRACTION,
+        prom_filter                = PBFUSION_PROM_FILTER,
     shell:
         r"""
         (
@@ -107,9 +123,19 @@ rule run_pbfusion:
         mkdir -p "$(dirname "{params.out_prefix}")"
         
         pbfusion discover \
-           --threads        {threads} \
-           --gtf            "{input.cache}" \
-           --output-prefix  "{params.out_prefix}" \
+           --threads                  {threads} \
+           --gtf                      "{input.cache}" \
+           --output-prefix            "{params.out_prefix}" \
+           --min-fusion-quality       "{params.min_fusion_quality}" \
+           --min-coverage              {params.min_coverage} \
+           --min-mean-identity         {params.min_mean_identity} \
+           --min-mean-mapq             {params.min_mean_mapq} \
+           --min-fusion-read-fraction  {params.min_fusion_read_fraction} \
+           --max-variability           {params.max_variability} \
+           --max-readthrough           {params.max_readthrough} \
+           --max-genes-in_event        {params.max_genes_in_event} \
+           --min-fusion-fraction       {params.min_fusion_fraction} \
+           --prom-filter               {params.prom_filter} \
            --verbose \
            "{input.bam}"
         

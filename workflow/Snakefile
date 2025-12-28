@@ -98,7 +98,6 @@ MAXINTRONLEN    = config.get("max_intron_length", 1250000)
 USE_TC          = as_bool(config.get("use_transcriptclean", True))
 ONLYCHR         = as_bool(config.get("limit_output_to_chrNXY", True))
 MAXCHRMREADS    = config.get("max_chrM_reads", 50000)
-RUN_PBFUSION    = as_bool(config.get("run_pbfusion", True))
 
 # Define local variables: Reference files
 GENOMEFASTA     = config.get("reference_genome_fasta")
@@ -133,7 +132,7 @@ PRUNE_LOW_EXPRESSED_ISOFORMS_RETAIN_PCT = config.get("prune_low_expressed_isofor
 PRUNE_LOW_EXPRESSED_ISFORMS_MATCH_MODE  = config.get("prune_low_expressed_isforms_match_mode","any_shared")
 PRUNE_LOW_EXPRESSED_ISFORMS_MIN_SAMPLES = config.get("prune_low_expressed_isforms_min_samples",2)
 
-# Define local variables: Choose whether or not to run certain rules
+# Define local variables: Choose whether or not to run certain filter rules
 REMOVE_MONOEXONS_NO_TSS       = as_bool(config.get("remove_monoexons_without_cage_support", True))
 REMOVE_MONOEXON_PRE_MRNAS     = as_bool(config.get("remove_monoexon_premRNA_fragments", True))
 REMOVE_NONCANONICAL_SPLICE    = as_bool(config.get("remove_isoforms_with_noncanonical_splice_junctions", True))
@@ -144,7 +143,7 @@ REMOVE_PAR_OVERLAP            = as_bool(config.get("remove_isoforms_overlapping_
 REMOVE_BELOW_TPM              = as_bool(config.get("remove_isoforms_not_meeting_TPM_threshold", True))
 REMOVE_TERMINAL_EXONS_SEGDUP  = as_bool(config.get("remove_isoforms_with_mismapped_segdup_exons", True))
 
-# Define local variables, transcriptclean chunking parameters
+# Define local variables: transcriptclean chunking parameters
 TRANSCRIPTCLEAN_CHUNK_MAXREADS  = config.get("transcriptclean_chunk_maxreads",2000000)
 TRANSCRIPTCLEAN_CHUNK_THREADS   = config.get("transcripclean_chunk_threads",2)
 
@@ -152,6 +151,19 @@ TRANSCRIPTCLEAN_CHUNK_THREADS   = config.get("transcripclean_chunk_threads",2)
 BAM_CHOICE          = str(config.get("qc_bam_choice", "labeled")).lower()  # "labeled" | "mapped"
 VARSCAN_MIN_COV     = config.get("varscan_min_coverage", 20),
 VARSCAN_MIN_READS2  = config.get("varscan_min_reads2", 4),
+
+# Define local variables: pbfusion arguments
+RUN_PBFUSION                        = as_bool(config.get("run_pbfusion", True))
+PBFUSION_MIN_FUSION_QUALITY         = config.get("pbfusion_min_fusion_quality", "MEDIUM")
+PBFUSION_MIN_COVERAGE               = config.get("pbfusion_min_coverage", 2)
+PBFUSION_MIN_MEAN_IDENTITY          = config.get("pbfusion_min_mean_identity", 0.93)
+PBFUSION_MIN_MEAN_MAPQ              = config.get("pbfusion_min_mean_mapq", 10)
+PBFUSION_MIN_FUSION_READ_FRACTION   = config.get("pbfusion_min_fusion_read_fraction", 0.25)
+PBFUSION_MAX_VARIABILITY            = config.get("pbfusion_max_variability", 1000)
+PBFUSION_MAX_READTHROUGH            = config.get("pbfusion_max_readthrough", 100000)
+PBFUSION_MAX_GENES_IN_EVENT         = config.get("pbfusion_max_genes_in_event", 3)
+PBFUSION_MIN_FUSION_FRACTION        = config.get("pbfusion_min_fusion_fraction", 0.01)
+PBFUSION_PROM_FILTER                = config.get("pbfusion_prom_filter", 8)
 
 # Set conditional isoPropeller arguments. If a terminal exon bed file is defined
 # in the configuration file, use it.

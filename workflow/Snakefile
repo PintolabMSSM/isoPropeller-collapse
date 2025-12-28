@@ -207,8 +207,8 @@ if RUN_PBFUSION:
     # Include all final pbfusion targets
     PBFUSION_TARGETS = expand([
         "09_pbfusion/{sample}/{sample}.breakpoints.bed",
+        "09_pbfusion/{sample}/{sample}.breakpoints.groups.bed",
         "09_pbfusion/{sample}/{sample}.transcripts",
-        "09_pbfusion/{sample}/{sample}.breakpoints.groups",
         "09_pbfusion/{sample}/{sample}.unannotated.bed",
         "09_pbfusion/{sample}/{sample}.unannotated.clusters.bed"
     ], sample=SAMPLES)

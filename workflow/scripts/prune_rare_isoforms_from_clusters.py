@@ -544,6 +544,7 @@ def main():
     args.out.parent.mkdir(parents=True, exist_ok=True)
     filtered = expr_df[expr_df["transcript_id"].isin(keep_set)][["transcript_id"] + expr_cols].copy()
     filtered.sort_values("transcript_id", inplace=True)
+    filtered.rename(columns={"transcript_id": "#TranscriptID"}, inplace=True)  # Rename the first columns to "#TranscriptID"
     filtered.to_csv(args.out, sep="\t", index=False)
 
     if args.clusters_out:

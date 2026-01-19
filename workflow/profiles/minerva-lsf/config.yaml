@@ -1,7 +1,7 @@
 # --- Define basic settings --- #
 executor:           lsf
 scheduler:          greedy
-jobs:               500
+jobs:               100
 latency-wait:       5
 rerun-incomplete:   true
 use-singularity:    true

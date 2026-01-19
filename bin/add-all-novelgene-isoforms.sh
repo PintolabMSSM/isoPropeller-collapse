@@ -6,11 +6,29 @@
 # Specify minimum input files
 #----------------------------------------------------------------------
 
-# Required input, the annotated GTF file from the annotate pipeline
-ISOP_ANNOTATE_GTF="/sc/arion/projects/pintod02b/ISOPROPELLER-RUNS/isopropeller-annotate-isoHuB-all-controls_n81_3above0.5_defrag/06_tracks/ISOP_depth-gt1_isoqc_pass_defrag_patched_extra_stopfix.gtf"
+usage() {
+    echo -e "\nUsage: $0 -a <ANNOTATE_GTF> -b <COLLAPSE_BASE>\n"
+    echo -e "  -a: Path to the annotated GTF file from isoPropeller-annotate"
+    echo -e "      (e.g. 06_tracks/ISOP_depth-gt1_isoqc_pass_defrag_patched_extra_stopfix.gtf)\n"
+    echo -e "  -b: Base path + prefix of the isoPropeller-collapse source files"
+    echo -e "      (e.g. 07_isoPropeller-defrag/ISOP_depth-gt1_tpm0.5s3/ISOP_depth-gt1_isoqc_pass_defrag)\n"
+    exit 1
+}
 
-# Required input, the prefix of the source files in the collapse pipeline used in the annotate run
-ISOP_COLLAPSE_BASE="/sc/arion/projects/pintod02b/ISOPROPELLER-RUNS/isopropeller-collapse-isoHuB_all-controls_n81/07_isoPropeller-defrag/ISOP_depth-gt1_tpm0.5s3/ISOP_depth-gt1_isoqc_pass_defrag"
+# Parse options
+while getopts "a:b:" opt; do
+    case $opt in
+        a) ISOP_ANNOTATE_GTF="$OPTARG" ;;
+        b) ISOP_COLLAPSE_BASE="$OPTARG" ;;
+        *) usage ;;
+    esac
+done
+
+# Check if required arguments are provided
+if [[ -z "$ISOP_ANNOTATE_GTF" || -z "$ISOP_COLLAPSE_BASE" ]]; then
+    log "Error: Missing required arguments."
+    usage
+fi
 
 
 #----------------------------------------------------------------------

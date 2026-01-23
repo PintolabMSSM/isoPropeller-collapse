@@ -3,6 +3,21 @@
 # 19.01.2026 12:22:52 EST
 
 #----------------------------------------------------------------------
+# Utility functions
+#----------------------------------------------------------------------
+
+log() {
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*"
+}
+
+die() {
+    echo "ERROR: $*" >&2
+    [[ $- == *i* ]] && return 1
+    exit 1
+}
+
+
+#----------------------------------------------------------------------
 # Specify minimum input files
 #----------------------------------------------------------------------
 
@@ -42,18 +57,9 @@ FILT_FOLDER="$(dirname ${ISOP_COLLAPSE_BASE}} | sed 's/\(\/07_\|\/08_\).*//' )/0
 UNFILT_PREFIX="$(dirname ${ISOP_COLLAPSE_BASE}} | sed 's/\(\/07_\|\/08_\).*//' )/04_isoPropeller-merge/ISOP_depth-gt1"
 
 # Start logging
-log() {
-    echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*"
-}
 log "Validating inputs"
 
 # Validate inputs
-die() {
-    echo "ERROR: $*" >&2
-    [[ $- == *i* ]] && return 1
-    exit 1
-}
-
 for VALIDATE in "${ISOP_ANNOTATE_GTF}" \
                 "${ISOP_COLLAPSE_BASE}_exp.txt" \
                 "${ISOP_COLLAPSE_BASE}.gtf" \
@@ -201,7 +207,12 @@ intersect-by-ids \
     -ff "${UNFILT_PREFIX}_exp.txt" \
     -if "${OUTPUT_FOLDER}/tmp/FINAL-ISOFORMS.txt" \
     | perl -pe 's/^transcript_id/#TranscriptID/' \
-    > "${OUTPUT_FOLDER}/${OUT_PREFIX}_exp.txt"
+    > "${OUTPUT_FOLDER}/${OUT_PREFIX}_exp.tmp"
+
+# Reprocess the header of the expression matrix to be compatible with the isoPropeller-annotate pipeline
+awk 'BEGIN{OFS="\t"} NR==1 { $1="#TranscriptID"; for(i=2; i<=NF; i++) { split($i, parts, "/"); $i=parts[2] } } 1' \
+    "${OUTPUT_FOLDER}/${OUT_PREFIX}_exp.tmp" > "${OUTPUT_FOLDER}/${OUT_PREFIX}_exp.txt"
+rm -f "${OUTPUT_FOLDER}/${OUT_PREFIX}_exp.tmp"
 
 # Generate the max ends GTF file
 gtf-filter-attributes.pl \

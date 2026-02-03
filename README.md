@@ -1,5 +1,9 @@
+[![Snakemake](https://img.shields.io/badge/workflow-snakemake-90EE90.svg?style=flat-square)](https://snakemake.github.io)
+![Python](https://img.shields.io/badge/python-3.8%2B-blue.svg?logo=python&logoColor=white)
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://github.com/PintolabMSSM/isoPropeller/blob/main/LICENSE)
+
 ## isoPropeller-collapse
-**isoPropeller-collapse** is a Snakemake pipeline designed for the non-redundant reconstruction of transcriptomes from long-read sequencing data (e.g., PacBio HiFi/Iso-Seq). It provides the discovery engine of the **isoPropeller** suite, transforming long read sequencing data into a high-confidence, filtered, and consolidated isoform reference.
+**isoPropeller-collapse** is a Snakemake pipeline designed for the non-redundant reconstruction of transcriptomes from long-read sequencing data (e.g., PacBio HiFi/Iso-Seq). It provides the discovery engine of the **isoPropeller** suite, enabling reference-free transcript model reconstruction and the generation of a high-confidence, filtered, and consolidated RNA isoform map.
 
 The pipeline automates the long read sequencing workflow to collapse reads into isoforms, including:
 
@@ -242,3 +246,16 @@ This stage of the **isoPropeller-collapse** pipeline is dedicated to the identif
 - **`{sample}.breakpoints.groups.bed`**: Groups together multiple breakpoints that appear to belong to the same complex rearrangement event.
 - **`{sample}.transcripts`**: A detailed text report listing every transcript that provides evidence for a fusion, including quality scores and read support.
 - **`{sample}.unannotated.bed` / `.clusters.bed`**: Reports on chimeric reads that do not overlap with known gene annotations, potentially representing novel fusion partners or intergenic rearrangements.
+
+
+## Contributors
+The IsoPropeller core tools and snakemake workflows are developped and maintained by [Xiao Lin](https://github.com/alanlamsiu), [Yoav Hadas](https://github.com/yoavhadas), and [Dalila Pinto](https://github.com/ddpinto) at the Icahn School of Medicine at Mount Sinai.
+If you want to contribute, please leave an issue. Thank you.
+
+The source code is available under the GPL3.0 license.
+
+## Citation
+The paper describing isoPropeller is in preparation. Stay tuned!
+
+## Feedback and bug reports
+We welcome your comments, bug reports, and suggestions. They will help us to further improve IsoPropeller. You may submit feedback and bug reports through our GitHub repository issue tracker.

@@ -111,18 +111,18 @@ awk 'BEGIN{FS=OFS="\t"}  $2=="antisense" || $2=="divergent" || $2=="intergenic" 
 
 log "Gather all other isoforms overlapping novelgenes by splice junction or exon boundary overlap"
 
-# From the query file we grab all exon coordinates including strand for overlap matching
+# From the query file we grab all exon boundary coordinates including strand for overlap matching
 gtf-filter-attributes.pl -a transcript_id -m "${OUTPUT_FOLDER}/tmp/novelgene-tid.txt" "${ISOP_ANNOTATE_GTF}" \
     | awk 'BEGIN{FS=OFS="\t"} $3=="exon"' \
     > "${OUTPUT_FOLDER}/tmp/novelgene-tid.gtf"
 
 gtf2gff.pl "${OUTPUT_FOLDER}/tmp/novelgene-tid.gtf" \
-    | awk 'BEGIN{FS=OFS="\t"} {print $1":"$4"-"$5":"$7, $9}' \
+    | awk 'BEGIN{FS=OFS="\t"} {print $1":"$4":"$7, $9"\n"; print $1":"$5":"$7, $9;}' \
     | sort -u \
     > "${OUTPUT_FOLDER}/tmp/novelgene-coordinates.txt"
 
 # Now we do the same for the unfiltered file
-awk 'BEGIN{FS=OFS="\t"} {print $1":"$4"-"$5":"$7, $9}' "${UNFILT_PREFIX}.gff" \
+awk 'BEGIN{FS=OFS="\t"} {print $1":"$4":"$7, $9"\n"; print $1":"$5":"$7, $9;}' "${UNFILT_PREFIX}.gff" \
     | sort -u \
     > "${OUTPUT_FOLDER}/tmp/unfilt-coordinates.txt"
 

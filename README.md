@@ -3,6 +3,11 @@
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://github.com/PintolabMSSM/isoPropeller/blob/main/LICENSE)
 
 ## isoPropeller-collapse
+
+<div>
+<img align="left" src="docs/images/IsoPropeller_logo.png" alt="IsoPropeller Logo" width="150">
+</div>
+
 **isoPropeller-collapse** is a Snakemake pipeline designed for the non-redundant reconstruction of transcriptomes from long-read sequencing data (e.g., PacBio HiFi/Iso-Seq). It provides the discovery engine of the **isoPropeller** suite, enabling reference-free transcript model reconstruction and the generation of a high-confidence, filtered, and consolidated RNA isoform map.
 
 The pipeline automates the long read sequencing workflow to collapse reads into isoforms, including:

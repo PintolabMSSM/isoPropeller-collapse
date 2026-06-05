@@ -110,3 +110,13 @@ pbfusion_max_readthrough:            100000     # Assigns "low confidence" to fu
 pbfusion_max_genes_in_event:         3          # Mark fusion groups involving > [arg] genes as low quality. This is a common source of false positives 
 pbfusion_min_fusion_fraction:        0.01       # Minimum fusion fraction relative to transcript count
 pbfusion_prom_filter:                8          # Filter rarer events involving genes with high numbers of fusion partners. These are a common source of false positives. Disable by setting `--prom-filter 0`.
+
+
+# Options for an oarfish re-quantification analysis
+# oarfish (https://github.com/COMBINE-lab/oarfish) re-quantifies the filtered, defragmented, and
+# defrag-pruned isoform GTFs by building a transcriptome from each GTF and remapping the merged FLNC
+# reads to it, producing a transcript-level EM count matrix in each stage's output folder.
+run_oarfish:                         true                                          # True: run oarfish step. False: skip it
+oarfish_seq_tech:                    "pac-bio-hifi"                                # Sequencing tech / minimap2 preset. Choices: ont-cdna | ont-drna | pac-bio | pac-bio-hifi
+oarfish_extra_args:                  "--model-coverage --filter-group no-filters"  # Extra oarfish flags (coverage model on, NanoCount filters off, per the oarfish README example)
+oarfish_transcript_source_flag:      "--annotated"                                 # How oarfish tracks the transcriptome's provenance. Choices: --annotated | --novel (no effect on quantification; use --reference for oarfish < 0.8)

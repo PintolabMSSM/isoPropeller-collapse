@@ -165,6 +165,12 @@ PBFUSION_MAX_GENES_IN_EVENT         = config.get("pbfusion_max_genes_in_event", 
 PBFUSION_MIN_FUSION_FRACTION        = config.get("pbfusion_min_fusion_fraction", 0.01)
 PBFUSION_PROM_FILTER                = config.get("pbfusion_prom_filter", 8)
 
+# Define local variables: oarfish requantification arguments
+RUN_OARFISH         = as_bool(config.get("run_oarfish", True))
+OARFISH_SEQ_TECH    = config.get("oarfish_seq_tech", "pac-bio-hifi")  # ont-cdna | ont-drna | pac-bio | pac-bio-hifi
+OARFISH_EXTRA_ARGS  = config.get("oarfish_extra_args", "--model-coverage --filter-group no-filters")
+OARFISH_TX_SRC_FLAG = config.get("oarfish_transcript_source_flag", "--annotated")  # or --novel
+
 # Set conditional isoPropeller arguments. If a terminal exon bed file is defined
 # in the configuration file, use it.
 if TERMINALEXONBED:
@@ -212,6 +218,16 @@ if RUN_PBFUSION:
         "09_pbfusion/{sample}/{sample}.unannotated.bed",
         "09_pbfusion/{sample}/{sample}.unannotated.clusters.bed"
     ], sample=SAMPLES)
+
+
+OARFISH_TARGETS = []
+if RUN_OARFISH:
+    print("[INFO] Loading conditional oarfish requantification rules.", file=sys.stderr)
+    include: "rules/10_oarfish.smk"
+
+    # One count matrix per stage (filter / defrag / defrag-pruned),
+    # written into each stage's own output folder.
+    OARFISH_TARGETS = OARFISH_COUNT_MATRICES
 
 
 # Make final targets
@@ -284,4 +300,7 @@ rule all:
         expand("08_isoPropeller-defrag-pruned/{prefix}_depth-gt1_" + FILTERTAG + "/{prefix}_depth-gt1_isoqc_pass_defrag_pruned_dropped.txt", prefix=[MERGEDISOPREFIX]),
 
         # Conditional PBfusion targets
-        PBFUSION_TARGETS
+        PBFUSION_TARGETS,
+
+        # Conditional oarfish requantification count matrices
+        OARFISH_TARGETS

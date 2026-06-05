@@ -1,0 +1,11 @@
+name: oarfish
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  # oarfish >=0.8 is required for the --annotated/--novel and --only-index
+  # flags used in 10_oarfish.smk. (Older versions used --reference instead;
+  # if you must use one, set oarfish_transcript_source_flag: "--reference"
+  # in config.yaml and drop the --only-index rule.)
+  - oarfish>=0.8
+  - gffread>=0.12

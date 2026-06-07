@@ -58,7 +58,7 @@ set-resources:
 
   qc_genotyping_snps:
     lsf_queue:  "premium"
-    mem_mb:     25000
+    mem_mb:     64000
     runtime:    1440
 
   mapping_pbfusion:

@@ -1,41 +1,57 @@
-# Run-constant prefix / suffix / filtertag (these match `rule all`).
 _OARF_P   = MERGEDISOPREFIX
 _OARF_SUF = "depth-gt1"
 _OARF_FT  = FILTERTAG
 
-# stage -> {dir, stem}.  `dir` is the existing stage output folder; `stem` is
-# the basename of that stage's primary GTF (without extension).
-OARFISH_STAGES = {
+# Full per-stage subfolder name, identical to the filter/defrag/prune folders.
+_OARF_SUBDIR = f"{_OARF_P}_{_OARF_SUF}_{_OARF_FT}"   # e.g. ISOP_depth-gt1_tpm0.5s1
+
+# stage -> {parent, stem}.  `parent` is the stage output folder that holds the
+# per-filtertag subdirectory; `stem` is the basename of that stage's primary GTF
+# (without extension).  Both depend only on prefix/suffix, never on the filtertag.
+OARFISH_STAGE_SPECS = {
     "filter": {
-        "dir":  f"05_isoPropeller-filter/{_OARF_P}_{_OARF_SUF}_{_OARF_FT}",
-        "stem": f"{_OARF_P}_{_OARF_SUF}_isoqc_pass",
+        "parent": "05_isoPropeller-filter",
+        "stem":   f"{_OARF_P}_{_OARF_SUF}_isoqc_pass",
     },
     "defrag": {
-        "dir":  f"07_isoPropeller-defrag/{_OARF_P}_{_OARF_SUF}_{_OARF_FT}",
-        "stem": f"{_OARF_P}_{_OARF_SUF}_isoqc_pass_defrag",
+        "parent": "07_isoPropeller-defrag",
+        "stem":   f"{_OARF_P}_{_OARF_SUF}_isoqc_pass_defrag",
     },
     "defrag_pruned": {
-        "dir":  f"08_isoPropeller-defrag-pruned/{_OARF_P}_{_OARF_SUF}_{_OARF_FT}",
-        "stem": f"{_OARF_P}_{_OARF_SUF}_isoqc_pass_defrag_pruned",
+        "parent": "08_isoPropeller-defrag-pruned",
+        "stem":   f"{_OARF_P}_{_OARF_SUF}_isoqc_pass_defrag_pruned",
     },
 }
 
+
+# ── Path helpers ──────────────────────────────────────────────────────────────
+def _oarf_stage_dir(stage):
+    """Upstream stage folder for the active filtertag, e.g.
+    05_isoPropeller-filter/ISOP_depth-gt1_tpm0.5s1."""
+    spec = OARFISH_STAGE_SPECS[stage]
+    return f"{spec['parent']}/{_OARF_SUBDIR}"
+
 def _oarf_gtf(stage):
-    s = OARFISH_STAGES[stage]
-    return f"{s['dir']}/{s['stem']}.gtf"
+    spec = OARFISH_STAGE_SPECS[stage]
+    return f"{_oarf_stage_dir(stage)}/{spec['stem']}.gtf"
 
 def _oarf_count_matrix(stage):
-    s = OARFISH_STAGES[stage]
-    return f"{s['dir']}/{s['stem']}_oarfish_counts.tsv"
+    spec = OARFISH_STAGE_SPECS[stage]
+    return f"{_oarf_stage_dir(stage)}/{spec['stem']}_oarfish_counts.tsv"
 
 def _oarf_quant_files(stage):
-    return [f"10_oarfish/{stage}/quant/{s}/{s}.quant" for s in SAMPLES]
+    return [
+        f"10_oarfish/{stage}/{_OARF_SUBDIR}/quant/{s}/{s}.quant" for s in SAMPLES
+    ]
 
-# Final deliverables consumed by `rule all` (one count matrix per stage).
-OARFISH_COUNT_MATRICES = [_oarf_count_matrix(st) for st in OARFISH_STAGES]
+# Final deliverables consumed by `rule all` (one count matrix per stage,
+# written into each stage's own filtertag folder).
+OARFISH_COUNT_MATRICES = [_oarf_count_matrix(st) for st in OARFISH_STAGE_SPECS]
 
 wildcard_constraints:
-    stage = "|".join(OARFISH_STAGES.keys())
+    # longest-first so "defrag_pruned" is not shadowed by "defrag"
+    stage  = "defrag_pruned|defrag|filter",
+    sample = r"[^/]+",
 
 
 # ───────────────────────────────────────────────
@@ -94,11 +110,11 @@ rule oarfish_build_transcriptome:
         genome     = GENOMEFASTA,
         genome_fai = GENOMEFASTA + ".fai"
     output:
-        fa = "10_oarfish/{stage}/transcriptome.fa"
+        fa = f"10_oarfish/{{stage}}/{_OARF_SUBDIR}/transcriptome.fa"
     log:
-        "logs/10_oarfish/{stage}_build_transcriptome.log"
+        f"logs/10_oarfish/{{stage}}/{_OARF_SUBDIR}/build_transcriptome.log"
     benchmark:
-        "benchmarks/10_oarfish/{stage}_build_transcriptome.txt"
+        f"benchmarks/10_oarfish/{{stage}}/{_OARF_SUBDIR}/build_transcriptome.txt"
     threads: 4
     conda:
         SNAKEDIR + "envs/oarfish.yaml"
@@ -125,13 +141,13 @@ rule oarfish_build_transcriptome:
 rule oarfish_index:
     message: "Indexing transcriptome for oarfish ({wildcards.stage})"
     input:
-        fa = "10_oarfish/{stage}/transcriptome.fa"
+        fa = f"10_oarfish/{{stage}}/{_OARF_SUBDIR}/transcriptome.fa"
     output:
-        mmi = "10_oarfish/{stage}/transcriptome.mmi"
+        mmi = f"10_oarfish/{{stage}}/{_OARF_SUBDIR}/transcriptome.mmi"
     log:
-        "logs/10_oarfish/{stage}_index.log"
+        f"logs/10_oarfish/{{stage}}/{_OARF_SUBDIR}/index.log"
     benchmark:
-        "benchmarks/10_oarfish/{stage}_index.txt"
+        f"benchmarks/10_oarfish/{{stage}}/{_OARF_SUBDIR}/index.txt"
     threads: 8
     conda:
         SNAKEDIR + "envs/oarfish.yaml"
@@ -164,19 +180,19 @@ rule oarfish_quant_sample:
     message: "oarfish quant: {wildcards.sample} ({wildcards.stage})"
     input:
         reads = "01_mapping/{sample}/flnc_merged.fastq.gz",
-        index = "10_oarfish/{stage}/transcriptome.mmi"
+        index = f"10_oarfish/{{stage}}/{_OARF_SUBDIR}/transcriptome.mmi"
     output:
-        quant = "10_oarfish/{stage}/quant/{sample}/{sample}.quant",
-        meta  = "10_oarfish/{stage}/quant/{sample}/{sample}.meta_info.json"
+        quant = f"10_oarfish/{{stage}}/{_OARF_SUBDIR}/quant/{{sample}}/{{sample}}.quant",
+        meta  = f"10_oarfish/{{stage}}/{_OARF_SUBDIR}/quant/{{sample}}/{{sample}}.meta_info.json"
     log:
-        "logs/10_oarfish/{stage}/{sample}_quant.log"
+        f"logs/10_oarfish/{{stage}}/{_OARF_SUBDIR}/{{sample}}_quant.log"
     benchmark:
-        "benchmarks/10_oarfish/{stage}/{sample}_quant.txt"
+        f"benchmarks/10_oarfish/{{stage}}/{_OARF_SUBDIR}/{{sample}}_quant.txt"
     threads: 16
     conda:
         SNAKEDIR + "envs/oarfish.yaml"
     params:
-        out_prefix = "10_oarfish/{stage}/quant/{sample}/{sample}",
+        out_prefix = f"10_oarfish/{{stage}}/{_OARF_SUBDIR}/quant/{{sample}}/{{sample}}",
         seq_tech   = OARFISH_SEQ_TECH,
         extra      = OARFISH_EXTRA_ARGS
     shell:
@@ -202,7 +218,7 @@ rule oarfish_quant_sample:
 
 # ───────────────────────────────────────────────
 # Rule: Merge per-sample counts into a matrix (one rule per stage so the
-# matrix is written into the stage's own output folder)
+# matrix is written into the stage's own filtertag folder)
 # ───────────────────────────────────────────────
 rule oarfish_counts_filter:
     message: "Merging oarfish counts (filter)"
@@ -211,7 +227,7 @@ rule oarfish_counts_filter:
     output:
         matrix = _oarf_count_matrix("filter")
     log:
-        "logs/10_oarfish/merge_counts_filter.log"
+        f"logs/10_oarfish/filter/{_OARF_SUBDIR}/merge_counts.log"
     threads: 1
     run:
         _merge_oarfish_counts(list(input.quants), list(SAMPLES), output.matrix)
@@ -224,7 +240,7 @@ rule oarfish_counts_defrag:
     output:
         matrix = _oarf_count_matrix("defrag")
     log:
-        "logs/10_oarfish/merge_counts_defrag.log"
+        f"logs/10_oarfish/defrag/{_OARF_SUBDIR}/merge_counts.log"
     threads: 1
     run:
         _merge_oarfish_counts(list(input.quants), list(SAMPLES), output.matrix)
@@ -237,7 +253,7 @@ rule oarfish_counts_defrag_pruned:
     output:
         matrix = _oarf_count_matrix("defrag_pruned")
     log:
-        "logs/10_oarfish/merge_counts_defrag_pruned.log"
+        f"logs/10_oarfish/defrag_pruned/{_OARF_SUBDIR}/merge_counts.log"
     threads: 1
     run:
         _merge_oarfish_counts(list(input.quants), list(SAMPLES), output.matrix)

@@ -26,7 +26,7 @@ set-resources:
     runtime:    360
 
   mapping:
-    mem_mb:     64000
+    mem_mb:     96000
 
   talon_label_reads:
     mem_mb:     32000

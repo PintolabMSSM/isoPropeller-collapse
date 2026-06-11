@@ -63,3 +63,6 @@ set-resources:
 
   mapping_pbfusion:
     mem_mb:     64000
+
+  oarfish_quant_sample:
+    mem_mb:     64000

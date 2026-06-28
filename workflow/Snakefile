@@ -95,7 +95,8 @@ PART_MAP = {(s, i): p for s, lst in PARTS.items() for i, p in enumerate(lst)}
 SAMPLES         = sorted(PARTS.keys())
 MERGEDISOPREFIX = config.get("merged_isoform_prefix", "ISOP")
 MAXINTRONLEN    = config.get("max_intron_length", 1250000)
-USE_TC          = as_bool(config.get("use_transcriptclean", True))
+USE_TC          = as_bool(config.get("use_transcriptclean", False))
+USE_ISOP_SJCORR = as_bool(config.get("use_isopropeller_sjcorrect", True))
 ONLYCHR         = as_bool(config.get("limit_output_to_chrNXY", True))
 MAXCHRMREADS    = config.get("max_chrM_reads", 50000)
 
@@ -172,12 +173,13 @@ OARFISH_EXTRA_ARGS  = config.get("oarfish_extra_args", "--model-coverage --filte
 OARFISH_TX_SRC_FLAG = config.get("oarfish_transcript_source_flag", "--annotated")  # or --novel
 
 # Set conditional isoPropeller arguments. If a terminal exon bed file is defined
-# in the configuration file, use it.
+# in the configuration file, use it. We also use the same mechanism to append the
+# isoPropeller splice junction correction mode
+ISOPROPEXTRAARGS = ""
 if TERMINALEXONBED:
-    ISOPROPEXTRAARGS = f"-l {TERMINALEXONBED}"
-else:
-    ISOPROPEXTRAARGS = ""
-
+    ISOPROPEXTRAARGS += f" -l {TERMINALEXONBED}"
+if USE_ISOP_SJCORR:
+    ISOPROPEXTRAARGS += f" -x {SPLICEJUNCTIONS}"
 
 # ───────────────────────────────────────────────
 # RULES 

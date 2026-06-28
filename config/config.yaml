@@ -35,9 +35,14 @@ reference_intrapriming_exclude_regions_bed: "/sc/arion/projects/pintod02c/refere
 # This is set to 1.25 Mb by default, which is the maximum known intron size in the human genome
 max_intron_length: 1250000
 
-# Set to 'true' to perform transcriptclean after mapping FLNC reads to the genome
-# This will correct sequencing errors and splice sites and is recommended in general
-use_transcriptclean: true
+# Select method for isoform correction. Two options are currently supported.
+# - The 'use_isopropeller_sjcorrect' option will use the native isoPropeller splice
+#   junction correction approach to correct non-canonical junctions.
+# - The 'use_transcriptclean' option will use transcriptclean for correcting splice
+#   junctions and variants.
+# Set either one of these options to 'true' or set both to 'false' to skip all corrections
+use_isopropeller_sjcorrect:   true
+use_transcriptclean:          false
 
 # Set to 'true' if outputs should be limited to autosomes (chrN) and sex chromosomes (chrX, chrY), 
 # removing chrM and other contigs. Make sure to set this to false if you use a non-reference 

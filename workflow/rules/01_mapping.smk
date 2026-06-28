@@ -145,3 +145,28 @@ rule talon_label_reads:
         echo "Finished running TALON label_reads"
         ) &> "{log}"
         """
+
+
+# ───────────────────────────────────────────────
+# Rule: Downsample reads on chrM to avoid slowdowns in subsequent correction steps
+# ───────────────────────────────────────────────
+rule downsample_chrM:
+    message: "Downsample mitochondrial reads for {wildcards.sample}"
+    input:
+        bam     = "01_mapping/{sample}/{sample}_mapped_labeled.bam",
+        bai     = "01_mapping/{sample}/{sample}_mapped_labeled.bam.bai"
+    output:
+        bam     = "01_mapping/{sample}/{sample}_mapped_labeled_chrM_DS.bam",
+        bai     = "01_mapping/{sample}/{sample}_mapped_labeled_chrM_DS.bam.bai"
+    params:
+        max_chrM_reads = MAXCHRMREADS,
+        seed           = 4232
+    log:
+        "logs/02_transcriptclean/{sample}_downsample_chrM.log"
+    benchmark:
+        "benchmarks/02_transcriptclean/{sample}_downsample_chrM.txt"
+    threads: 4
+    conda:
+        SNAKEDIR + "envs/pysam.yaml"
+    script:
+        SNAKEDIR + "scripts/downsample_chrM_bam.py"

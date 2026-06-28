@@ -9,7 +9,7 @@ from snakemake.io import glob_wildcards
 checkpoint bam_to_sam_and_split:
     message: "Convert BAM to SAM and split into chunks for {wildcards.sample}"
     input:
-        bam="01_mapping/{sample}/{sample}_mapped_labeled.bam"
+        bam= "01_mapping/{sample}/{sample}_mapped_labeled_chrM_DS.bam",
     output:
         # The output is a directory that will contain the subdirectories for each chunk.
         # This directory also acts as a flag for completion for the checkpoint.
@@ -196,8 +196,8 @@ rule gather_results:
         clean_logs = get_clean_logs,
         te_logs    = get_clean_te_logs
     output:
-        merged_bam    = temp("02_transcriptclean/{sample}/{sample}_mapped_labeled_tclean_temp.bam"),
-        merged_bai    = temp("02_transcriptclean/{sample}/{sample}_mapped_labeled_tclean_temp.bam.bai"),
+        merged_bam    = "02_transcriptclean/{sample}/{sample}_mapped_labeled_tclean.bam",
+        merged_bai    = "02_transcriptclean/{sample}/{sample}_mapped_labeled_tclean.bam.bai",
         merged_log    = "02_transcriptclean/{sample}/{sample}_final_clean.log.gz",
         merged_te_log = "02_transcriptclean/{sample}/{sample}_final_clean.TE.log.gz"
     log:
@@ -249,26 +249,4 @@ rule gather_results:
         ) &> "{log}"
         """
 
-# ───────────────────────────────────────────────
-# Rule 4: Downsample reads on chrM to avoid slowdowns
-# ───────────────────────────────────────────────
-rule downsample_chrM:
-    message: "Downsample mitochondrial reads for {wildcards.sample}"
-    input:
-        bam = "02_transcriptclean/{sample}/{sample}_mapped_labeled_tclean_temp.bam",
-        bai = "02_transcriptclean/{sample}/{sample}_mapped_labeled_tclean_temp.bam.bai"
-    output:
-        bam = "02_transcriptclean/{sample}/{sample}_mapped_labeled_tclean.bam",
-        bai = "02_transcriptclean/{sample}/{sample}_mapped_labeled_tclean.bam.bai"
-    params:
-        max_chrM_reads = MAXCHRMREADS,
-        seed           = 4232
-    log:
-        "logs/02_transcriptclean/{sample}_downsample_chrM.log"
-    benchmark:
-        "benchmarks/02_transcriptclean/{sample}_downsample_chrM.txt"
-    threads: 4
-    conda:
-        SNAKEDIR + "envs/pysam.yaml"
-    script:
-        SNAKEDIR + "scripts/downsample_chrM_bam.py"
+

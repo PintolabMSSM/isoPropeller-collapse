@@ -43,7 +43,7 @@ set-resources:
 
   run_isopropeller:
     lsf_queue:  "express"
-    mem_mb:     200000
+    mem_mb:     300000
     runtime:    720
 
   merge_isopropeller_gtfs:

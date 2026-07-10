@@ -252,12 +252,12 @@ if RUN_OARFISH:
 rule all:
     input:
         # Original pipeline outputs
-        expand("05_isoPropeller-filter/{prefix}_{suffix}_" + TPM_FILTERTAG + "/{prefix}_{suffix}_isoqc_pass.gtf", prefix=[MERGEDISOPREFIX], suffix=[DEPTHSUFFIX]),
-        expand("05_isoPropeller-filter/{prefix}_{suffix}_" + TPM_FILTERTAG + "/{prefix}_{suffix}_isoqc_pass_exp.txt", prefix=[MERGEDISOPREFIX], suffix=[DEPTHSUFFIX]),
-        expand("05_isoPropeller-filter/{prefix}_{suffix}_" + TPM_FILTERTAG + "/{prefix}_{suffix}_isoqc_pass_id.txt", prefix=[MERGEDISOPREFIX], suffix=[DEPTHSUFFIX]),
-        expand("05_isoPropeller-filter/{prefix}_{suffix}_" + TPM_FILTERTAG + "/{prefix}_{suffix}_isoqc_pass_tss.bed", prefix=[MERGEDISOPREFIX], suffix=[DEPTHSUFFIX]),
-        expand("05_isoPropeller-filter/{prefix}_{suffix}_" + TPM_FILTERTAG + "/{prefix}_{suffix}_isoqc_pass_tts.bed", prefix=[MERGEDISOPREFIX], suffix=[DEPTHSUFFIX]),
-        expand("05_isoPropeller-filter/{prefix}_{suffix}_" + TPM_FILTERTAG + "/{prefix}_{suffix}_isoqc_pass.trackgroups", prefix=[MERGEDISOPREFIX], suffix=[DEPTHSUFFIX]),
+        expand("05_isoPropeller-filter/{prefix}_{suffix}/" + TPM_FILTERTAG + "/isoqc_pass.gtf", prefix=[MERGEDISOPREFIX], suffix=[DEPTHSUFFIX]),
+        expand("05_isoPropeller-filter/{prefix}_{suffix}/" + TPM_FILTERTAG + "/isoqc_pass_exp.txt", prefix=[MERGEDISOPREFIX], suffix=[DEPTHSUFFIX]),
+        expand("05_isoPropeller-filter/{prefix}_{suffix}/" + TPM_FILTERTAG + "/isoqc_pass_id.txt", prefix=[MERGEDISOPREFIX], suffix=[DEPTHSUFFIX]),
+        expand("05_isoPropeller-filter/{prefix}_{suffix}/" + TPM_FILTERTAG + "/isoqc_pass_tss.bed", prefix=[MERGEDISOPREFIX], suffix=[DEPTHSUFFIX]),
+        expand("05_isoPropeller-filter/{prefix}_{suffix}/" + TPM_FILTERTAG + "/isoqc_pass_tts.bed", prefix=[MERGEDISOPREFIX], suffix=[DEPTHSUFFIX]),
+        expand("05_isoPropeller-filter/{prefix}_{suffix}/" + TPM_FILTERTAG + "/isoqc_pass.trackgroups", prefix=[MERGEDISOPREFIX], suffix=[DEPTHSUFFIX]),
 
         # QC Seqkit on FLNC fastq
         "06_qc-reports/flnc-seqkit-stats/seqkit_flnc_wide.stats.tsv",
@@ -285,37 +285,37 @@ rule all:
 
         # QC isoform filtering reports
         expand(
-            "06_qc-reports/isoform-filtering/{prefix}_{suffix}_{tpm_filtertag}/isoform-filter-stats.totals.tsv",
+            "06_qc-reports/isoform-filtering/{prefix}_{suffix}/{tpm_filtertag}/isoform-filter-stats.totals.tsv",
             prefix=[MERGEDISOPREFIX],
             suffix=[DEPTHSUFFIX],
             tpm_filtertag=[TPM_FILTERTAG],
         ),
         expand(
-            "06_qc-reports/isoform-filtering/{prefix}_{suffix}_{tpm_filtertag}/isoform-filter-stats.per-sample-wide.tsv",
+            "06_qc-reports/isoform-filtering/{prefix}_{suffix}/{tpm_filtertag}/isoform-filter-stats.per-sample-wide.tsv",
             prefix=[MERGEDISOPREFIX],
             suffix=[DEPTHSUFFIX],
             tpm_filtertag=[TPM_FILTERTAG],
         ),
 
         # Defragmented pipeline outputs
-        expand("07_isoPropeller-defrag/{prefix}_{suffix}_" + TPM_FILTERTAG + "/" + DEFRAG_FILTERTAG + "/{prefix}_{suffix}_isoqc_pass_defrag_exp_redist.txt", prefix=[MERGEDISOPREFIX], suffix=[DEPTHSUFFIX]),
-        expand("07_isoPropeller-defrag/{prefix}_{suffix}_" + TPM_FILTERTAG + "/" + DEFRAG_FILTERTAG + "/{prefix}_{suffix}_isoqc_pass_defrag.gtf", prefix=[MERGEDISOPREFIX], suffix=[DEPTHSUFFIX]),
-        expand("07_isoPropeller-defrag/{prefix}_{suffix}_" + TPM_FILTERTAG + "/" + DEFRAG_FILTERTAG + "/{prefix}_{suffix}_isoqc_pass_defrag_exp.txt", prefix=[MERGEDISOPREFIX], suffix=[DEPTHSUFFIX]),
-        expand("07_isoPropeller-defrag/{prefix}_{suffix}_" + TPM_FILTERTAG + "/" + DEFRAG_FILTERTAG + "/{prefix}_{suffix}_isoqc_pass_defrag_id.txt", prefix=[MERGEDISOPREFIX], suffix=[DEPTHSUFFIX]),
-        expand("07_isoPropeller-defrag/{prefix}_{suffix}_" + TPM_FILTERTAG + "/" + DEFRAG_FILTERTAG + "/{prefix}_{suffix}_isoqc_pass_defrag_tss.bed", prefix=[MERGEDISOPREFIX], suffix=[DEPTHSUFFIX]),
-        expand("07_isoPropeller-defrag/{prefix}_{suffix}_" + TPM_FILTERTAG + "/" + DEFRAG_FILTERTAG + "/{prefix}_{suffix}_isoqc_pass_defrag_tts.bed", prefix=[MERGEDISOPREFIX], suffix=[DEPTHSUFFIX]),
-        expand("07_isoPropeller-defrag/{prefix}_{suffix}_" + TPM_FILTERTAG + "/" + DEFRAG_FILTERTAG + "/{prefix}_{suffix}_isoqc_pass_defrag.trackgroups", prefix=[MERGEDISOPREFIX], suffix=[DEPTHSUFFIX]),
+        expand("07_isoPropeller-defrag/{prefix}_{suffix}/" + TPM_FILTERTAG + "/" + DEFRAG_FILTERTAG + "/isoqc_pass_defrag_exp_redist.txt", prefix=[MERGEDISOPREFIX], suffix=[DEPTHSUFFIX]),
+        expand("07_isoPropeller-defrag/{prefix}_{suffix}/" + TPM_FILTERTAG + "/" + DEFRAG_FILTERTAG + "/isoqc_pass_defrag.gtf", prefix=[MERGEDISOPREFIX], suffix=[DEPTHSUFFIX]),
+        expand("07_isoPropeller-defrag/{prefix}_{suffix}/" + TPM_FILTERTAG + "/" + DEFRAG_FILTERTAG + "/isoqc_pass_defrag_exp.txt", prefix=[MERGEDISOPREFIX], suffix=[DEPTHSUFFIX]),
+        expand("07_isoPropeller-defrag/{prefix}_{suffix}/" + TPM_FILTERTAG + "/" + DEFRAG_FILTERTAG + "/isoqc_pass_defrag_id.txt", prefix=[MERGEDISOPREFIX], suffix=[DEPTHSUFFIX]),
+        expand("07_isoPropeller-defrag/{prefix}_{suffix}/" + TPM_FILTERTAG + "/" + DEFRAG_FILTERTAG + "/isoqc_pass_defrag_tss.bed", prefix=[MERGEDISOPREFIX], suffix=[DEPTHSUFFIX]),
+        expand("07_isoPropeller-defrag/{prefix}_{suffix}/" + TPM_FILTERTAG + "/" + DEFRAG_FILTERTAG + "/isoqc_pass_defrag_tts.bed", prefix=[MERGEDISOPREFIX], suffix=[DEPTHSUFFIX]),
+        expand("07_isoPropeller-defrag/{prefix}_{suffix}/" + TPM_FILTERTAG + "/" + DEFRAG_FILTERTAG + "/isoqc_pass_defrag.trackgroups", prefix=[MERGEDISOPREFIX], suffix=[DEPTHSUFFIX]),
 
         # Defrag-pruned pipeline outputs
-        expand("08_isoPropeller-defrag-pruned/{prefix}_{suffix}_" + TPM_FILTERTAG + "/" + DEFRAG_FILTERTAG + "/" + PRUNE_FILTERTAG + "/{prefix}_{suffix}_isoqc_pass_defrag_pruned.gtf", prefix=[MERGEDISOPREFIX], suffix=[DEPTHSUFFIX]),
-        expand("08_isoPropeller-defrag-pruned/{prefix}_{suffix}_" + TPM_FILTERTAG + "/" + DEFRAG_FILTERTAG + "/" + PRUNE_FILTERTAG + "/{prefix}_{suffix}_isoqc_pass_defrag_pruned_modal_ends.gtf", prefix=[MERGEDISOPREFIX], suffix=[DEPTHSUFFIX]),
-        expand("08_isoPropeller-defrag-pruned/{prefix}_{suffix}_" + TPM_FILTERTAG + "/" + DEFRAG_FILTERTAG + "/" + PRUNE_FILTERTAG + "/{prefix}_{suffix}_isoqc_pass_defrag_pruned_exp.txt", prefix=[MERGEDISOPREFIX], suffix=[DEPTHSUFFIX]),
-        expand("08_isoPropeller-defrag-pruned/{prefix}_{suffix}_" + TPM_FILTERTAG + "/" + DEFRAG_FILTERTAG + "/" + PRUNE_FILTERTAG + "/{prefix}_{suffix}_isoqc_pass_defrag_pruned_id.txt", prefix=[MERGEDISOPREFIX], suffix=[DEPTHSUFFIX]),
-        expand("08_isoPropeller-defrag-pruned/{prefix}_{suffix}_" + TPM_FILTERTAG + "/" + DEFRAG_FILTERTAG + "/" + PRUNE_FILTERTAG + "/{prefix}_{suffix}_isoqc_pass_defrag_pruned_tss.bed", prefix=[MERGEDISOPREFIX], suffix=[DEPTHSUFFIX]),
-        expand("08_isoPropeller-defrag-pruned/{prefix}_{suffix}_" + TPM_FILTERTAG + "/" + DEFRAG_FILTERTAG + "/" + PRUNE_FILTERTAG + "/{prefix}_{suffix}_isoqc_pass_defrag_pruned_tts.bed", prefix=[MERGEDISOPREFIX], suffix=[DEPTHSUFFIX]),
-        expand("08_isoPropeller-defrag-pruned/{prefix}_{suffix}_" + TPM_FILTERTAG + "/" + DEFRAG_FILTERTAG + "/" + PRUNE_FILTERTAG + "/{prefix}_{suffix}_isoqc_pass_defrag_pruned.trackgroups", prefix=[MERGEDISOPREFIX], suffix=[DEPTHSUFFIX]),
-        expand("08_isoPropeller-defrag-pruned/{prefix}_{suffix}_" + TPM_FILTERTAG + "/" + DEFRAG_FILTERTAG + "/" + PRUNE_FILTERTAG + "/{prefix}_{suffix}_isoqc_pass_defrag_pruned_clusters.txt", prefix=[MERGEDISOPREFIX], suffix=[DEPTHSUFFIX]),
-        expand("08_isoPropeller-defrag-pruned/{prefix}_{suffix}_" + TPM_FILTERTAG + "/" + DEFRAG_FILTERTAG + "/" + PRUNE_FILTERTAG + "/{prefix}_{suffix}_isoqc_pass_defrag_pruned_dropped.txt", prefix=[MERGEDISOPREFIX], suffix=[DEPTHSUFFIX]),
+        expand("08_isoPropeller-defrag-pruned/{prefix}_{suffix}/" + TPM_FILTERTAG + "/" + DEFRAG_FILTERTAG + "/" + PRUNE_FILTERTAG + "/isoqc_pass_defrag_pruned.gtf", prefix=[MERGEDISOPREFIX], suffix=[DEPTHSUFFIX]),
+        expand("08_isoPropeller-defrag-pruned/{prefix}_{suffix}/" + TPM_FILTERTAG + "/" + DEFRAG_FILTERTAG + "/" + PRUNE_FILTERTAG + "/isoqc_pass_defrag_pruned_modal_ends.gtf", prefix=[MERGEDISOPREFIX], suffix=[DEPTHSUFFIX]),
+        expand("08_isoPropeller-defrag-pruned/{prefix}_{suffix}/" + TPM_FILTERTAG + "/" + DEFRAG_FILTERTAG + "/" + PRUNE_FILTERTAG + "/isoqc_pass_defrag_pruned_exp.txt", prefix=[MERGEDISOPREFIX], suffix=[DEPTHSUFFIX]),
+        expand("08_isoPropeller-defrag-pruned/{prefix}_{suffix}/" + TPM_FILTERTAG + "/" + DEFRAG_FILTERTAG + "/" + PRUNE_FILTERTAG + "/isoqc_pass_defrag_pruned_id.txt", prefix=[MERGEDISOPREFIX], suffix=[DEPTHSUFFIX]),
+        expand("08_isoPropeller-defrag-pruned/{prefix}_{suffix}/" + TPM_FILTERTAG + "/" + DEFRAG_FILTERTAG + "/" + PRUNE_FILTERTAG + "/isoqc_pass_defrag_pruned_tss.bed", prefix=[MERGEDISOPREFIX], suffix=[DEPTHSUFFIX]),
+        expand("08_isoPropeller-defrag-pruned/{prefix}_{suffix}/" + TPM_FILTERTAG + "/" + DEFRAG_FILTERTAG + "/" + PRUNE_FILTERTAG + "/isoqc_pass_defrag_pruned_tts.bed", prefix=[MERGEDISOPREFIX], suffix=[DEPTHSUFFIX]),
+        expand("08_isoPropeller-defrag-pruned/{prefix}_{suffix}/" + TPM_FILTERTAG + "/" + DEFRAG_FILTERTAG + "/" + PRUNE_FILTERTAG + "/isoqc_pass_defrag_pruned.trackgroups", prefix=[MERGEDISOPREFIX], suffix=[DEPTHSUFFIX]),
+        expand("08_isoPropeller-defrag-pruned/{prefix}_{suffix}/" + TPM_FILTERTAG + "/" + DEFRAG_FILTERTAG + "/" + PRUNE_FILTERTAG + "/isoqc_pass_defrag_pruned_clusters.txt", prefix=[MERGEDISOPREFIX], suffix=[DEPTHSUFFIX]),
+        expand("08_isoPropeller-defrag-pruned/{prefix}_{suffix}/" + TPM_FILTERTAG + "/" + DEFRAG_FILTERTAG + "/" + PRUNE_FILTERTAG + "/isoqc_pass_defrag_pruned_dropped.txt", prefix=[MERGEDISOPREFIX], suffix=[DEPTHSUFFIX]),
 
         # Conditional PBfusion targets
         PBFUSION_TARGETS,

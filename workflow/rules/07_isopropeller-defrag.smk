@@ -14,6 +14,7 @@ rule isopropeller_defrag:
         tts = "05_isoPropeller-filter/{prefix}_{suffix}_{filtertag}/{prefix}_{suffix}_isoqc_pass_tts.bed",
         qcf = "05_isoPropeller-filter/{prefix}_{suffix}_{filtertag}/{prefix}_{suffix}_isoqc_fail.ids",
         trk = "05_isoPropeller-filter/{prefix}_{suffix}_{filtertag}/{prefix}_{suffix}_isoqc_pass.trackgroups",
+        ref = lambda wildcards: REFGTF if (globals().get("USE_REF_DEFRAG") and globals().get("REFGTF")) else []
     output:
         ctm = "07_isoPropeller-defrag/{prefix}_{suffix}_{filtertag}/{prefix}_{suffix}_isoqc_pass_containment_map.tsv",
         red = "07_isoPropeller-defrag/{prefix}_{suffix}_{filtertag}/{prefix}_{suffix}_isoqc_pass_defrag_exp_redist.txt",
@@ -38,6 +39,7 @@ rule isopropeller_defrag:
         min_frac    = CONSOLIDATE_MERGE_MIN_FRAC,
         min_samples = CONSOLIDATE_MERGE_MIN_SAMPLES,
         round_mode  = CONSOLIDATE_ROUND_MODE
+        ref_flag    = lambda wildcards: f"--reference-gtf {REFGTF}" if USE_REF_DEFRAG else ""
     shell:
         r"""
         (
@@ -56,6 +58,7 @@ rule isopropeller_defrag:
           --merge-min-frac {params.min_frac} --merge-min-samples {params.min_samples} \
           --proportional \
           --drop-contained \
+          {params.ref_flag} \
           --counts --round-counts {params.round_mode} \
           --threads {threads} \
           --log-every 1000 \

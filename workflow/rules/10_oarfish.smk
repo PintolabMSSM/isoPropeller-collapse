@@ -1,5 +1,5 @@
 _OARF_P   = MERGEDISOPREFIX
-_OARF_SUF = "depth-gt1"
+_OARF_SUF = DEPTHSUFFIX          # "depth-gt1" or "all", from config isoform_depth_suffix
 _OARF_FT  = FILTERTAG
 
 # Full per-stage subfolder name, identical to the filter/defrag/prune folders.

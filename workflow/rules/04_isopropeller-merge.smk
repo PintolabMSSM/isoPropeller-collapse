@@ -67,7 +67,7 @@ rule merge_isopropeller_gtfs:
 rule prepare_end_dist_list:
     message: "Preparing end distribution file list"
     input:
-        end_dists = expand("03_isoPropeller/{sample}/{sample}_all_end_dist.txt", sample=SAMPLES)
+        end_dists = expand("03_isoPropeller/{sample}/{sample}_raw_end_dist.txt", sample=SAMPLES)
     output:
         listfile  = temp("04_isoPropeller-merge/temp_end_dist_list.txt")
     log:

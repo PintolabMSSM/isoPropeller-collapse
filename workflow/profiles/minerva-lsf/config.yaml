@@ -66,3 +66,9 @@ set-resources:
 
   oarfish_quant_sample:
     mem_mb:     64000
+
+  filter_repeat_region_overlap:
+    mem_mb:     50000
+
+  filter_par_region_overlap:
+    mem_mb:     50000

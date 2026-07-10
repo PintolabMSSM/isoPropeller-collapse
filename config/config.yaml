@@ -57,6 +57,13 @@ max_chrM_reads: 50000
 # Prefix to use for the merged isoform file and final merged isoforms
 merged_isoform_prefix:  "ISOP"
 
+# Choose which per-sample isoform set is carried through the merge / filter / defrag
+# steps and into the final output paths. Step 03 always generates both GTFs; this only
+# selects which one the rest of the pipeline consumes and which suffix labels the outputs.
+#   "depth-gt1" : keep only transcripts with read depth > 1 (recommended default)
+#   "all"       : keep the full, unfiltered isoPropeller output
+isoform_depth_suffix:   "depth-gt1"
+
 # After the isoPropeller merging steps, optionally perform the following filtering steps to reduce
 # technical and biological noise.
 remove_monoexons_without_cage_support:              True

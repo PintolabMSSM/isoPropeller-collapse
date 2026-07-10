@@ -581,23 +581,23 @@ rule multiqc_cohort:
 def _active_filter_id_paths(prefix, suffix):
     paths = []
     if REMOVE_MONOEXONS_NO_TSS:
-        paths.append(f"05_isoPropeller-filter/{prefix}_{suffix}_{FILTERTAG}/filt_monoexon_tss/isoqc_fail_{prefix}_{suffix}_monoexon-no-reftss-overlap.ids")
+        paths.append(f"05_isoPropeller-filter/filt_monoexon_tss/isoqc_fail_{prefix}_{suffix}_monoexon-no-reftss-overlap.ids")
     if REMOVE_MONOEXON_PRE_MRNAS:
-        paths.append(f"05_isoPropeller-filter/{prefix}_{suffix}_{FILTERTAG}/filt_monoexon_premrna/isoqc_fail_{prefix}_{suffix}_monoexon-likely-premrnas.ids")
+        paths.append(f"05_isoPropeller-filter/filt_monoexon_premrna/isoqc_fail_{prefix}_{suffix}_monoexon-likely-premrnas.ids")
     if REMOVE_NONCANONICAL_SPLICE:
-        paths.append(f"05_isoPropeller-filter/{prefix}_{suffix}_{FILTERTAG}/filt_noncanonical_splice/isoqc_fail_{prefix}_{suffix}_multiexonic-noncanonical-splices.ids")
+        paths.append(f"05_isoPropeller-filter/filt_noncanonical_splice/isoqc_fail_{prefix}_{suffix}_multiexonic-noncanonical-splices.ids")
     if REMOVE_TSWITCH_ARTIFACTS:
-        paths.append(f"05_isoPropeller-filter/{prefix}_{suffix}_{FILTERTAG}/filt_template_switch/isoqc_fail_{prefix}_{suffix}_multiexonic-rt-switching.ids")
+        paths.append(f"05_isoPropeller-filter/filt_template_switch/isoqc_fail_{prefix}_{suffix}_multiexonic-rt-switching.ids")
     if REMOVE_ANTISENSE_SPLICEMATCH:
-        paths.append(f"05_isoPropeller-filter/{prefix}_{suffix}_{FILTERTAG}/filt_antisense_match/isoqc_fail_{prefix}_{suffix}_multiexonic-antisense-splicechain-match.ids")
+        paths.append(f"05_isoPropeller-filter/filt_antisense_match/isoqc_fail_{prefix}_{suffix}_multiexonic-antisense-splicechain-match.ids")
     if REMOVE_CONTAINED_IN_REPEATS:
-        paths.append(f"05_isoPropeller-filter/{prefix}_{suffix}_{FILTERTAG}/filt_repeat_overlap/isoqc_fail_{prefix}_{suffix}_repeatmasker-overlap.ids")
+        paths.append(f"05_isoPropeller-filter/filt_repeat_overlap/isoqc_fail_{prefix}_{suffix}_repeatmasker-overlap.ids")
     if REMOVE_PAR_OVERLAP:
-        paths.append(f"05_isoPropeller-filter/{prefix}_{suffix}_{FILTERTAG}/filt_par_overlap/isoqc_fail_{prefix}_{suffix}_PAR-overlap.ids")
-    if REMOVE_BELOW_TPM:
-        paths.append(f"05_isoPropeller-filter/{prefix}_{suffix}_{FILTERTAG}/filt_min_tpm/isoqc_fail_{prefix}_{suffix}_min-TPM.ids")
+        paths.append(f"05_isoPropeller-filter/filt_par_overlap/isoqc_fail_{prefix}_{suffix}_PAR-overlap.ids")
     if REMOVE_TERMINAL_EXONS_SEGDUP:
-        paths.append(f"05_isoPropeller-filter/{prefix}_{suffix}_{FILTERTAG}/filt_terminal_exon_segdup/isoqc_fail_{prefix}_{suffix}_mismapped-terminal-exon-in-segdup.ids")
+        paths.append(f"05_isoPropeller-filter/filt_terminal_exon_segdup/isoqc_fail_{prefix}_{suffix}_mismapped-terminal-exon-in-segdup.ids")
+    if REMOVE_BELOW_TPM:
+        paths.append(f"05_isoPropeller-filter/{prefix}_{suffix}_{TPM_FILTERTAG}/filt_min_tpm/isoqc_fail_{prefix}_{suffix}_min-TPM.ids")
     return paths
 
 def _active_filter_id_paths_wc(wc):
@@ -607,20 +607,20 @@ rule iso_qc_cohort_report:
     message: "Isoform filtering QC report: {wildcards.prefix}_{wildcards.suffix}"
     input:
         orig_ids = "04_isoPropeller-merge/{prefix}_{suffix}_id.txt",
-        pass_ids = "05_isoPropeller-filter/{prefix}_{suffix}_{filtertag}/{prefix}_{suffix}_isoqc_pass_id.txt",
-        pass_exp = "05_isoPropeller-filter/{prefix}_{suffix}_{filtertag}/{prefix}_{suffix}_isoqc_pass_exp.txt",
+        pass_ids = "05_isoPropeller-filter/{prefix}_{suffix}_{tpm_filtertag}/{prefix}_{suffix}_isoqc_pass_id.txt",
+        pass_exp = "05_isoPropeller-filter/{prefix}_{suffix}_{tpm_filtertag}/{prefix}_{suffix}_isoqc_pass_exp.txt",
         fail_ids = _active_filter_id_paths_wc,
         seqkit_cohort = "06_qc-reports/flnc-seqkit-stats/seqkit_flnc_wide.stats.tsv"
     output:
-        totals = "06_qc-reports/isoform-filtering/{prefix}_{suffix}_{filtertag}/isoform-filter-stats.totals.tsv",
-        per_sample_wide = "06_qc-reports/isoform-filtering/{prefix}_{suffix}_{filtertag}/isoform-filter-stats.per-sample-wide.tsv"
+        totals = "06_qc-reports/isoform-filtering/{prefix}_{suffix}_{tpm_filtertag}/isoform-filter-stats.totals.tsv",
+        per_sample_wide = "06_qc-reports/isoform-filtering/{prefix}_{suffix}_{tpm_filtertag}/isoform-filter-stats.per-sample-wide.tsv"
     log:
-        "logs/06_qc-reports/isoform-filtering/{prefix}_{suffix}_{filtertag}_isoform-filter-stats.log"
+        "logs/06_qc-reports/isoform-filtering/{prefix}_{suffix}_{tpm_filtertag}_isoform-filter-stats.log"
     benchmark:
-        "benchmarks/06_qc-reports/isoform-filtering/{prefix}_{suffix}_{filtertag}_isoform-filter-stats.txt"
+        "benchmarks/06_qc-reports/isoform-filtering/{prefix}_{suffix}_{tpm_filtertag}_isoform-filter-stats.txt"
     threads: 1
     params:
-        filtertag = FILTERTAG
+        tpm_filtertag = TPM_FILTERTAG
     conda:
         SNAKEDIR + "envs/qc-env.yaml"
     run:

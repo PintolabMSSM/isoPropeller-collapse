@@ -140,6 +140,7 @@ CONSOLIDATE_PROTECT_WINDOW          = int(config.get("consolidate_protect_window
 CONSOLIDATE_ROUND_MODE              = config.get("consolidate_round_mode","nearest")
 CONSOLIDATE_MERGE_MIN_FRAC          = config.get("consolidate_merge_min_frac",0.1)
 CONSOLIDATE_MERGE_MIN_SAMPLES       = config.get("consolidate_merge_min_samples",2)
+CONSOLIDATE_REF                     = as_bool(config.get("consolidate_ref", False))
 
 # Parameters for pruning low-expressed isoforms
 PRUNE_LOW_EXPRESSED_ISOFORMS_RETAIN_PCT = config.get("prune_low_expressed_isoforms_retain_pct",97)

@@ -277,12 +277,13 @@ _G_minimal_superset = None
 _G_tss_regions = None
 _G_tes_regions = None
 _G_protect_window = None
+_G_reference_chains = None
 
 
 def _mp_init(tx2chain, tx2_tss_tes, terminal_only, minimal_superset,
-             tss_regions, tes_regions, protect_window):
+             tss_regions, tes_regions, protect_window, reference_chains):
     global _G_tx2chain, _G_tx2_tss_tes, _G_terminal_only, _G_minimal_superset
-    global _G_tss_regions, _G_tes_regions, _G_protect_window
+    global _G_tss_regions, _G_tes_regions, _G_protect_window, _G_reference_chains
     _G_tx2chain = tx2chain
     _G_tx2_tss_tes = tx2_tss_tes
     _G_terminal_only = terminal_only
@@ -290,6 +291,7 @@ def _mp_init(tx2chain, tx2_tss_tes, terminal_only, minimal_superset,
     _G_tss_regions = tss_regions
     _G_tes_regions = tes_regions
     _G_protect_window = protect_window
+    _G_reference_chains = reference_chains
 
 
 def _process_gene(args) -> Tuple[Dict[str, List[str]], int, int]:
@@ -311,6 +313,10 @@ def _process_gene(args) -> Tuple[Dict[str, List[str]], int, int]:
     for a in tlist:
         Aset = chain_sets[a]
         Alist = chain_lists[a]
+
+        if _G_reference_chains and tuple(Alist) in _G_reference_chains:
+            continue
+
         chrom, strand, a_tss, a_tes = tx2_tss_tes.get(a, ("?", "?", 0, 0))
 
         cand: List[Tuple[str, int]] = []
@@ -369,6 +375,7 @@ def find_supersets_with_filters_and_logging(
     tss_regions: Dict[Tuple[str, str], List[Tuple[int, int]]],
     tes_regions: Dict[Tuple[str, str], List[Tuple[int, int]]],
     protect_window: int,
+    reference_chains: Optional[Set[Tuple[int, int]]] = None,
     log_every: int = 1000,
     threads: int = 1,
 ) -> Tuple[Dict[str, List[str]], int, int]:
@@ -392,7 +399,7 @@ def find_supersets_with_filters_and_logging(
     if threads > 1 and mp is not None:
         with mp.Pool(processes=threads, initializer=_mp_init,
                      initargs=(tx2chain, tx2_tss_tes, terminal_only, minimal_superset,
-                               tss_regions, tes_regions, protect_window)) as pool:
+                               tss_regions, tes_regions, protect_window, reference_chains)) as pool:
             for partial, contained, n_tx in pool.imap_unordered(_process_gene, items, chunksize=32):
                 processed_genes += 1
                 processed_tx_running += n_tx
@@ -413,6 +420,10 @@ def find_supersets_with_filters_and_logging(
             for a in tlist:
                 Aset = chain_sets[a]
                 Alist = chain_lists[a]
+
+                if _G_reference_chains and tuple(Alist) in _G_reference_chains:
+                    continue
+
                 chrom, strand, a_tss, a_tes = tx2_tss_tes.get(a, ("?", "?", 0, 0))
 
                 cand: List[Tuple[str, int]] = []
@@ -631,6 +642,7 @@ def main():
     ap.add_argument("--proportional", action="store_true", help="Redistribute proportional to supersets' expression (default: equal split unless flag set).")
 
     # Long-read specific controls
+    ap.add_argument("--reference-gtf", type=Path, default=None, help="Optional reference GTF file. Transcripts with matching splice chains will be protected from collapsing.")
     ap.add_argument("--terminal-only", action="store_true", help="Require that contained vs. parent differ only at transcript ends (no internal novel junctions).")
     ap.add_argument("--minimal-superset", action="store_true", help="Route only to the closest (fewest extra junctions) supersets.")
     ap.add_argument("--protect-tss-bed", type=Path, default=None, help="BED file with known CAGE/TSS regions; enforces TSS proximity within --protect-window.")
@@ -665,6 +677,16 @@ def main():
     n_cols = len([c for c in expr_df.columns if c != "transcript_id"])
     print(f"[INFO {ts()}] Parsed {len(tx2chain)} transcripts from GTF; expression table has {n_cols} expression column(s)")
 
+    reference_chains = set()
+    if args.reference_gtf:
+        print(f"[INFO {ts()}] Parsing reference GTF for known splice chains...")
+        ref_tx2chain, _, _, _ = parse_gtf(args.reference_gtf)
+
+        # Convert lists of junctions into frozensets or tuples so they are hashable
+        for chain in ref_tx2chain.values():
+            reference_chains.add(tuple(chain))
+        print(f"[INFO {ts()}] Loaded {len(reference_chains)} unique reference splice chains.")
+
     # --- Run isoform dominance profiling automatically (per (gene,locus)) ---
     print(f"[INFO {ts()}] Profiling isoform dominance and long tail per (gene,locus)...")
     summarize_isoform_dominance_with_tail(
@@ -696,6 +718,7 @@ def main():
         tss_regions=tss_regions,
         tes_regions=tes_regions,
         protect_window=args.protect_window,
+        reference_chains=reference_chains,
         log_every=args.log_every,
         threads=max(1, args.threads) if mp is not None else 1,
     )

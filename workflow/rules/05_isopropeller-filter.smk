@@ -44,7 +44,7 @@ if REMOVE_TERMINAL_EXONS_SEGDUP:
 
 if REMOVE_BELOW_TPM:
     FILTER_FAIL_ID_PATHS.append(
-        lambda wc: f"05_isoPropeller-filter/{wc.prefix}_{wc.suffix}_{FILTERTAG}/filt_min_tpm/isoqc_fail_{wc.prefix}_{wc.suffix}_min-TPM.ids"
+        lambda wc: f"05_isoPropeller-filter/filt_min_tpm/{TPM_FILTERTAG}/isoqc_fail_{wc.prefix}_{wc.suffix}_min-TPM.ids"
     )
 
 # ───────────────────────────────────────────────
@@ -64,12 +64,12 @@ rule filter_monoexon_tss_overlap:
         maxdist   = FILT_MONOEXON_TSS_MAXDIST_BP,
         snakedir  = SNAKEDIR
     log:
-        "logs/05_isoPropeller-filter/filt_monoexon_tss/filter_monoexon_tss_overlap.log"
+        "logs/05_isoPropeller-filter/{prefix}_{suffix}/filt_monoexon_tss/filter_monoexon_tss_overlap.log"
     benchmark:
-        "benchmarks/05_isoPropeller-filter/filt_monoexon_tss/filter_monoexon_tss_overlap.txt"
+        "benchmarks/05_isoPropeller-filter/{prefix}_{suffix}/filt_monoexon_tss/filter_monoexon_tss_overlap.txt"
     threads: 4
     resources:
-        tmpdir = lambda wildcards: f"05_isoPropeller-filter/filt_monoexon_tss/.tmp"
+        tmpdir = lambda wildcards: f"05_isoPropeller-filter/{prefix}_{suffix}/filt_monoexon_tss/.tmp"
     conda:
         SNAKEDIR + "envs/isoform-filter.yaml"
     shell:
@@ -102,12 +102,12 @@ rule filter_monoexon_premrna_fragments:
         min_intron_ovlp = FILT_MONOEXON_MIN_INTRON_OVLP_BP,
         snakedir = SNAKEDIR
     log:
-        "logs/05_isoPropeller-filter/filt_monoexon_premrna/filter_monoexon_premrna_fragments.log"
+        "logs/05_isoPropeller-filter/{prefix}_{suffix}/filt_monoexon_premrna/filter_monoexon_premrna_fragments.log"
     benchmark:
-        "benchmarks/05_isoPropeller-filter/filt_monoexon_premrna/filter_monoexon_premrna_fragments.txt"
+        "benchmarks/05_isoPropeller-filter/{prefix}_{suffix}/filt_monoexon_premrna/filter_monoexon_premrna_fragments.txt"
     threads: 4
     resources:
-        tmpdir = lambda wildcards: f"05_isoPropeller-filter/filt_monoexon_premrna/.tmp"
+        tmpdir = lambda wildcards: f"05_isoPropeller-filter/{prefix}_{suffix}/filt_monoexon_premrna/.tmp"
     conda:
         SNAKEDIR + "envs/isoform-filter.yaml"
     shell:
@@ -138,12 +138,12 @@ rule filter_noncanonical_splice_junctions:
     params:
         snakedir = SNAKEDIR
     log:
-        "logs/05_isoPropeller-filter/filt_noncanonical_splice/filter_noncanonical_splice_junctions.log"
+        "logs/05_isoPropeller-filter/{prefix}_{suffix}filt_noncanonical_splice/filter_noncanonical_splice_junctions.log"
     benchmark:
-        "benchmarks/05_isoPropeller-filter/filt_noncanonical_splice/filter_noncanonical_splice_junctions.txt"
+        "benchmarks/05_isoPropeller-filter/{prefix}_{suffix}/filt_noncanonical_splice/filter_noncanonical_splice_junctions.txt"
     threads: 4
     resources:
-        tmpdir = lambda wildcards: f"05_isoPropeller-filter/filt_noncanonical_splice/.tmp"
+        tmpdir = lambda wildcards: f"05_isoPropeller-filter/{prefix}_{suffix}/filt_noncanonical_splice/.tmp"
     conda:
         SNAKEDIR + "envs/isoform-filter.yaml"
     shell:
@@ -174,12 +174,12 @@ rule filter_template_switching_artifacts:
     params:
         snakedir  = SNAKEDIR
     log:
-        "logs/05_isoPropeller-filter/filt_template_switch/filter_template_switching_artifacts.log"
+        "logs/05_isoPropeller-filter/{prefix}_{suffix}/filt_template_switch/filter_template_switching_artifacts.log"
     benchmark:
-        "benchmarks/05_isoPropeller-filter/filt_template_switch/filter_template_switching_artifacts.txt"
+        "benchmarks/05_isoPropeller-filter/{prefix}_{suffix}/filt_template_switch/filter_template_switching_artifacts.txt"
     threads: 4
     resources:
-        tmpdir = lambda wildcards: f"05_isoPropeller-filter/filt_template_switch/.tmp"
+        tmpdir = lambda wildcards: f"05_isoPropeller-filter/{prefix}_{suffix}/filt_template_switch/.tmp"
     conda:
         SNAKEDIR + "envs/isoform-filter.yaml"
     shell:
@@ -209,12 +209,12 @@ rule filter_antisense_splicechain_match:
     params:
         snakedir  = SNAKEDIR
     log:
-        "logs/05_isoPropeller-filter/filt_antisense_match/filter_antisense_splicechain_match.log"
+        "logs/05_isoPropeller-filter/{prefix}_{suffix}/filt_antisense_match/filter_antisense_splicechain_match.log"
     benchmark:
-        "benchmarks/05_isoPropeller-filter/filt_antisense_match/filter_antisense_splicechain_match.txt"
+        "benchmarks/05_isoPropeller-filter/{prefix}_{suffix}/filt_antisense_match/filter_antisense_splicechain_match.txt"
     threads: 4
     resources:
-        tmpdir = lambda wildcards: f"05_isoPropeller-filter/filt_antisense_match/.tmp"
+        tmpdir = lambda wildcards: f"05_isoPropeller-filter/{prefix}_{suffix}/filt_antisense_match/.tmp"
     conda:
         SNAKEDIR + "envs/isoform-filter.yaml"
     shell:
@@ -238,19 +238,19 @@ rule filter_repeat_region_overlap:
         isoform_bed = "04_isoPropeller-merge/{prefix}_{suffix}.bed",
         repeat_bed  = RMSKBED
     output:
-        fail_ids  = "05_isoPropeller-filter/filt_repeat_overlap/isoqc_fail_{prefix}_{suffix}_repeatmasker-overlap.ids",
-        fail_bed  = "05_isoPropeller-filter/filt_repeat_overlap/isoqc_fail_{prefix}_{suffix}_repeatmasker-overlap.bed",
+        fail_ids   = "05_isoPropeller-filter/filt_repeat_overlap/isoqc_fail_{prefix}_{suffix}_repeatmasker-overlap.ids",
+        fail_bed   = "05_isoPropeller-filter/filt_repeat_overlap/isoqc_fail_{prefix}_{suffix}_repeatmasker-overlap.bed",
         fail_stats = "05_isoPropeller-filter/filt_repeat_overlap/isoqc_fail_{prefix}_{suffix}_repeatmasker-overlap.stats.txt"
     params:
         min_frac = FILT_RMSK_MIN_OVLP_FRACT,
         snakedir  = SNAKEDIR
     log:
-        "logs/05_isoPropeller-filter/filt_repeat_overlap/filter_repeat_region_overlap.log"
+        "logs/05_isoPropeller-filter/{prefix}_{suffix}/filt_repeat_overlap/filter_repeat_region_overlap.log"
     benchmark:
-        "benchmarks/05_isoPropeller-filter/filt_repeat_overlap/filter_repeat_region_overlap.txt"
+        "benchmarks/05_isoPropeller-filter/{prefix}_{suffix}/filt_repeat_overlap/filter_repeat_region_overlap.txt"
     threads: 4
     resources:
-        tmpdir = lambda wildcards: f"05_isoPropeller-filter/filt_repeat_overlap/.tmp"
+        tmpdir = lambda wildcards: f"05_isoPropeller-filter/{prefix}_{suffix}/filt_repeat_overlap/.tmp"
     conda:
         SNAKEDIR + "envs/isoform-filter.yaml"
     shell:
@@ -283,12 +283,12 @@ rule filter_par_region_overlap:
         min_frac  = FILT_PAR_MIN_OVLP_FRACT,
         snakedir  = SNAKEDIR
     log:
-        "logs/05_isoPropeller-filter/filt_par_overlap/filter_par_region_overlap.log"
+        "logs/05_isoPropeller-filter/{prefix}_{suffix}/filt_par_overlap/filter_par_region_overlap.log"
     benchmark:
-        "benchmarks/05_isoPropeller-filter/filt_par_overlap/filter_par_region_overlap.txt"
+        "benchmarks/05_isoPropeller-filter/{prefix}_{suffix}/filt_par_overlap/filter_par_region_overlap.txt"
     threads: 4
     resources:
-        tmpdir = lambda wildcards: f"05_isoPropeller-filter/filt_par_overlap/.tmp"
+        tmpdir = lambda wildcards: f"05_isoPropeller-filter/{prefix}_{suffix}/filt_par_overlap/.tmp"
     conda:
         SNAKEDIR + "envs/isoform-filter.yaml"
     shell:
@@ -320,12 +320,12 @@ rule filter_terminal_exons_in_segdup:
     params:
         snakedir = SNAKEDIR
     log:
-        "logs/05_isoPropeller-filter/filt_terminal_exon_segdup/filter_terminal_exons_in_segdup.log"
+        "logs/05_isoPropeller-filter/{prefix}_{suffix}/filt_terminal_exon_segdup/filter_terminal_exons_in_segdup.log"
     benchmark:
-        "benchmarks/05_isoPropeller-filter/filt_terminal_exon_segdup/filter_terminal_exons_in_segdup.txt"
+        "benchmarks/05_isoPropeller-filter/{prefix}_{suffix}/filt_terminal_exon_segdup/filter_terminal_exons_in_segdup.txt"
     threads: 4
     resources:
-        tmpdir = lambda wildcards: f"05_isoPropeller-filter/filt_terminal_exon_segdup/.tmp"
+        tmpdir = lambda wildcards: f"05_isoPropeller-filter/{prefix}_{suffix}/filt_terminal_exon_segdup/.tmp"
     conda:
         SNAKEDIR + "envs/omics-toolkit.yaml"
     shell:
@@ -385,20 +385,20 @@ rule filter_tpm_expression:
         isoform_bed = "04_isoPropeller-merge/{prefix}_{suffix}.bed",
         count_matrix = "04_isoPropeller-merge/{prefix}_{suffix}_exp.txt"
     output:
-        fail_ids = "05_isoPropeller-filter/{prefix}_{suffix}_{filtertag}/filt_min_tpm/isoqc_fail_{prefix}_{suffix}_min-TPM.ids",
-        fail_bed = "05_isoPropeller-filter/{prefix}_{suffix}_{filtertag}/filt_min_tpm/isoqc_fail_{prefix}_{suffix}_min-TPM.bed"
+        fail_ids = "05_isoPropeller-filter/filt_min_tpm/{tpm_filtertag}/isoqc_fail_{prefix}_{suffix}_min-TPM.ids",
+        fail_bed = "05_isoPropeller-filter/filt_min_tpm/{tpm_filtertag}/isoqc_fail_{prefix}_{suffix}_min-TPM.bed"
     params:
         min_tpm    = FILT_TPM_MIN_COUNT,
         min_frac   = FILT_TPM_MIN_SAMPLES,
-        filtertag  = FILTERTAG,
+        tpm_filtertag  = TPM_FILTERTAG,
         snakedir   = SNAKEDIR
     log:
-        "logs/05_isoPropeller-filter/{prefix}_{suffix}_{filtertag}/filt_min_tpm/filter_tpm_expression.log"
+        "logs/05_isoPropeller-filter/{prefix}_{suffix}/filt_min_tpm/{tpm_filtertag}/filter_tpm_expression.log"
     benchmark:
-        "benchmarks/05_isoPropeller-filter/{prefix}_{suffix}_{filtertag}/filt_min_tpm/filter_tpm_expression.txt"
+        "benchmarks/05_isoPropeller-filter/{prefix}_{suffix}/filt_min_tpm/{tpm_filtertag}/filter_tpm_expression.txt"
     threads: 4
     resources:
-        tmpdir = lambda wildcards: f"05_isoPropeller-filter/{wildcards.prefix}_{wildcards.suffix}_{wildcards.filtertag}/filt_min_tpm/.tmp"
+        tmpdir = lambda wildcards: f"05_isoPropeller-filter/{wildcards.prefix}_{wildcards.suffix}/filt_min_tpm/{wildcards.tpm_filtertag}/.tmp"
     conda:
         SNAKEDIR + "envs/isoform-filter.yaml"
     shell:
@@ -430,21 +430,21 @@ rule filter_aggregate_final_outputs:
         tts = "04_isoPropeller-merge/{prefix}_{suffix}_tts.bed",
         fail_ids = lambda wc: [func(wc) for func in FILTER_FAIL_ID_PATHS]f
     output:
-        gtf = "05_isoPropeller-filter/{prefix}_{suffix}_{filtertag}/{prefix}_{suffix}_isoqc_pass.gtf",
-        mod = "05_isoPropeller-filter/{prefix}_{suffix}_{filtertag}/{prefix}_{suffix}_isoqc_pass_modal_ends.gtf",
-        exp = "05_isoPropeller-filter/{prefix}_{suffix}_{filtertag}/{prefix}_{suffix}_isoqc_pass_exp.txt",
-        ids = "05_isoPropeller-filter/{prefix}_{suffix}_{filtertag}/{prefix}_{suffix}_isoqc_pass_id.txt",
-        tss = "05_isoPropeller-filter/{prefix}_{suffix}_{filtertag}/{prefix}_{suffix}_isoqc_pass_tss.bed",
-        tts = "05_isoPropeller-filter/{prefix}_{suffix}_{filtertag}/{prefix}_{suffix}_isoqc_pass_tts.bed",
-        qcf = "05_isoPropeller-filter/{prefix}_{suffix}_{filtertag}/{prefix}_{suffix}_isoqc_fail.ids",
-        trk = "05_isoPropeller-filter/{prefix}_{suffix}_{filtertag}/{prefix}_{suffix}_isoqc_pass.trackgroups",
+        gtf = "05_isoPropeller-filter/{tpm_filtertag}/{prefix}_{suffix}_isoqc_pass.gtf",
+        mod = "05_isoPropeller-filter/{tpm_filtertag}/{prefix}_{suffix}_isoqc_pass_modal_ends.gtf",
+        exp = "05_isoPropeller-filter/{tpm_filtertag}/{prefix}_{suffix}_isoqc_pass_exp.txt",
+        ids = "05_isoPropeller-filter/{tpm_filtertag}/{prefix}_{suffix}_isoqc_pass_id.txt",
+        tss = "05_isoPropeller-filter/{tpm_filtertag}/{prefix}_{suffix}_isoqc_pass_tss.bed",
+        tts = "05_isoPropeller-filter/{tpm_filtertag}/{prefix}_{suffix}_isoqc_pass_tts.bed",
+        qcf = "05_isoPropeller-filter/{tpm_filtertag}/{prefix}_{suffix}_isoqc_fail.ids",
+        trk = "05_isoPropeller-filter/{tpm_filtertag}/{prefix}_{suffix}_isoqc_pass.trackgroups",
     params:
         snakedir = SNAKEDIR,
-        filtertag = FILTERTAG
+        tpm_filtertag = TPM_FILTERTAG
     log:
-        "logs/05_isoPropeller-filter/{prefix}_{suffix}_{filtertag}/aggregate_outputs.log"
+        "logs/05_isoPropeller-filter/{prefix}_{suffix}/{tpm_filtertag}/aggregate_outputs.log"
     benchmark:
-        "benchmarks/05_isoPropeller-filter/{prefix}_{suffix}_{filtertag}/aggregate_outputs.txt"
+        "benchmarks/05_isoPropeller-filter/{prefix}_{suffix}/{tpm_filtertag}/aggregate_outputs.txt"
     threads: 4
     conda:
         SNAKEDIR + "envs/omics-toolkit.yaml"

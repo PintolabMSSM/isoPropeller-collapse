@@ -6,29 +6,29 @@ ruleorder: isopropeller_defrag > gff_to_bed
 rule isopropeller_defrag:
     message: "Defragmenting isoPropeller outputs"
     input:
-        gtf = "05_isoPropeller-filter/{prefix}_{suffix}_{filtertag}/{prefix}_{suffix}_isoqc_pass.gtf",
-        mod = "05_isoPropeller-filter/{prefix}_{suffix}_{filtertag}/{prefix}_{suffix}_isoqc_pass_modal_ends.gtf",
-        exp = "05_isoPropeller-filter/{prefix}_{suffix}_{filtertag}/{prefix}_{suffix}_isoqc_pass_exp.txt",
-        ids = "05_isoPropeller-filter/{prefix}_{suffix}_{filtertag}/{prefix}_{suffix}_isoqc_pass_id.txt",
-        tss = "05_isoPropeller-filter/{prefix}_{suffix}_{filtertag}/{prefix}_{suffix}_isoqc_pass_tss.bed",
-        tts = "05_isoPropeller-filter/{prefix}_{suffix}_{filtertag}/{prefix}_{suffix}_isoqc_pass_tts.bed",
-        qcf = "05_isoPropeller-filter/{prefix}_{suffix}_{filtertag}/{prefix}_{suffix}_isoqc_fail.ids",
-        trk = "05_isoPropeller-filter/{prefix}_{suffix}_{filtertag}/{prefix}_{suffix}_isoqc_pass.trackgroups",
+        gtf = "05_isoPropeller-filter/{tpm_filtertag}/{prefix}_{suffix}_isoqc_pass.gtf",
+        mod = "05_isoPropeller-filter/{tpm_filtertag}/{prefix}_{suffix}_isoqc_pass_modal_ends.gtf",
+        exp = "05_isoPropeller-filter/{tpm_filtertag}/{prefix}_{suffix}_isoqc_pass_exp.txt",
+        ids = "05_isoPropeller-filter/{tpm_filtertag}/{prefix}_{suffix}_isoqc_pass_id.txt",
+        tss = "05_isoPropeller-filter/{tpm_filtertag}/{prefix}_{suffix}_isoqc_pass_tss.bed",
+        tts = "05_isoPropeller-filter/{tpm_filtertag}/{prefix}_{suffix}_isoqc_pass_tts.bed",
+        qcf = "05_isoPropeller-filter/{tpm_filtertag}/{prefix}_{suffix}_isoqc_fail.ids",
+        trk = "05_isoPropeller-filter/{tpm_filtertag}/{prefix}_{suffix}_isoqc_pass.trackgroups",
         ref = lambda wildcards: REFGTF if (globals().get("CONSOLIDATE_REF") and globals().get("REFGTF")) else []
     output:
-        ctm = "07_isoPropeller-defrag/{prefix}_{suffix}_{filtertag}/{prefix}_{suffix}_isoqc_pass_containment_map.tsv",
-        red = "07_isoPropeller-defrag/{prefix}_{suffix}_{filtertag}/{prefix}_{suffix}_isoqc_pass_defrag_exp_redist.txt",
-        gtf = "07_isoPropeller-defrag/{prefix}_{suffix}_{filtertag}/{prefix}_{suffix}_isoqc_pass_defrag.gtf",
-        mod = "07_isoPropeller-defrag/{prefix}_{suffix}_{filtertag}/{prefix}_{suffix}_isoqc_pass_defrag_modal_ends.gtf",
-        exp = "07_isoPropeller-defrag/{prefix}_{suffix}_{filtertag}/{prefix}_{suffix}_isoqc_pass_defrag_exp.txt",
-        ids = "07_isoPropeller-defrag/{prefix}_{suffix}_{filtertag}/{prefix}_{suffix}_isoqc_pass_defrag_id.txt",
-        tss = "07_isoPropeller-defrag/{prefix}_{suffix}_{filtertag}/{prefix}_{suffix}_isoqc_pass_defrag_tss.bed",
-        tts = "07_isoPropeller-defrag/{prefix}_{suffix}_{filtertag}/{prefix}_{suffix}_isoqc_pass_defrag_tts.bed",
-        trk = "07_isoPropeller-defrag/{prefix}_{suffix}_{filtertag}/{prefix}_{suffix}_isoqc_pass_defrag.trackgroups",
+        ctm = "07_isoPropeller-defrag/{tpm_filtertag}/{defrag_filtertag}/{prefix}_{suffix}_isoqc_pass_containment_map.tsv",
+        red = "07_isoPropeller-defrag/{tpm_filtertag}/{defrag_filtertag}/{prefix}_{suffix}_isoqc_pass_defrag_exp_redist.txt",
+        gtf = "07_isoPropeller-defrag/{tpm_filtertag}/{defrag_filtertag}/{prefix}_{suffix}_isoqc_pass_defrag.gtf",
+        mod = "07_isoPropeller-defrag/{tpm_filtertag}/{defrag_filtertag}/{prefix}_{suffix}_isoqc_pass_defrag_modal_ends.gtf",
+        exp = "07_isoPropeller-defrag/{tpm_filtertag}/{defrag_filtertag}/{prefix}_{suffix}_isoqc_pass_defrag_exp.txt",
+        ids = "07_isoPropeller-defrag/{tpm_filtertag}/{defrag_filtertag}/{prefix}_{suffix}_isoqc_pass_defrag_id.txt",
+        tss = "07_isoPropeller-defrag/{tpm_filtertag}/{defrag_filtertag}/{prefix}_{suffix}_isoqc_pass_defrag_tss.bed",
+        tts = "07_isoPropeller-defrag/{tpm_filtertag}/{defrag_filtertag}/{prefix}_{suffix}_isoqc_pass_defrag_tts.bed",
+        trk = "07_isoPropeller-defrag/{tpm_filtertag}/{defrag_filtertag}/{prefix}_{suffix}_isoqc_pass_defrag.trackgroups",
     log:
-        "logs/07_isoPropeller-defrag/{prefix}_{suffix}_{filtertag}/defrag_{prefix}_{suffix}.txt"
+        "logs/07_isoPropeller-defrag/{prefix}_{suffix}/{tpm_filtertag}/{defrag_filtertag}/defrag_{prefix}_{suffix}.txt"
     benchmark:
-        "benchmarks/07_isoPropeller-defrag/{prefix}_{suffix}_{filtertag}/defrag_{prefix}_{suffix}.txt"
+        "benchmarks/07_isoPropeller-defrag/{prefix}_{suffix}/{tpm_filtertag}/{defrag_filtertag}/defrag_{prefix}_{suffix}.txt"
     threads: 12
     conda:
         SNAKEDIR + "envs/isopropeller.yaml"
@@ -78,4 +78,3 @@ rule isopropeller_defrag:
 
         ) &> "{log}"
         """
-

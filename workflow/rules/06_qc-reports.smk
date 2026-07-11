@@ -597,7 +597,7 @@ def _active_filter_id_paths(prefix, suffix):
     if REMOVE_TERMINAL_EXONS_SEGDUP:
         paths.append(f"05_isoPropeller-filter/filt_terminal_exon_segdup/isoqc_fail_{prefix}_{suffix}_mismapped-terminal-exon-in-segdup.ids")
     if REMOVE_BELOW_TPM:
-        paths.append(f"05_isoPropeller-filter/{prefix}_{suffix}_{TPM_FILTERTAG}/filt_min_tpm/isoqc_fail_{prefix}_{suffix}_min-TPM.ids")
+        paths.append(f"05_isoPropeller-filter/filt_min_tpm/{TPM_FILTERTAG}/isoqc_fail_{prefix}_{suffix}_min-TPM.ids")
     return paths
 
 def _active_filter_id_paths_wc(wc):
@@ -607,8 +607,8 @@ rule iso_qc_cohort_report:
     message: "Isoform filtering QC report: {wildcards.prefix}_{wildcards.suffix}"
     input:
         orig_ids = "04_isoPropeller-merge/{prefix}_{suffix}_id.txt",
-        pass_ids = "05_isoPropeller-filter/{prefix}_{suffix}_{tpm_filtertag}/{prefix}_{suffix}_isoqc_pass_id.txt",
-        pass_exp = "05_isoPropeller-filter/{prefix}_{suffix}_{tpm_filtertag}/{prefix}_{suffix}_isoqc_pass_exp.txt",
+        pass_ids = "05_isoPropeller-filter/{tpm_filtertag}/{prefix}_{suffix}_isoqc_pass_id.txt",
+        pass_exp = "05_isoPropeller-filter/{tpm_filtertag}/{prefix}_{suffix}_isoqc_pass_exp.txt",
         fail_ids = _active_filter_id_paths_wc,
         seqkit_cohort = "06_qc-reports/flnc-seqkit-stats/seqkit_flnc_wide.stats.tsv"
     output:

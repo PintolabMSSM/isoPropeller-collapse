@@ -2,31 +2,30 @@
 # ───────────────────────────────────────────────
 # Prune low-expressed isoforms from isoform clusters
 # ───────────────────────────────────────────────
-ruleorder: isopropeller_defrag_prune > gff_to_bed
 rule isopropeller_defrag_prune:
     message: "Defragmenting isoPropeller outputs"
     input:
-        gtf = "07_isoPropeller-defrag/{tpm_filtertag}/{defrag_filtertag}/{prefix}_{suffix}_isoqc_pass_defrag.gtf",
-        mod = "07_isoPropeller-defrag/{tpm_filtertag}/{defrag_filtertag}/{prefix}_{suffix}_isoqc_pass_defrag_modal_ends.gtf",
-        exp = "07_isoPropeller-defrag/{tpm_filtertag}/{defrag_filtertag}/{prefix}_{suffix}_isoqc_pass_defrag_exp.txt",
-        ids = "07_isoPropeller-defrag/{tpm_filtertag}/{defrag_filtertag}/{prefix}_{suffix}_isoqc_pass_defrag_id.txt",
-        tss = "07_isoPropeller-defrag/{tpm_filtertag}/{defrag_filtertag}/{prefix}_{suffix}_isoqc_pass_defrag_tss.bed",
-        tts = "07_isoPropeller-defrag/{tpm_filtertag}/{defrag_filtertag}/{prefix}_{suffix}_isoqc_pass_defrag_tts.bed",
-        trk = "07_isoPropeller-defrag/{tpm_filtertag}/{defrag_filtertag}/{prefix}_{suffix}_isoqc_pass_defrag.trackgroups",
+        gtf = "07_isoPropeller-defrag/{prefix}_{suffix}/{tpm_filtertag}/{defrag_filtertag}/{prefix}_{suffix}_isoqc_pass_defrag.gtf",
+        mod = "07_isoPropeller-defrag/{prefix}_{suffix}/{tpm_filtertag}/{defrag_filtertag}/{prefix}_{suffix}_isoqc_pass_defrag_modal_ends.gtf",
+        exp = "07_isoPropeller-defrag/{prefix}_{suffix}/{tpm_filtertag}/{defrag_filtertag}/{prefix}_{suffix}_isoqc_pass_defrag_exp.txt",
+        ids = "07_isoPropeller-defrag/{prefix}_{suffix}/{tpm_filtertag}/{defrag_filtertag}/{prefix}_{suffix}_isoqc_pass_defrag_id.txt",
+        tss = "07_isoPropeller-defrag/{prefix}_{suffix}/{tpm_filtertag}/{defrag_filtertag}/{prefix}_{suffix}_isoqc_pass_defrag_tss.bed",
+        tts = "07_isoPropeller-defrag/{prefix}_{suffix}/{tpm_filtertag}/{defrag_filtertag}/{prefix}_{suffix}_isoqc_pass_defrag_tts.bed",
+        trk = "07_isoPropeller-defrag/{prefix}_{suffix}/{tpm_filtertag}/{defrag_filtertag}/{prefix}_{suffix}_isoqc_pass_defrag.trackgroups",
     output:
-        gtf = "08_isoPropeller-defrag-pruned/{tpm_filtertag}/{defrag_filtertag}/{prune_filtertag}/{prefix}_{suffix}_isoqc_pass_defrag_pruned.gtf",
-        mod = "08_isoPropeller-defrag-pruned/{tpm_filtertag}/{defrag_filtertag}/{prune_filtertag}/{prefix}_{suffix}_isoqc_pass_defrag_pruned_modal_ends.gtf",
-        exp = "08_isoPropeller-defrag-pruned/{tpm_filtertag}/{defrag_filtertag}/{prune_filtertag}/{prefix}_{suffix}_isoqc_pass_defrag_pruned_exp.txt",
-        ids = "08_isoPropeller-defrag-pruned/{tpm_filtertag}/{defrag_filtertag}/{prune_filtertag}/{prefix}_{suffix}_isoqc_pass_defrag_pruned_id.txt",
-        tss = "08_isoPropeller-defrag-pruned/{tpm_filtertag}/{defrag_filtertag}/{prune_filtertag}/{prefix}_{suffix}_isoqc_pass_defrag_pruned_tss.bed",
-        tts = "08_isoPropeller-defrag-pruned/{tpm_filtertag}/{defrag_filtertag}/{prune_filtertag}/{prefix}_{suffix}_isoqc_pass_defrag_pruned_tts.bed",
-        trk = "08_isoPropeller-defrag-pruned/{tpm_filtertag}/{defrag_filtertag}/{prune_filtertag}/{prefix}_{suffix}_isoqc_pass_defrag_pruned.trackgroups",
-        cls = "08_isoPropeller-defrag-pruned/{tpm_filtertag}/{defrag_filtertag}/{prune_filtertag}/{prefix}_{suffix}_isoqc_pass_defrag_pruned_clusters.txt",
-        drp = "08_isoPropeller-defrag-pruned/{tpm_filtertag}/{defrag_filtertag}/{prune_filtertag}/{prefix}_{suffix}_isoqc_pass_defrag_pruned_dropped.txt",
+        gtf = "08_isoPropeller-defrag-pruned/{prefix}_{suffix}/{tpm_filtertag}/{defrag_filtertag}/{prune_filtertag}/{prefix}_{suffix}_isoqc_pass_defrag_pruned.gtf",
+        mod = "08_isoPropeller-defrag-pruned/{prefix}_{suffix}/{tpm_filtertag}/{defrag_filtertag}/{prune_filtertag}/{prefix}_{suffix}_isoqc_pass_defrag_pruned_modal_ends.gtf",
+        exp = "08_isoPropeller-defrag-pruned/{prefix}_{suffix}/{tpm_filtertag}/{defrag_filtertag}/{prune_filtertag}/{prefix}_{suffix}_isoqc_pass_defrag_pruned_exp.txt",
+        ids = "08_isoPropeller-defrag-pruned/{prefix}_{suffix}/{tpm_filtertag}/{defrag_filtertag}/{prune_filtertag}/{prefix}_{suffix}_isoqc_pass_defrag_pruned_id.txt",
+        tss = "08_isoPropeller-defrag-pruned/{prefix}_{suffix}/{tpm_filtertag}/{defrag_filtertag}/{prune_filtertag}/{prefix}_{suffix}_isoqc_pass_defrag_pruned_tss.bed",
+        tts = "08_isoPropeller-defrag-pruned/{prefix}_{suffix}/{tpm_filtertag}/{defrag_filtertag}/{prune_filtertag}/{prefix}_{suffix}_isoqc_pass_defrag_pruned_tts.bed",
+        trk = "08_isoPropeller-defrag-pruned/{prefix}_{suffix}/{tpm_filtertag}/{defrag_filtertag}/{prune_filtertag}/{prefix}_{suffix}_isoqc_pass_defrag_pruned.trackgroups",
+        cls = "08_isoPropeller-defrag-pruned/{prefix}_{suffix}/{tpm_filtertag}/{defrag_filtertag}/{prune_filtertag}/{prefix}_{suffix}_isoqc_pass_defrag_pruned_clusters.txt",
+        drp = "08_isoPropeller-defrag-pruned/{prefix}_{suffix}/{tpm_filtertag}/{defrag_filtertag}/{prune_filtertag}/{prefix}_{suffix}_isoqc_pass_defrag_pruned_dropped.txt",
     log:
-        "logs/08_isoPropeller-defrag-pruned/{tpm_filtertag}/{defrag_filtertag}/{prune_filtertag}/prune_{prefix}_{suffix}.txt"
+        "logs/08_isoPropeller-defrag-pruned/{prefix}_{suffix}/{tpm_filtertag}/{defrag_filtertag}/{prune_filtertag}/prune_{prefix}_{suffix}.txt"
     benchmark:
-        "benchmarks/08_isoPropeller-defrag-pruned/{tpm_filtertag}/{defrag_filtertag}/{prune_filtertag}/prune_{prefix}_{suffix}.txt"
+        "benchmarks/08_isoPropeller-defrag-pruned/{prefix}_{suffix}/{tpm_filtertag}/{defrag_filtertag}/{prune_filtertag}/prune_{prefix}_{suffix}.txt"
     threads: 2
     conda:
         SNAKEDIR + "envs/isopropeller.yaml"

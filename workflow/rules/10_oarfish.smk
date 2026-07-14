@@ -1,24 +1,26 @@
-_OARF_P   = MERGEDISOPREFIX
-_OARF_SUF = DEPTHSUFFIX          # "depth-gt1" or "all", from config isoform_depth_suffix
-_OARF_FT  = FILTERTAG
+_OARF_P    = MERGEDISOPREFIX
+_OARF_SUF  = DEPTHSUFFIX          # "depth-gt1" or "all", from config isoform_depth_suffix
+_OARF_TFT  = TPM_FILTERTAG
+_OARF_DFT  = DEFRAG_FILTERTAG
+_OARF_PFT  = PRUNE_FILTERTAG
 
 # Full per-stage subfolder name, identical to the filter/defrag/prune folders.
-_OARF_SUBDIR = f"{_OARF_P}_{_OARF_SUF}_{_OARF_FT}"   # e.g. ISOP_depth-gt1_tpm0.5s1
+_OARF_SUBDIR = f"{_OARF_P}_{_OARF_SUF}/{_OARF_TFT}/{_OARF_DFT}/{_OARF_PFT}"   # e.g. ISOP_depth-gt1/tpm0.5s1/defrag0.1s2/prune97s2
 
 # stage -> {parent, stem}.  `parent` is the stage output folder that holds the
 # per-filtertag subdirectory; `stem` is the basename of that stage's primary GTF
 # (without extension).  Both depend only on prefix/suffix, never on the filtertag.
 OARFISH_STAGE_SPECS = {
     "filter": {
-        "parent": "05_isoPropeller-filter",
+        "parent": f"05_isoPropeller-filter/{_OARF_P}_{_OARF_SUF}/{_OARF_TFT}",
         "stem":   f"{_OARF_P}_{_OARF_SUF}_isoqc_pass",
     },
     "defrag": {
-        "parent": "07_isoPropeller-defrag",
+        "parent": f"07_isoPropeller-defrag/{_OARF_P}_{_OARF_SUF}/{_OARF_TFT}/{_OARF_DFT}",
         "stem":   f"{_OARF_P}_{_OARF_SUF}_isoqc_pass_defrag",
     },
     "defrag_pruned": {
-        "parent": "08_isoPropeller-defrag-pruned",
+        "parent": f"08_isoPropeller-defrag-pruned/{_OARF_P}_{_OARF_SUF}/{_OARF_TFT}/{_OARF_DFT}/{_OARF_PFT}",
         "stem":   f"{_OARF_P}_{_OARF_SUF}_isoqc_pass_defrag_pruned",
     },
 }
@@ -29,7 +31,7 @@ def _oarf_stage_dir(stage):
     """Upstream stage folder for the active filtertag, e.g.
     05_isoPropeller-filter/ISOP_depth-gt1_tpm0.5s1."""
     spec = OARFISH_STAGE_SPECS[stage]
-    return f"{spec['parent']}/{_OARF_SUBDIR}"
+    return spec["parent"]
 
 def _oarf_gtf(stage):
     spec = OARFISH_STAGE_SPECS[stage]

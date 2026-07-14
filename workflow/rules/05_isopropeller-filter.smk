@@ -428,16 +428,16 @@ rule filter_aggregate_final_outputs:
         ids = "04_isoPropeller-merge/{prefix}_{suffix}_id.txt",
         tss = "04_isoPropeller-merge/{prefix}_{suffix}_tss.bed",
         tts = "04_isoPropeller-merge/{prefix}_{suffix}_tts.bed",
-        fail_ids = lambda wc: [func(wc) for func in FILTER_FAIL_ID_PATHS]f
+        fail_ids = lambda wc: [func(wc) for func in FILTER_FAIL_ID_PATHS]
     output:
-        gtf = "05_isoPropeller-filter/{tpm_filtertag}/{prefix}_{suffix}_isoqc_pass.gtf",
-        mod = "05_isoPropeller-filter/{tpm_filtertag}/{prefix}_{suffix}_isoqc_pass_modal_ends.gtf",
-        exp = "05_isoPropeller-filter/{tpm_filtertag}/{prefix}_{suffix}_isoqc_pass_exp.txt",
-        ids = "05_isoPropeller-filter/{tpm_filtertag}/{prefix}_{suffix}_isoqc_pass_id.txt",
-        tss = "05_isoPropeller-filter/{tpm_filtertag}/{prefix}_{suffix}_isoqc_pass_tss.bed",
-        tts = "05_isoPropeller-filter/{tpm_filtertag}/{prefix}_{suffix}_isoqc_pass_tts.bed",
-        qcf = "05_isoPropeller-filter/{tpm_filtertag}/{prefix}_{suffix}_isoqc_fail.ids",
-        trk = "05_isoPropeller-filter/{tpm_filtertag}/{prefix}_{suffix}_isoqc_pass.trackgroups",
+        gtf = "05_isoPropeller-filter/{prefix}_{suffix}/{tpm_filtertag}/{prefix}_{suffix}_isoqc_pass.gtf",
+        mod = "05_isoPropeller-filter/{prefix}_{suffix}/{tpm_filtertag}/{prefix}_{suffix}_isoqc_pass_modal_ends.gtf",
+        exp = "05_isoPropeller-filter/{prefix}_{suffix}/{tpm_filtertag}/{prefix}_{suffix}_isoqc_pass_exp.txt",
+        ids = "05_isoPropeller-filter/{prefix}_{suffix}/{tpm_filtertag}/{prefix}_{suffix}_isoqc_pass_id.txt",
+        tss = "05_isoPropeller-filter/{prefix}_{suffix}/{tpm_filtertag}/{prefix}_{suffix}_isoqc_pass_tss.bed",
+        tts = "05_isoPropeller-filter/{prefix}_{suffix}/{tpm_filtertag}/{prefix}_{suffix}_isoqc_pass_tts.bed",
+        qcf = "05_isoPropeller-filter/{prefix}_{suffix}/{tpm_filtertag}/{prefix}_{suffix}_isoqc_fail.ids",
+        trk = "05_isoPropeller-filter/{prefix}_{suffix}/{tpm_filtertag}/{prefix}_{suffix}_isoqc_pass.trackgroups",
     params:
         snakedir = SNAKEDIR,
         tpm_filtertag = TPM_FILTERTAG

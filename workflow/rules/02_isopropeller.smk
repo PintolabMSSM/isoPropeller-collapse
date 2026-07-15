@@ -4,26 +4,26 @@
 rule run_isopropeller:
     message: "Running isoPropeller on sample {wildcards.sample}"
     input:
-        bam  = lambda wc: ( f"02_transcriptclean/{wc.sample}/{wc.sample}_mapped_labeled_tclean.bam"
+        bam  = lambda wc: ( f"01_transcriptclean/{wc.sample}/{wc.sample}_mapped_labeled_tclean.bam"
                             if USE_TC
                             else f"01_mapping/{wc.sample}/{wc.sample}_mapped_labeled_chrM_DS.bam"),
         genfasta = GENOMEFASTA,
         reftss   = REFTSS
     output:
-        gtf   = "03_isoPropeller/{sample}/{sample}_raw.gtf",
-        end   = "03_isoPropeller/{sample}/{sample}_raw_end_dist.txt",
-        stat  = "03_isoPropeller/{sample}/{sample}_raw_stat.txt",
-        log   = "03_isoPropeller/{sample}/{sample}_raw.log"
+        gtf   = "02_isoPropeller/{sample}/{sample}_raw.gtf",
+        end   = "02_isoPropeller/{sample}/{sample}_raw_end_dist.txt",
+        stat  = "02_isoPropeller/{sample}/{sample}_raw_stat.txt",
+        log   = "02_isoPropeller/{sample}/{sample}_raw.log"
     log:
-        "logs/03_isoPropeller/{sample}_run.log"
+        "logs/02_isoPropeller/{sample}_run.log"
     benchmark:
-        "benchmarks/03_isoPropeller/{sample}_run.txt"
+        "benchmarks/02_isoPropeller/{sample}_run.txt"
     threads: 24
     conda:
         SNAKEDIR + "envs/isopropeller.yaml"
     params:
         sample     = "{sample}",
-        outdir     = "03_isoPropeller/{sample}",
+        outdir     = "02_isoPropeller/{sample}",
         extra_args = ISOPROPEXTRAARGS
     shell:
         r"""
@@ -57,14 +57,14 @@ rule run_isopropeller:
 rule postprocess_isopropeller_gtf:
     message: "Post-processing isoPropeller GTF ({wildcards.suffix}) for {wildcards.sample}"
     input:
-        gtf          = "03_isoPropeller/{sample}/{sample}_raw.gtf"
+        gtf          = "02_isoPropeller/{sample}/{sample}_raw.gtf"
     output:
-        filtered_gtf = "03_isoPropeller/{sample}/{sample}_{suffix}.gtf",
-        tmp_id_file  = temp("03_isoPropeller/{sample}/{sample}_temp_transcript_id_{suffix}.txt")
+        filtered_gtf = "02_isoPropeller/{sample}/{sample}_{suffix}.gtf",
+        tmp_id_file  = temp("02_isoPropeller/{sample}/{sample}_temp_transcript_id_{suffix}.txt")
     log:
-        "logs/03_isoPropeller/{sample}_postprocess_gtf_{suffix}.log"
+        "logs/02_isoPropeller/{sample}_postprocess_gtf_{suffix}.log"
     benchmark:
-        "benchmarks/03_isoPropeller/{sample}_postprocess_gtf_{suffix}.txt"
+        "benchmarks/02_isoPropeller/{sample}_postprocess_gtf_{suffix}.txt"
     threads: 1
     wildcard_constraints:
         # Only the two consumable products are built here; the raw GTF is never

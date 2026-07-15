@@ -63,10 +63,12 @@ isoform_depth_suffix:   "depth-gt1"
 # (these are likely incomplete transcript fragments). Reads from the shorter splice chains are
 # proportionally redistributed across the longer splice chains. Isoforms with 5' ends overlapping
 # known CAGE or TSS regions within the 'consolidate_protect_window' distance are protected from merging.
-# If a reference annotation GTF is provided, known isoforms will be protected.
+# By default, isoforms that match the splice chain of reference transcripts defined in `reference_annotations_gtf`
+# will also be protected from merging. This can be disabled by setting 'protect_known_transcripts' to False
+protect_known_transcripts:                          True
+consolidate_contained_splicechains:                 True
 consolidate_protect_window:                         75
 consolidate_round_mode:                             "nearest"  # nearest|floor|ceil|none
-consolidate_ref:                                    True
 
 # After the isoPropeller merging steps, optionally perform the following filtering steps to reduce
 # technical and biological noise.

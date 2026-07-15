@@ -84,12 +84,13 @@ filt_tpm_min_samples:               3
 # (these are likely incomplete transcript fragments). Reads from the shorter splice chains are
 # proportionally redistributed across the longer splice chains. Dominant isoforms that account for at 
 # least 10% or more of the transcript output per gene (consolidate_merge_min_frac) in at least 2 or 
-# more samples (consolidate_merge_min_samples) will never be merged into larger transcripts. If a 
-# reference annotation GTF is provided, known isoforms will be protected.
+# more samples (consolidate_merge_min_samples) will never be merged into larger transcripts.
+# By default, isoforms that match the splice chain of reference transcripts defined in `reference_annotations_gtf`
+# will also be protected from merging. This can be disabled by setting 'protect_known_transcripts' to False
+protect_known_transcripts:                          True
 consolidate_contained_splicechains:                 True
 consolidate_merge_min_frac:                         0.1
 consolidate_merge_min_samples:                      2
-consolidate_ref:                                    True
 
 # Set parameters for pruning isoforms from overlapping isoform clusters, retaining only the top
 # percentile of expressed isoforms.

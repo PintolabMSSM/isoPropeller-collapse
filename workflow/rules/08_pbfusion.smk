@@ -8,13 +8,13 @@ rule mapping_pbfusion:
         fastq = "01_mapping/{sample}/flnc_merged.fastq.gz",
         ref   = GENOMEFASTA
     output:
-        bam   = temp("09_pbfusion/{sample}_pbfusion.bam"),
-        bai   = temp("09_pbfusion/{sample}_pbfusion.bam.bai")
+        bam   = temp("08_pbfusion/{sample}_pbfusion.bam"),
+        bai   = temp("08_pbfusion/{sample}_pbfusion.bam.bai")
     log:
-        "logs/09_pbfusion/{sample}_mapping.log"
+        "logs/08_pbfusion/{sample}_mapping.log"
     threads: 24
     benchmark: 
-        "benchmarks/09_pbfusion/{sample}_pbmm2-mapping.txt"
+        "benchmarks/08_pbfusion/{sample}_pbmm2-mapping.txt"
     conda:
         SNAKEDIR + "envs/pbfusion.yaml"
     params:
@@ -55,11 +55,11 @@ rule pbfusion_cache:
     input:
         gtf = REFGTF
     output:
-        cache = "09_pbfusion/reference_cache/gtf.bin"
+        cache = "08_pbfusion/reference_cache/gtf.bin"
     log:
-        "logs/09_pbfusion/gtf_cache.log"
+        "logs/08_pbfusion/gtf_cache.log"
     benchmark: 
-        "benchmarks/09_pbfusion/prepare-reference-cache.txt"
+        "benchmarks/08_pbfusion/prepare-reference-cache.txt"
     conda:
         SNAKEDIR + "envs/pbfusion.yaml"
     shell:
@@ -86,24 +86,24 @@ rule pbfusion_cache:
 rule run_pbfusion:
     message: "Running pbfusion for sample {wildcards.sample}"
     input:
-        bam    = "09_pbfusion/{sample}_pbfusion.bam",
-        bai    = "09_pbfusion/{sample}_pbfusion.bam.bai",
-        cache  = "09_pbfusion/reference_cache/gtf.bin"
+        bam    = "08_pbfusion/{sample}_pbfusion.bam",
+        bai    = "08_pbfusion/{sample}_pbfusion.bam.bai",
+        cache  = "08_pbfusion/reference_cache/gtf.bin"
     output:
-        out_breakp       = "09_pbfusion/{sample}/{sample}.breakpoints.bed",
-        out_breakpgrp    = "09_pbfusion/{sample}/{sample}.breakpoints.groups.bed",
-        out_transcr      = "09_pbfusion/{sample}/{sample}.transcripts",
-        out_unannot      = "09_pbfusion/{sample}/{sample}.unannotated.bed",
-        out_unannot_clst = "09_pbfusion/{sample}/{sample}.unannotated.clusters.bed",
+        out_breakp       = "08_pbfusion/{sample}/{sample}.breakpoints.bed",
+        out_breakpgrp    = "08_pbfusion/{sample}/{sample}.breakpoints.groups.bed",
+        out_transcr      = "08_pbfusion/{sample}/{sample}.transcripts",
+        out_unannot      = "08_pbfusion/{sample}/{sample}.unannotated.bed",
+        out_unannot_clst = "08_pbfusion/{sample}/{sample}.unannotated.clusters.bed",
     log:
-        "logs/09_pbfusion/{sample}_pbfusion.log"
+        "logs/08_pbfusion/{sample}_pbfusion.log"
     threads: 24
     benchmark: 
-        "benchmarks/09_pbfusion/{sample}_pbfusion.txt"
+        "benchmarks/08_pbfusion/{sample}_pbfusion.txt"
     conda:
         SNAKEDIR + "envs/pbfusion.yaml"
     params:
-        out_dir                    = "09_pbfusion/{sample}",
+        out_dir                    = "08_pbfusion/{sample}",
         out_prefix                 = "{sample}",
         min_fusion_quality         = PBFUSION_MIN_FUSION_QUALITY,
         min_coverage               = PBFUSION_MIN_COVERAGE,

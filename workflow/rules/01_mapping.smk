@@ -162,9 +162,9 @@ rule downsample_chrM:
         max_chrM_reads = MAXCHRMREADS,
         seed           = 4232
     log:
-        "logs/02_transcriptclean/{sample}_downsample_chrM.log"
+        "logs/01_mapping/{sample}_downsample_chrM.log"
     benchmark:
-        "benchmarks/02_transcriptclean/{sample}_downsample_chrM.txt"
+        "benchmarks/01_mapping/{sample}_downsample_chrM.txt"
     threads: 4
     conda:
         SNAKEDIR + "envs/pysam.yaml"

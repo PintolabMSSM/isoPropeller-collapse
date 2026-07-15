@@ -13,11 +13,11 @@ checkpoint bam_to_sam_and_split:
     output:
         # The output is a directory that will contain the subdirectories for each chunk.
         # This directory also acts as a flag for completion for the checkpoint.
-        directory("02_transcriptclean/{sample}/split/")
+        directory("01_transcriptclean/{sample}/split/")
     log:
-        "logs/02_transcriptclean/{sample}_bam_to_sam_split.log"
+        "logs/01_transcriptclean/{sample}_bam_to_sam_split.log"
     benchmark:
-        "benchmarks/02_transcriptclean/{sample}_bam_to_sam_split.txt"
+        "benchmarks/01_transcriptclean/{sample}_bam_to_sam_split.txt"
     params:
         reads_per_chunk = TRANSCRIPTCLEAN_CHUNK_MAXREADS,
         # Define the path for the manifest file listing all created chunks.
@@ -86,21 +86,21 @@ rule run_transcriptclean_on_chunk:
     message: "Running transcriptclean on {wildcards.sample}, chunk {wildcards.chunk}"
     input:
         # The input SAM path reflects the chunk subdirectory structure
-        sam = "02_transcriptclean/{sample}/split/{chunk}/{sample}.chunk_{chunk}.sam",
+        sam = "01_transcriptclean/{sample}/split/{chunk}/{sample}.chunk_{chunk}.sam",
         ref = GENOMEFASTA,
         fai = GENOMEFASTA + ".fai"
     output:
         # Outputs are kept in the unique subdirectory for each chunk to prevent conflicts.
-        cleaned_bam     = temp("02_transcriptclean/{sample}/split/{chunk}/{sample}.chunk_{chunk}_clean.bam"),
-        clean_log_gz    = temp("02_transcriptclean/{sample}/split_logs/{sample}.chunk_{chunk}_clean.log.gz"),
-        clean_te_log_gz = temp("02_transcriptclean/{sample}/split_logs/{sample}.chunk_{chunk}_clean.TE.log.gz")
+        cleaned_bam     = temp("01_transcriptclean/{sample}/split/{chunk}/{sample}.chunk_{chunk}_clean.bam"),
+        clean_log_gz    = temp("01_transcriptclean/{sample}/split_logs/{sample}.chunk_{chunk}_clean.log.gz"),
+        clean_te_log_gz = temp("01_transcriptclean/{sample}/split_logs/{sample}.chunk_{chunk}_clean.TE.log.gz")
     log:
-        "logs/02_transcriptclean/{sample}_transcriptclean_chunk_{chunk}.log"
+        "logs/01_transcriptclean/{sample}_transcriptclean_chunk_{chunk}.log"
     benchmark:
-        "benchmarks/02_transcriptclean/{sample}_transcriptclean_chunk_{chunk}.txt"
+        "benchmarks/01_transcriptclean/{sample}_transcriptclean_chunk_{chunk}.txt"
     params:
         # The output prefix points to the unique chunk subdirectory.
-        outprefix      = lambda wildcards: f"02_transcriptclean/{wildcards.sample}/split/{wildcards.chunk}/{wildcards.sample}.chunk_{wildcards.chunk}",
+        outprefix      = lambda wildcards: f"01_transcriptclean/{wildcards.sample}/split/{wildcards.chunk}/{wildcards.sample}.chunk_{wildcards.chunk}",
         junctions_file = SPLICEJUNCTIONS
     threads: TRANSCRIPTCLEAN_CHUNK_THREADS
     conda:
@@ -109,7 +109,7 @@ rule run_transcriptclean_on_chunk:
         r"""
         (
         # The CHUNK_DIR is already created by the checkpoint rule, but mkdir -p is safe.
-        CHUNK_DIR="02_transcriptclean/{wildcards.sample}/split/{wildcards.chunk}"
+        CHUNK_DIR="01_transcriptclean/{wildcards.sample}/split/{wildcards.chunk}"
         mkdir -p "$CHUNK_DIR"
 
         echo "Starting transcriptclean for {input.sam}"
@@ -135,7 +135,7 @@ rule run_transcriptclean_on_chunk:
         rm "$TMP_CLEAN_SAM" # Remove the intermediate SAM file
 
         # Ensure the directory for compressed logs exists
-        mkdir -p "02_transcriptclean/{wildcards.sample}/split_logs/"
+        mkdir -p "01_transcriptclean/{wildcards.sample}/split_logs/"
 
         # Compress the log files to their final destination
         pigz -f -c -p {threads} "$TMP_CLEAN_LOG" > "{output.clean_log_gz}"
@@ -169,19 +169,19 @@ def get_chunk_wildcards(wildcards):
 def get_cleaned_chunks(wildcards):
     """Gathers all cleaned BAM chunks for a sample."""
     # Path now includes the {chunk} subdirectory wildcard.
-    return expand("02_transcriptclean/{sample}/split/{chunk}/{sample}.chunk_{chunk}_clean.bam",
+    return expand("01_transcriptclean/{sample}/split/{chunk}/{sample}.chunk_{chunk}_clean.bam",
                   sample=wildcards.sample,
                   chunk=get_chunk_wildcards(wildcards))
 
 def get_clean_logs(wildcards):
     """Gathers all standard log chunks for a sample."""
-    return expand("02_transcriptclean/{sample}/split_logs/{sample}.chunk_{chunk}_clean.log.gz",
+    return expand("01_transcriptclean/{sample}/split_logs/{sample}.chunk_{chunk}_clean.log.gz",
                   sample=wildcards.sample,
                   chunk=get_chunk_wildcards(wildcards))
 
 def get_clean_te_logs(wildcards):
     """Gathers all TE log chunks for a sample."""
-    return expand("02_transcriptclean/{sample}/split_logs/{sample}.chunk_{chunk}_clean.TE.log.gz",
+    return expand("01_transcriptclean/{sample}/split_logs/{sample}.chunk_{chunk}_clean.TE.log.gz",
                   sample=wildcards.sample,
                   chunk=get_chunk_wildcards(wildcards))
 
@@ -196,14 +196,14 @@ rule gather_results:
         clean_logs = get_clean_logs,
         te_logs    = get_clean_te_logs
     output:
-        merged_bam    = "02_transcriptclean/{sample}/{sample}_mapped_labeled_tclean.bam",
-        merged_bai    = "02_transcriptclean/{sample}/{sample}_mapped_labeled_tclean.bam.bai",
-        merged_log    = "02_transcriptclean/{sample}/{sample}_final_clean.log.gz",
-        merged_te_log = "02_transcriptclean/{sample}/{sample}_final_clean.TE.log.gz"
+        merged_bam    = "01_transcriptclean/{sample}/{sample}_mapped_labeled_tclean.bam",
+        merged_bai    = "01_transcriptclean/{sample}/{sample}_mapped_labeled_tclean.bam.bai",
+        merged_log    = "01_transcriptclean/{sample}/{sample}_final_clean.log.gz",
+        merged_te_log = "01_transcriptclean/{sample}/{sample}_final_clean.TE.log.gz"
     log:
-        "logs/02_transcriptclean/{sample}_gather_results.log"
+        "logs/01_transcriptclean/{sample}_gather_results.log"
     benchmark:
-        "benchmarks/02_transcriptclean/{sample}_gather_results.txt"
+        "benchmarks/01_transcriptclean/{sample}_gather_results.txt"
     params:
         bams_count       = lambda wildcards, input: len(input.bams),
         clean_logs_count = lambda wildcards, input: len(input.clean_logs),
@@ -242,7 +242,7 @@ rule gather_results:
 
         # Clean up the now-empty intermediate chunk directory to save disk space.
         echo "Cleaning up intermediate chunk directory."
-        rm -rf "02_transcriptclean/{wildcards.sample}/split/"
+        rm -rf "01_transcriptclean/{wildcards.sample}/split/"
         echo "Cleanup complete."
 
         echo "All intermediate results gathered for {wildcards.sample}"

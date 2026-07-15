@@ -18,7 +18,9 @@ B) Per-sample support filter:
    - For each sample, within each cluster:
        (1) Relative-to-max support (optional):
            expr(t,s) >= sample_min_rel_expr * max_expr_in_cluster(s)
-       (2) Cumulative-expression retention:
+       (2) Relative-to-total support (optional):
+           expr(t,s) >= sample_min_frac_expr * total_expr_in_cluster(s)
+       (3) Cumulative-expression retention:
            Sort isoforms by expr desc; keep smallest prefix whose cumulative sum
            reaches retain_locus_expr_pct_per_sample% of total cluster expr in that sample.
            (This keeps isoforms that together make up the top fraction of expression.)
@@ -316,6 +318,7 @@ def keep_by_sample_support(
     sub: pd.DataFrame,
     expr_cols: List[str],
     sample_min_rel_expr: float,
+    sample_min_frac_expr: float,
     retain_locus_expr_pct_per_sample: Optional[float],
     min_support_samples: int,
     fallback_score_mode: str,
@@ -335,8 +338,8 @@ def keep_by_sample_support(
         .astype(float)
     )
 
-    if (sample_min_rel_expr <= 0.0) and (retain_locus_expr_pct_per_sample is None):
-        raise ValueError("Sample-support filtering requires sample_min_rel_expr>0 and/or retain_locus_expr_pct_per_sample set.")
+    if (sample_min_rel_expr <= 0.0) and (sample_min_frac_expr <= 0.0) and (retain_locus_expr_pct_per_sample is None):
+        raise ValueError("Sample-support filtering requires sample_min_rel_expr>0 and/or sample_min_frac_expr>0 and/or retain_locus_expr_pct_per_sample set.")
 
     passes = pd.DataFrame(False, index=comp_df.index, columns=comp_df.columns)
 
@@ -346,7 +349,13 @@ def keep_by_sample_support(
         thresh = max_per_sample * float(sample_min_rel_expr)
         passes |= comp_df.ge(thresh, axis=1)
 
-    # B) Cumulative-expression retention per sample (your requested "top percentile of locus expression")
+     # B) Relative-to-total support
+    if sample_min_frac_expr and sample_min_frac_expr > 0:
+        total_per_sample = comp_df.sum(axis=0)
+        thresh = total_per_sample * float(sample_min_frac_expr)
+        passes |= comp_df.ge(thresh, axis=1)
+
+    # C) Cumulative-expression retention per sample (your requested "top percentile of locus expression")
     if retain_locus_expr_pct_per_sample is not None:
         pct = float(retain_locus_expr_pct_per_sample)
         if not (0.0 < pct <= 100.0):
@@ -371,6 +380,7 @@ def keep_by_sample_support(
 
     stats = {
         "sample_min_rel_expr": float(sample_min_rel_expr),
+        "sample_min_frac_expr" : float (sample_min_frac_expr ) ,
         "retain_locus_expr_pct_per_sample": float(retain_locus_expr_pct_per_sample) if retain_locus_expr_pct_per_sample is not None else None,
         "min_support_samples": int(min_support_samples),
         "pass_count_min": int(pass_counts.min()) if len(pass_counts) else 0,
@@ -406,6 +416,9 @@ def main():
     ap.add_argument("--sample-min-rel-expr", type=float, default=0.0,
                     help="Per sample, isoform is supported if expr >= this * (cluster max in sample). 0 disables.")
 
+   ap.add_argument("--sample-min-frac-expr", type=float, default=0.0,
+                  help="Per sample, isoform is supported if expr >= this * (total cluster expr in sample). 0 disables.")
+
     ap.add_argument("--retain-locus-expr-pct-per-sample", type=float, default=None,
                     help=("Per sample, keep isoforms that cumulatively account for the top X%% of cluster expression "
                           "(e.g. 98 keeps isoforms whose cumulative sum reaches 98%% of total)."))
@@ -428,13 +441,16 @@ def main():
         raise ValueError("--min-keep must be >= 1.")
     if args.sample_min_rel_expr < 0:
         raise ValueError("--sample-min-rel-expr must be >= 0.")
+    if args.sample_min_frac_expr < 0 or args.sample_min_frac_expr > 1.0:
+        raise ValueError("--sample-min-frac-expr must be between 0.0 and 1.0.")
     if args.min_support_samples < 1:
         raise ValueError("--min-support-samples must be >= 1.")
 
     if args.sample_support_filter:
-        if (args.sample_min_rel_expr == 0.0) and (args.retain_locus_expr_pct_per_sample is None):
+        if (args.sample_min_rel_expr == 0.0) and (args.sample_min_frac_expr == 0.0) and (args.retain_locus_expr_pct_per_sample is None):
             raise ValueError(
                 "--sample-support-filter requires --sample-min-rel-expr > 0 and/or "
+                "--sample-min_frac_expr and/or"
                 "--retain-locus-expr-pct-per-sample set."
             )
 
@@ -483,6 +499,7 @@ def main():
                     sub=sub,
                     expr_cols=expr_cols,
                     sample_min_rel_expr=args.sample_min_rel_expr,
+                    sample_min_frac_expr=args.sample_min_frac_expr,
                     retain_locus_expr_pct_per_sample=args.retain_locus_expr_pct_per_sample,
                     min_support_samples=args.min_support_samples,
                     fallback_score_mode=args.score,
@@ -502,6 +519,7 @@ def main():
                             "cluster_size": len(comp),
                             "reason": "failed_sample_support",
                             "sample_min_rel_expr": st["sample_min_rel_expr"],
+                            "sample_min_frac_expr": st["sample_min_frac_expr"],
                             "retain_locus_expr_pct_per_sample": st["retain_locus_expr_pct_per_sample"],
                             "min_support_samples": st["min_support_samples"],
                             "expr_sum": float(np.sum(vals)),

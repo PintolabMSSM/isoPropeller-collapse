@@ -33,9 +33,9 @@ rule isopropeller_defrag_prune:
     params:
         prefix_val  = MERGEDISOPREFIX,
         prune_py    = SNAKEDIR + "scripts/prune_rare_isoforms_from_clusters.py",
-        retain_pct  = PRUNE_LOW_EXPRESSED_ISOFORMS_RETAIN_PCT,
-        min_samples = PRUNE_LOW_EXPRESSED_ISFORMS_MIN_SAMPLES,
-        match_mode  = PRUNE_LOW_EXPRESSED_ISFORMS_MATCH_MODE,
+        retain_frac  = PRUNE_LOW_EXPRESSED_ISOFORMS_RETAIN_FRAC,
+        min_samples = PRUNE_LOW_EXPRESSED_ISOFORMS_MIN_SAMPLES,
+        match_mode  = PRUNE_LOW_EXPRESSED_ISOFORMS_MATCH_MODE,
     shell:
         r"""
         (
@@ -51,7 +51,7 @@ rule isopropeller_defrag_prune:
           --expr-col '*' \
           --match-mode "{params.match_mode}" \
           --sample-support-filter \
-          --retain-locus-expr-pct-per-sample {params.retain_pct} \
+          --sample-min-frac-expr {params.retain_frac} \
           --min-support-samples {params.min_samples} \
           --min-keep 1 \
           --out "{output.exp}" \

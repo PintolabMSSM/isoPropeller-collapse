@@ -97,9 +97,9 @@ consolidate_contained_splicechains:                 True
 consolidate_merge_min_frac:                         0.1
 consolidate_merge_min_samples:                      2
 
-# Set parameters for pruning isoforms from overlapping isoform clusters, retaining only the top
-# percentile of expressed isoforms.
-prune_low_expressed_isoforms_retain_pct:            97
+# Set parameters for pruning isoforms from overlapping isoform clusters, removing less abundant 
+# isoforms.
+prune_low_expressed_isoforms_retain_frac:            0.02
 prune_low_expressed_isforms_match_mode:             "any_shared"
 prune_low_expressed_isforms_min_samples:            2
 

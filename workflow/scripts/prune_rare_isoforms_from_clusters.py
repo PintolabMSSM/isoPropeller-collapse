@@ -347,8 +347,8 @@ def keep_by_sample_support(
             chain = tx2chain.get(tx)
             if chain:
                chain = tuple(chain)
-            if chain in reference_chains:
-               protected_tx.add(tx)
+               if chain in reference_chains:
+                  protected_tx.add(tx)
                
     """
     Per-sample support:

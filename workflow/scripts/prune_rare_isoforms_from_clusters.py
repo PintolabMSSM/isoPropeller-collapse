@@ -270,18 +270,29 @@ def keep_by_global_percentile(
     retain_top_pct: float,
     score_mode: str,
     min_keep: int,
+    reference_chains: Optional[Set[Tuple[int, ...]]] = None,
+    tx_to_chain: Optional[Dict[str, Tuple[int, ...]]] = None,
 ) -> Tuple[Set[str], List[str], float]:
     comp_df = sub[sub["transcript_id"].isin(comp)].copy()
     comp_scores = compute_score(comp_df, expr_cols, score_mode).astype(float)
     comp_sorted = comp_scores.sort_values(ascending=False)
 
+   # Identify protected reference-matching transcripts within this cluster
+    protected_tx = set()
+    if reference_chains and tx_to_chain:
+        for tx in comp:
+            chain = tx_to_chain.get(tx)
+            if chain and chain in reference_chains:
+                protected_tx.add(tx)
+               
     n = len(comp_sorted)
     n_keep_target = int(np.ceil((retain_top_pct / 100.0) * n))
     n_keep = max(int(min_keep), min(n, n_keep_target))
 
     keep_tx = set(comp_sorted.head(n_keep).index.astype(str).tolist())
+    keep_tx = keep_tx.union(protected_tx)    
     drop_tx = [t for t in comp_sorted.index.astype(str).tolist() if t not in keep_tx]
-    cutoff = float(comp_sorted.iloc[n_keep - 1]) if n_keep > 0 else float("nan")
+    cutoff = float(comp_sorted.iloc[n_keep - 1]) if n_keep > 0 and len(comp_sorted) > 0 else float("nan")
     return keep_tx, drop_tx, cutoff
 
 
@@ -323,7 +334,18 @@ def keep_by_sample_support(
     min_support_samples: int,
     fallback_score_mode: str,
     min_keep: int,
+    reference_chains: Optional[Set[Tuple[int, ...]]] = None,
+    tx_to_chain: Optional[Dict[str, Tuple[int, ...]]] = None,
 ) -> Tuple[Set[str], List[str], Dict[str, Any]]:
+
+    # Identify protected transcripts up front
+    protected_tx = set()
+    if reference_chains and tx_to_chain:
+        for tx in comp:
+            chain = tx_to_chain.get(tx)
+            if chain and chain in reference_chains:
+                protected_tx.add(tx)
+               
     """
     Per-sample support:
     - Criterion A (optional): relative-to-max within cluster per sample
@@ -370,11 +392,17 @@ def keep_by_sample_support(
     pass_counts = passes.sum(axis=1)
     keep_tx = set(pass_counts[pass_counts >= int(min_support_samples)].index.astype(str))
 
+    keep_tx=keep_tx.union(protected_tx)
+
     # Ensure at least min_keep per cluster
     if len(keep_tx) < int(min_keep):
         fallback_sub = sub[sub["transcript_id"].isin(comp)].copy()
         scores = compute_score(fallback_sub, expr_cols, fallback_score_mode).astype(float)
         keep_tx = set(scores.sort_values(ascending=False).head(int(min_keep)).index.astype(str).tolist())
+
+    # Union protected_tx AFTER the fallback check so it is never lost
+    if protected_tx:
+       keep_tx.update(protected_tx)
 
     drop_tx = [t for t in comp_df.index.astype(str).tolist() if t not in keep_tx]
 
@@ -403,6 +431,9 @@ def main():
     ap.add_argument("--min-jaccard", type=float, default=0.5)
     ap.add_argument("--bridge-strong-min-shared", type=int, default=2)
     ap.add_argument("--bridge-weak-min-jaccard", type=float, default=0.15)
+
+    ap.add_argument("--reference-gtf", type=Path, default=None, 
+                   help="Optional reference GTF file. Transcripts with matching splice chains will be protected from filtering.")
 
     # Global filtering (isoform COUNT percentile)
     ap.add_argument("--retain-top-pct", type=float, default=98.0,
@@ -456,6 +487,16 @@ def main():
 
     print(f"[{ts()}] Loading GTF...")
     tx2chain, tx2gene, tx2locus = parse_gtf(args.gtf)
+
+    reference_chains = set()
+    if args.reference_gtf:
+        print(f"[INFO {ts()}] Parsing reference GTF for known splice chains...")
+        ref_tx2chain, _, _, _ = parse_gtf(args.reference_gtf)
+
+        # Convert lists of junctions into frozensets or tuples so they are hashable
+        for chain in ref_tx2chain.values():
+            reference_chains.add(tuple(chain))
+        print(f"[INFO {ts()}] Loaded {len(reference_chains)} unique reference splice chains.")
 
     print(f"[{ts()}] Loading expression table...")
     expr_df = load_expression_table(args.expr, args.tx_col, args.expr_col)

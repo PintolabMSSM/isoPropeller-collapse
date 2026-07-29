@@ -447,8 +447,8 @@ def main():
     ap.add_argument("--sample-min-rel-expr", type=float, default=0.0,
                     help="Per sample, isoform is supported if expr >= this * (cluster max in sample). 0 disables.")
 
-   ap.add_argument("--sample-min-frac-expr", type=float, default=0.0,
-                  help="Per sample, isoform is supported if expr >= this * (total cluster expr in sample). 0 disables.")
+    ap.add_argument("--sample-min-frac-expr", type=float, default=0.0,
+                   help="Per sample, isoform is supported if expr >= this * (total cluster expr in sample). 0 disables.")
 
     ap.add_argument("--retain-locus-expr-pct-per-sample", type=float, default=None,
                     help=("Per sample, keep isoforms that cumulatively account for the top X%% of cluster expression "

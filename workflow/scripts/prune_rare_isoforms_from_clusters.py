@@ -282,8 +282,10 @@ def keep_by_global_percentile(
     if reference_chains and tx_to_chain:
         for tx in comp:
             chain = tx_to_chain.get(tx)
-            if chain and chain in reference_chains:
-                protected_tx.add(tx)
+            if chain :
+               chhain = tuple(chain)
+               if chain in reference_chains:
+                  protected_tx.add(tx)
                
     n = len(comp_sorted)
     n_keep_target = int(np.ceil((retain_top_pct / 100.0) * n))
@@ -343,8 +345,10 @@ def keep_by_sample_support(
     if reference_chains and tx_to_chain:
         for tx in comp:
             chain = tx_to_chain.get(tx)
-            if chain and chain in reference_chains:
-                protected_tx.add(tx)
+            if chain:
+               chain = tuple(chain)
+            if chain in reference_chains:
+               protected_tx.add(tx)
                
     """
     Per-sample support:

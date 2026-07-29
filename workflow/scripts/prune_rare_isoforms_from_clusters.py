@@ -491,7 +491,7 @@ def main():
     reference_chains = set()
     if args.reference_gtf:
         print(f"[INFO {ts()}] Parsing reference GTF for known splice chains...")
-        ref_tx2chain, _, _, _ = parse_gtf(args.reference_gtf)
+        ref_tx2chain, _, _ = parse_gtf(args.reference_gtf)
 
         # Convert lists of junctions into frozensets or tuples so they are hashable
         for chain in ref_tx2chain.values():

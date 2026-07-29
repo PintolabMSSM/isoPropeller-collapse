@@ -271,7 +271,7 @@ def keep_by_global_percentile(
     score_mode: str,
     min_keep: int,
     reference_chains: Optional[Set[Tuple[int, ...]]] = None,
-    tx_to_chain: Optional[Dict[str, Tuple[int, ...]]] = None,
+    tx2chain: Optional[Dict[str, Tuple[int, ...]]] = None,
 ) -> Tuple[Set[str], List[str], float]:
     comp_df = sub[sub["transcript_id"].isin(comp)].copy()
     comp_scores = compute_score(comp_df, expr_cols, score_mode).astype(float)
@@ -279,11 +279,11 @@ def keep_by_global_percentile(
 
    # Identify protected reference-matching transcripts within this cluster
     protected_tx = set()
-    if reference_chains and tx_to_chain:
+    if reference_chains and tx2chain:
         for tx in comp:
-            chain = tx_to_chain.get(tx)
-            if chain :
-               chhain = tuple(chain)
+            chain = tx2chain.get(tx)
+            if chain:
+               chain = tuple(chain)
                if chain in reference_chains:
                   protected_tx.add(tx)
                
@@ -337,14 +337,14 @@ def keep_by_sample_support(
     fallback_score_mode: str,
     min_keep: int,
     reference_chains: Optional[Set[Tuple[int, ...]]] = None,
-    tx_to_chain: Optional[Dict[str, Tuple[int, ...]]] = None,
+    tx2chain: Optional[Dict[str, Tuple[int, ...]]] = None,
 ) -> Tuple[Set[str], List[str], Dict[str, Any]]:
 
     # Identify protected transcripts up front
     protected_tx = set()
-    if reference_chains and tx_to_chain:
+    if reference_chains and tx2chain:
         for tx in comp:
-            chain = tx_to_chain.get(tx)
+            chain = tx2chain.get(tx)
             if chain:
                chain = tuple(chain)
             if chain in reference_chains:
@@ -550,7 +550,7 @@ def main():
                     fallback_score_mode=args.score,
                     min_keep=args.min_keep,
                     reference_chains=reference_chains,
-                    tx_to_chain=tx2chain,
+                    tx2chain=tx2chain,
                 )
                 keep_set |= kt
 
@@ -582,7 +582,7 @@ def main():
                     score_mode=args.score,
                     min_keep=args.min_keep,
                     reference_chains=reference_chains,
-                    tx_to_chain=tx2chain,
+                    tx2chain=tx2chain,
                 )
                 keep_set |= kt
 

@@ -545,6 +545,8 @@ def main():
                     min_support_samples=args.min_support_samples,
                     fallback_score_mode=args.score,
                     min_keep=args.min_keep,
+                    reference_chains=reference_chains,
+                    tx_to_chain=tx2chain,
                 )
                 keep_set |= kt
 
@@ -575,6 +577,8 @@ def main():
                     retain_top_pct=args.retain_top_pct,
                     score_mode=args.score,
                     min_keep=args.min_keep,
+                    reference_chains=reference_chains,
+                    tx_to_chain=tx2chain,
                 )
                 keep_set |= kt
 

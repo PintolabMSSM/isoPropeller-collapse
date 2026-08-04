@@ -97,11 +97,11 @@ consolidate_contained_splicechains:                 True
 consolidate_merge_min_frac:                         0.1
 consolidate_merge_min_samples:                      2
 
-# Set parameters for pruning isoforms from overlapping isoform clusters, removing less abundant 
-# isoforms.
-prune_low_expressed_isoforms_retain_frac:            0.02
-prune_low_expressed_isforms_match_mode:             "any_shared"
-prune_low_expressed_isforms_min_samples:            2
+# Set parameters for pruning rare isoforms from overlapping isoform clusters.
+prune_low_expressed_isoforms_retain_pct:            97                 # Cumulative expression retention % per sample (0, 100]
+prune_low_expressed_isoforms_match_mode:            "bridge_safe"      # Cluster match mode: "bridge_safe", "any_shared", "subset", "jaccard".
+prune_low_expressed_isoforms_min_samples:           2                  # Min samples required to support an isoform (integer >= 1).
+prune_low_expressed_isoforms_tie_policy:            "exclude_all_ties" # Tie-handling policy at cutoff boundary: "include_all_ties", "exclude_all_ties", "truncate_ties".
 
 # Set up chunking parameters for transcriptclean
 transcriptclean_chunk_maxreads:  2000000

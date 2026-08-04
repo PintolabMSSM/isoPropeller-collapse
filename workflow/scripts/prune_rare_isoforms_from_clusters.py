@@ -196,6 +196,64 @@ def load_expression_table(path: Path, tx_col: str, expr_col: str) -> pd.DataFram
     return out
 
 
+def resolve_protected_transcripts(
+    tx2chain: Dict[str, List[Tuple[int, int]]],
+    reference_gtf: Path,
+    transcript_attr: str = "transcript_id",
+    gene_attr: str = "gene_id",
+) -> Tuple[Set[str], int]:
+    """
+    Identify transcripts whose splice chain exactly matches a reference transcript.
+
+    A transcript is protected if its ordered junction chain is identical to the chain of
+    some transcript in the reference annotation. Protected transcripts are never removed
+    by any filtering criterion, regardless of expression.
+
+    Parameters
+    ----------
+    tx2chain : Dict[str, List[Tuple[int, int]]]
+        Junction chains for the query transcripts (from `parse_gtf`).
+    reference_gtf : Path
+        Path to the reference GTF (can be gzip-compressed).
+    transcript_attr : str, default="transcript_id"
+        GTF attribute key for transcript identifier in the reference.
+    gene_attr : str, default="gene_id"
+        GTF attribute key for gene identifier in the reference.
+
+    Returns
+    -------
+    protected_txs : Set[str]
+        Query transcript IDs matching a reference splice chain.
+    n_reference_chains : int
+        Number of distinct non-empty reference chains loaded.
+
+    Notes
+    -----
+    Single-exon transcripts have an empty junction chain. An empty chain would match every
+    single-exon transcript in the annotation, so empty chains are excluded on both sides:
+    single-exon transcripts are never protected by this mechanism.
+
+    Matching is on junction coordinates alone, not on chromosome or strand. Junction
+    coordinates are genomic, so an accidental cross-locus match requires every donor and
+    acceptor to coincide exactly; this is effectively impossible for multi-junction chains
+    but is not formally excluded for single-junction ones.
+    """
+    ref_tx2chain, _, _ = parse_gtf(reference_gtf, transcript_attr=transcript_attr, gene_attr=gene_attr)
+
+    reference_chains: Set[Tuple[Tuple[int, int], ...]] = set()
+    for chain in ref_tx2chain.values():
+        if chain:
+            reference_chains.add(tuple(chain))
+
+    protected_txs: Set[str] = set()
+    if reference_chains:
+        for tx, chain in tx2chain.items():
+            if chain and tuple(chain) in reference_chains:
+                protected_txs.add(str(tx))
+
+    return protected_txs, len(reference_chains)
+
+
 def jaccard(a: Set[Tuple[int, int]], b: Set[Tuple[int, int]]) -> float:
     """
     Calculate Jaccard similarity index between two junction sets.
@@ -458,6 +516,7 @@ def keep_by_sample_support(
     min_keep: int,
     tie_policy: str = "include_all_ties",
     tie_abs_tol: float = 1e-9,
+    protected_txs: Optional[Set[str]] = None,
 ) -> Tuple[Set[str], List[str], Dict[str, Any]]:
     """
     Filter transcripts per cluster based on multi-sample support criteria.
@@ -488,6 +547,11 @@ def keep_by_sample_support(
         Tie-handling policy at cumulative expression boundary.
     tie_abs_tol : float, default=1e-9
         Absolute floating point tolerance for boundary ties.
+    protected_txs : Set[str], optional
+        Globally protected transcript IDs (reference splice-chain matches). Members of this
+        set within the cluster are retained unconditionally. Protection is applied after the
+        support criteria are evaluated, so protected transcripts still contribute to cluster
+        maxima, totals, and cumulative cutoffs exactly as they would without protection.
 
     Returns
     -------
@@ -544,8 +608,13 @@ def keep_by_sample_support(
     pass_counts = passes.sum(axis=1)
     supported_tx = set(pass_counts[pass_counts >= int(min_support_samples)].index.astype(str))
 
-    # Keep all supported isoforms
-    keep_tx = set(supported_tx)
+    # Reference-protected transcripts in this cluster are retained unconditionally,
+    # whether or not any support criterion passed.
+    cluster_txs = set(comp_df.index.astype(str))
+    protected_here: Set[str] = (set(protected_txs) & cluster_txs) if protected_txs else set()
+
+    # Keep all supported isoforms, plus anything protected
+    keep_tx = set(supported_tx) | protected_here
     rescued_tx: Set[str] = set()
 
     # Top up shortfall using fallback ranking if keep_tx count is below min_keep.
@@ -582,6 +651,8 @@ def keep_by_sample_support(
         "pass_count_min": int(pass_counts.min()) if len(pass_counts) else 0,
         "pass_count_max": int(pass_counts.max()) if len(pass_counts) else 0,
         "rescued_by_min_keep": rescued_tx,
+        "reference_protected": protected_here,
+        "reference_protected_only": protected_here - supported_tx,
         "drop_reasons": drop_reasons,
     }
     return keep_tx, drop_tx, stats
@@ -609,6 +680,15 @@ def main():
     cluster_group.add_argument("--min-jaccard", type=float, default=0.5)
     cluster_group.add_argument("--bridge-strong-min-shared", type=int, default=2)
     cluster_group.add_argument("--bridge-weak-min-jaccard", type=float, default=0.15)
+
+    # Reference protection
+    ref_group = ap.add_argument_group("Isoform Protection")
+    ref_group.add_argument("--protect-isoform-gtf", "--reference-gtf",
+                           dest="protect_isoform_gtf", type=Path, default=None,
+                           help=("Optional GTF of isoforms to protect. Transcripts whose splice chain "
+                                 "exactly matches an isoform in this GTF are PROTECTED from all filtering "
+                                 "and always kept. Single-exon transcripts (empty chain) are never "
+                                 "protected by this mechanism. (--reference-gtf is a deprecated alias.)"))
 
     # Per-Sample Filtering Options
     filter_group = ap.add_argument_group("Per-Sample Filtering Options")
@@ -668,6 +748,16 @@ def main():
     print(f"[{ts()}] Loading GTF...")
     tx2chain, tx2gene, tx2locus = parse_gtf(args.gtf)
 
+    protected_txs: Set[str] = set()
+    if args.protect_isoform_gtf:
+        print(f"[{ts()}] Parsing reference GTF for known splice chains...")
+        protected_txs, n_ref_chains = resolve_protected_transcripts(tx2chain, args.protect_isoform_gtf)
+        print(f"[{ts()}]   {n_ref_chains} distinct reference splice chains; "
+              f"{len(protected_txs)} transcripts protected from filtering.")
+        if n_ref_chains and not protected_txs:
+            print(f"[{ts()}]   WARNING: no transcript matched a reference chain. Check that both GTFs "
+                  f"use the same coordinate system and assembly.")
+
     print(f"[{ts()}] Loading expression table...")
     expr_df = load_expression_table(args.expr, args.tx_col, args.expr_col)
 
@@ -682,6 +772,8 @@ def main():
 
     keep_set: Set[str] = set()
     rescued_set: Set[str] = set()
+    protected_kept: Set[str] = set()
+    protected_only: Set[str] = set()
     cluster_rows: List[Dict[str, Any]] = []
     dropped_rows: List[Dict[str, Any]] = []
     cluster_id_counter = 0
@@ -716,9 +808,12 @@ def main():
                 min_keep=args.min_keep,
                 tie_policy=args.tie_policy,
                 tie_abs_tol=args.tie_abs_tol,
+                protected_txs=protected_txs,
             )
             keep_set |= kt
             rescued_set |= st["rescued_by_min_keep"]
+            protected_kept |= st["reference_protected"]
+            protected_only |= st["reference_protected_only"]
 
             for t in comp:
                 cluster_rows.append({
@@ -728,6 +823,7 @@ def main():
                     "cluster_id": cid,
                     "cluster_size": len(comp),
                     "kept": int(t in kt),
+                    "reference_protected": int(t in st["reference_protected"]),
                     "rescued_by_min_keep": int(t in st["rescued_by_min_keep"]),
                 })
 
@@ -764,7 +860,8 @@ def main():
         args.clusters_out.parent.mkdir(parents=True, exist_ok=True)
         pd.DataFrame(
             cluster_rows,
-            columns=["transcript_id", "gene", "locus", "cluster_id", "cluster_size", "kept", "rescued_by_min_keep"]
+            columns=["transcript_id", "gene", "locus", "cluster_id", "cluster_size", "kept",
+                     "reference_protected", "rescued_by_min_keep"]
         ).to_csv(args.clusters_out, sep="\t", index=False)
 
     if args.dropped_out:
@@ -774,6 +871,9 @@ def main():
     print(f"[{ts()}] Done. Kept {len(keep_set)} transcripts across {cluster_id_counter} clusters.")
     print(f"[{ts()}]   {len(rescued_set)} of these were retained only by the --min-keep fallback "
           f"(no support criterion passed).")
+    if args.protect_isoform_gtf:
+        print(f"[{ts()}]   {len(protected_kept)} were reference-protected "
+              f"({len(protected_only)} of which no support criterion passed).")
     print(f"[{ts()}] Wrote: {args.out}")
     if args.clusters_out:
         print(f"[{ts()}] Wrote: {args.clusters_out}")

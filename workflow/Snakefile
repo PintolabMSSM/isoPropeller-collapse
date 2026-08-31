@@ -144,10 +144,10 @@ if CONSOLIDATE_PROTECT_KNOWN_TRANSCRIPTS:
     CONSOLIDATE_EXTRAARGS += f" --reference-gtf {REFGTF}"
 
 # Parameters for pruning low-expressed isoforms
-PRUNE_LOW_EXPRESSED_ISOFORMS_RETAIN_PCT = config.get("prune_low_expressed_isoforms_retain_pct",97)
-PRUNE_LOW_EXPRESSED_ISFORMS_MATCH_MODE  = config.get("prune_low_expressed_isoforms_match_mode","bridge_safe")
-PRUNE_LOW_EXPRESSED_ISFORMS_MIN_SAMPLES = config.get("prune_low_expressed_isoforms_min_samples",2)
-PRUNE_LOW_EXPRESSED_ISFORMS_TIE_POLICY  = config.get("prune_low_expressed_isoforms_tie_policy","exclude_all_ties")
+PRUNE_LOW_EXPRESSED_ISOFORMS_RETAIN_PCT  = config.get("prune_low_expressed_isoforms_retain_pct",98)
+PRUNE_LOW_EXPRESSED_ISOFORMS_MATCH_MODE  = config.get("prune_low_expressed_isoforms_match_mode","any_shared")
+PRUNE_LOW_EXPRESSED_ISOFORMS_MIN_SAMPLES = config.get("prune_low_expressed_isoforms_min_samples",2)
+PRUNE_LOW_EXPRESSED_ISOFORMS_TIE_POLICY  = config.get("prune_low_expressed_isoforms_tie_policy","include_all_ties")
 
 # Define local variables: Choose whether or not to run certain filter rules
 REMOVE_MONOEXONS_NO_TSS       = as_bool(config.get("remove_monoexons_without_cage_support", True))
@@ -157,7 +157,7 @@ REMOVE_TSWITCH_ARTIFACTS      = as_bool(config.get("remove_isoforms_with_templat
 REMOVE_ANTISENSE_SPLICEMATCH  = as_bool(config.get("remove_isoforms_with_antisense_perfect_splicematch", True))
 REMOVE_CONTAINED_IN_REPEATS   = as_bool(config.get("remove_isoforms_fully_contained_in_repeats", True))
 REMOVE_PAR_OVERLAP            = as_bool(config.get("remove_isoforms_overlapping_PAR_regions", True))
-REMOVE_BELOW_TPM              = as_bool(config.get("remove_isoforms_not_meeting_TPM_threshold", True))
+REMOVE_BELOW_TPM              = as_bool(config.get("remove_isoforms_not_meeting_TPM_threshold", False))
 REMOVE_TERMINAL_EXONS_SEGDUP  = as_bool(config.get("remove_isoforms_with_mismapped_segdup_exons", True))
 
 # Define local variables: transcriptclean chunking parameters
@@ -206,7 +206,7 @@ TPM_FILTERTAG    = (
     else "tpm-off"
 )
 DEFRAG_FILTERTAG = f"defrag{CONSOLIDATE_MERGE_MIN_FRAC}s{CONSOLIDATE_MERGE_MIN_SAMPLES}"
-PRUNE_FILTERTAG  = f"prune{PRUNE_LOW_EXPRESSED_ISOFORMS_RETAIN_FRAC}s{PRUNE_LOW_EXPRESSED_ISOFORMS_MIN_SAMPLES}"
+PRUNE_FILTERTAG  = f"prune{PRUNE_LOW_EXPRESSED_ISOFORMS_RETAIN_PCT}s{PRUNE_LOW_EXPRESSED_ISOFORMS_MIN_SAMPLES}"
 
 
 # ───────────────────────────────────────────────

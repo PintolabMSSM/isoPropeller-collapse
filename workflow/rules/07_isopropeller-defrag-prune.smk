@@ -36,7 +36,7 @@ rule isopropeller_defrag_prune:
         retain_pct  = PRUNE_LOW_EXPRESSED_ISOFORMS_RETAIN_PCT,
         min_samples = PRUNE_LOW_EXPRESSED_ISOFORMS_MIN_SAMPLES,
         match_mode  = PRUNE_LOW_EXPRESSED_ISOFORMS_MATCH_MODE,
-        tie_policy  = PRUNE_LOW_EXPRESSED_ISFORMS_TIE_POLICY,
+        tie_policy  = PRUNE_LOW_EXPRESSED_ISOFORMS_TIE_POLICY,
     shell:
         r"""
         (

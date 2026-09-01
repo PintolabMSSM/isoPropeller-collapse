@@ -71,7 +71,7 @@ set-resources:
     mem_mb:     64000
 
   filter_repeat_region_overlap:
-    mem_mb:     50000
+    mem_mb:     200000
 
   filter_par_region_overlap:
-    mem_mb:     50000
+    mem_mb:     200000

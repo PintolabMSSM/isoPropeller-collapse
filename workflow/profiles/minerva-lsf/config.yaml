@@ -48,7 +48,7 @@ set-resources:
 
   merge_isopropeller_gtfs:
     lsf_queue:  "premium"
-    mem_mb:     90000
+    mem_mb:     200000
     runtime:    1440
 
   analyze_end_regions:
@@ -71,7 +71,7 @@ set-resources:
     mem_mb:     64000
 
   filter_repeat_region_overlap:
-    mem_mb:     50000
+    mem_mb:     200000
 
   filter_par_region_overlap:
-    mem_mb:     50000
+    mem_mb:     200000

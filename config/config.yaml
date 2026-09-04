@@ -62,7 +62,7 @@ merged_isoform_prefix:  "ISOP"
 # selects which one the rest of the pipeline consumes and which suffix labels the outputs.
 #   "depth-gt1" : keep only transcripts with read depth > 1 (recommended default)
 #   "all"       : keep the full, unfiltered isoPropeller output
-isoform_depth_suffix:   "depth-gt1"
+isoform_depth_suffix:   "all"
 
 # After the isoPropeller merging steps, optionally perform the following filtering steps to reduce
 # technical and biological noise.
@@ -73,7 +73,7 @@ remove_isoforms_with_template_switching_artifacts:  True
 remove_isoforms_with_antisense_perfect_splicematch: True
 remove_isoforms_fully_contained_in_repeats:         True
 remove_isoforms_overlapping_PAR_regions:            True
-remove_isoforms_not_meeting_TPM_threshold:          True
+remove_isoforms_not_meeting_TPM_threshold:          False
 remove_isoforms_with_mismapped_segdup_exons:        True
 
 # Define thresholds used in filtering
@@ -98,10 +98,10 @@ consolidate_merge_min_frac:                         0.1
 consolidate_merge_min_samples:                      2
 
 # Set parameters for pruning rare isoforms from overlapping isoform clusters.
-prune_low_expressed_isoforms_retain_pct:            97                 # Cumulative expression retention % per sample (0, 100]
-prune_low_expressed_isoforms_match_mode:            "bridge_safe"      # Cluster match mode: "bridge_safe", "any_shared", "subset", "jaccard".
+prune_low_expressed_isoforms_retain_pct:            98                 # Cumulative expression retention % per sample (0, 100]
+prune_low_expressed_isoforms_match_mode:            "any_shared"       # Cluster match mode: "bridge_safe", "any_shared", "subset", "jaccard".
 prune_low_expressed_isoforms_min_samples:           2                  # Min samples required to support an isoform (integer >= 1).
-prune_low_expressed_isoforms_tie_policy:            "exclude_all_ties" # Tie-handling policy at cutoff boundary: "include_all_ties", "exclude_all_ties", "truncate_ties".
+prune_low_expressed_isoforms_tie_policy:            "include_all_ties" # Tie-handling policy at cutoff boundary: "include_all_ties", "exclude_all_ties", "truncate_ties".
 
 # Set up chunking parameters for transcriptclean
 transcriptclean_chunk_maxreads:  2000000

@@ -383,7 +383,7 @@ def build_clusters_for_group(
     tx2chain : Dict[str, List[Tuple[int, int]]]
         Global junction chain lookup.
     match_mode : str
-        Clustering matching strategy (`'bridge_safe'`, `'any_shared'`, `'subset'`, or `'jaccard'`).
+        Clustering matching strategy (`'bridge_safe'`, `'any_shared'`, `'subset'`, `'jaccard'`, or `'gene_id'`).
     min_shared : int
         Minimum shared junction requirement (validated in `main`).
     min_jaccard : float

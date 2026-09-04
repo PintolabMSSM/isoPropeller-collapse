@@ -398,6 +398,9 @@ def build_clusters_for_group(
     List[List[str]]
         List of isoform clusters (each cluster is a list of transcript IDs).
     """
+    if match_mode == "gene_id":
+        return [tx_list]
+
     if len(tx_list) <= 1:
         return [tx_list]
 
@@ -674,7 +677,7 @@ def main():
 
     # Clustering Options
     cluster_group = ap.add_argument_group("Clustering Options")
-    cluster_group.add_argument("--match-mode", choices=["bridge_safe", "any_shared", "subset", "jaccard"], default="bridge_safe",
+    cluster_group.add_argument("--match-mode", choices=["bridge_safe", "any_shared", "subset", "jaccard", "gene_id"], default="bridge_safe",
                                help="Clustering mode. Defaults to 'bridge_safe' to prevent cluster collapsing.")
     cluster_group.add_argument("--min-shared", type=int, default=1)
     cluster_group.add_argument("--min-jaccard", type=float, default=0.5)

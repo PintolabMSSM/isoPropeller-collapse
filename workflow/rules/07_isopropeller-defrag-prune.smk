@@ -8,7 +8,7 @@ rule isopropeller_defrag_prune:
     input:
         gtf = "06_isoPropeller-defrag/{prefix}_{suffix}/" + TPM_FILTERTAG + "/" + DEFRAG_FILTERTAG + "/isoqc_pass_defrag.gtf",
         mod = "06_isoPropeller-defrag/{prefix}_{suffix}/" + TPM_FILTERTAG + "/" + DEFRAG_FILTERTAG + "/isoqc_pass_defrag_modal_ends.gtf",
-        exp = "06_isoPropeller-defrag/{prefix}_{suffix}/" + TPM_FILTERTAG + "/" + DEFRAG_FILTERTAG + "/isoqc_pass_defrag_exp.txt",
+        exp = "06_isoPropeller-defrag/{prefix}_{suffix}/" + TPM_FILTERTAG + "/" + DEFRAG_FILTERTAG + "/isoqc_pass_defrag_exp_redist.txt",
         ids = "06_isoPropeller-defrag/{prefix}_{suffix}/" + TPM_FILTERTAG + "/" + DEFRAG_FILTERTAG + "/isoqc_pass_defrag_id.txt",
         tss = "06_isoPropeller-defrag/{prefix}_{suffix}/" + TPM_FILTERTAG + "/" + DEFRAG_FILTERTAG + "/isoqc_pass_defrag_tss.bed",
         tts = "06_isoPropeller-defrag/{prefix}_{suffix}/" + TPM_FILTERTAG + "/" + DEFRAG_FILTERTAG + "/isoqc_pass_defrag_tts.bed",
@@ -36,7 +36,7 @@ rule isopropeller_defrag_prune:
         retain_pct  = PRUNE_LOW_EXPRESSED_ISOFORMS_RETAIN_PCT,
         min_samples = PRUNE_LOW_EXPRESSED_ISOFORMS_MIN_SAMPLES,
         match_mode  = PRUNE_LOW_EXPRESSED_ISOFORMS_MATCH_MODE,
-        tie_policy  = PRUNE_LOW_EXPRESSED_ISFORMS_TIE_POLICY,
+        tie_policy  = PRUNE_LOW_EXPRESSED_ISOFORMS_TIE_POLICY,
     shell:
         r"""
         (
@@ -48,7 +48,7 @@ rule isopropeller_defrag_prune:
         python "{params.prune_py}" \
           --gtf  "{input.gtf}" \
           --expr "{input.exp}" \
-          --tx-col '#TranscriptID' \
+          --tx-col 'transcript_id' \
           --expr-col '*' \
           --match-mode "{params.match_mode}" \
           --retain-locus-expr-pct-per-sample {params.retain_pct} \

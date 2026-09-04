@@ -19,7 +19,8 @@ min_snakemake_version = "8.25.0"
 
 # Load configuration from config file
 configfile: ''.join([os.environ['GIT_REPODIR'], "/config/config.yaml"])
-
+#configfile: "/sc/arion/projects/pintod02a/Xiao/NIAP_benchmark/isopropeller/collapse_config.yaml"
+#configfile: "/sc/arion/projects/pintod02a/Xiao/NIAP_benchmark/isopropeller/config_mouse.yaml"
 
 # ───────────────────────────────────────────────
 # INPUT CSV VALIDATION 
@@ -145,9 +146,9 @@ if CONSOLIDATE_PROTECT_KNOWN_TRANSCRIPTS:
 
 # Parameters for pruning low-expressed isoforms
 PRUNE_LOW_EXPRESSED_ISOFORMS_RETAIN_PCT = config.get("prune_low_expressed_isoforms_retain_pct",97)
-PRUNE_LOW_EXPRESSED_ISFORMS_MATCH_MODE  = config.get("prune_low_expressed_isoforms_match_mode","bridge_safe")
-PRUNE_LOW_EXPRESSED_ISFORMS_MIN_SAMPLES = config.get("prune_low_expressed_isoforms_min_samples",2)
-PRUNE_LOW_EXPRESSED_ISFORMS_TIE_POLICY  = config.get("prune_low_expressed_isoforms_tie_policy","exclude_all_ties")
+PRUNE_LOW_EXPRESSED_ISOFORMS_MATCH_MODE  = config.get("prune_low_expressed_isoforms_match_mode","bridge_safe")
+PRUNE_LOW_EXPRESSED_ISOFORMS_MIN_SAMPLES = config.get("prune_low_expressed_isoforms_min_samples",2)
+PRUNE_LOW_EXPRESSED_ISOFORMS_TIE_POLICY  = config.get("prune_low_expressed_isoforms_tie_policy","exclude_all_ties")
 
 # Define local variables: Choose whether or not to run certain filter rules
 REMOVE_MONOEXONS_NO_TSS       = as_bool(config.get("remove_monoexons_without_cage_support", True))
@@ -206,7 +207,7 @@ TPM_FILTERTAG    = (
     else "tpm-off"
 )
 DEFRAG_FILTERTAG = f"defrag{CONSOLIDATE_MERGE_MIN_FRAC}s{CONSOLIDATE_MERGE_MIN_SAMPLES}"
-PRUNE_FILTERTAG  = f"prune{PRUNE_LOW_EXPRESSED_ISOFORMS_RETAIN_FRAC}s{PRUNE_LOW_EXPRESSED_ISOFORMS_MIN_SAMPLES}"
+PRUNE_FILTERTAG  = f"prune{PRUNE_LOW_EXPRESSED_ISOFORMS_RETAIN_PCT}s{PRUNE_LOW_EXPRESSED_ISOFORMS_MIN_SAMPLES}"
 
 
 # ───────────────────────────────────────────────

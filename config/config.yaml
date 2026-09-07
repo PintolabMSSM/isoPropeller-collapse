@@ -95,12 +95,12 @@ filt_tpm_min_samples:               3
 protect_known_transcripts:                          True
 consolidate_contained_splicechains:                 True
 consolidate_merge_min_frac:                         0.1
-consolidate_merge_min_samples:                      2
+consolidate_merge_min_samples:                      3
 
 # Set parameters for pruning rare isoforms from overlapping isoform clusters.
 prune_low_expressed_isoforms_retain_pct:            98                 # Cumulative expression retention % per sample (0, 100]
-prune_low_expressed_isoforms_match_mode:            "any_shared"       # Cluster match mode: "bridge_safe", "any_shared", "subset", "jaccard".
-prune_low_expressed_isoforms_min_samples:           2                  # Min samples required to support an isoform (integer >= 1).
+prune_low_expressed_isoforms_match_mode:            "gene_id"          # Cluster match mode: "gene_id", "bridge_safe", "any_shared", "subset", "jaccard".
+prune_low_expressed_isoforms_min_samples:           3                  # Min samples required to support an isoform (integer >= 1).
 prune_low_expressed_isoforms_tie_policy:            "include_all_ties" # Tie-handling policy at cutoff boundary: "include_all_ties", "exclude_all_ties", "truncate_ties".
 
 # Set up chunking parameters for transcriptclean
@@ -131,7 +131,7 @@ pbfusion_prom_filter:                8          # Filter rarer events involving 
 # oarfish (https://github.com/COMBINE-lab/oarfish) re-quantifies the filtered, defragmented, and
 # defrag-pruned isoform GTFs by building a transcriptome from each GTF and remapping the merged FLNC
 # reads to it, producing a transcript-level EM count matrix in each stage's output folder.
-run_oarfish:                         true                                          # True: run oarfish step. False: skip it
+run_oarfish:                         false                                          # True: run oarfish step. False: skip it
 oarfish_seq_tech:                    "pac-bio-hifi"                                # Sequencing tech / minimap2 preset. Choices: ont-cdna | ont-drna | pac-bio | pac-bio-hifi
 oarfish_extra_args:                  "--model-coverage --filter-group no-filters"  # Extra oarfish flags (coverage model on, NanoCount filters off, per the oarfish README example)
 oarfish_transcript_source_flag:      "--annotated"                                 # How oarfish tracks the transcriptome's provenance. Choices: --annotated | --novel (no effect on quantification; use --reference for oarfish < 0.8)

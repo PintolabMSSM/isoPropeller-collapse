@@ -75,3 +75,9 @@ set-resources:
 
   filter_par_region_overlap:
     mem_mb:     200000
+
+  isopropeller_defrag:
+    mem_mb:     200000
+
+  isopropeller_defrag_prune:
+    mem_mb:     200000

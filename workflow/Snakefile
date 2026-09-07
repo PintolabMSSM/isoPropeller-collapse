@@ -145,9 +145,9 @@ if CONSOLIDATE_PROTECT_KNOWN_TRANSCRIPTS:
     CONSOLIDATE_EXTRAARGS += f" --reference-gtf {REFGTF}"
 
 # Parameters for pruning low-expressed isoforms
-PRUNE_LOW_EXPRESSED_ISOFORMS_RETAIN_PCT  = config.get("prune_low_expressed_isoforms_retain_pct",97)
+PRUNE_LOW_EXPRESSED_ISOFORMS_RETAIN_PCT  = config.get("prune_low_expressed_isoforms_retain_pct",98)
 PRUNE_LOW_EXPRESSED_ISOFORMS_MATCH_MODE  = config.get("prune_low_expressed_isoforms_match_mode","gene_id")
-PRUNE_LOW_EXPRESSED_ISOFORMS_MIN_SAMPLES = config.get("prune_low_expressed_isoforms_min_samples",2)
+PRUNE_LOW_EXPRESSED_ISOFORMS_MIN_SAMPLES = config.get("prune_low_expressed_isoforms_min_samples",3)
 PRUNE_LOW_EXPRESSED_ISOFORMS_TIE_POLICY  = config.get("prune_low_expressed_isoforms_tie_policy","include_all_ties")
 
 # Define local variables: Choose whether or not to run certain filter rules

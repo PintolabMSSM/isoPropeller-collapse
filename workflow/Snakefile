@@ -166,6 +166,7 @@ TRANSCRIPTCLEAN_CHUNK_MAXREADS  = config.get("transcriptclean_chunk_maxreads",20
 TRANSCRIPTCLEAN_CHUNK_THREADS   = config.get("transcripclean_chunk_threads",2)
 
 # QC local variables
+RUN_VARSCAN         = as_bool(config.get("run_varscan", True))
 BAM_CHOICE          = str(config.get("qc_bam_choice", "labeled")).lower()  # "labeled" | "mapped"
 VARSCAN_MIN_COV     = config.get("varscan_min_coverage", 20),
 VARSCAN_MIN_READS2  = config.get("varscan_min_reads2", 4),
@@ -260,6 +261,10 @@ if RUN_OARFISH:
     # written into each stage's own output folder.
     OARFISH_TARGETS = OARFISH_COUNT_MATRICES
 
+VARSCAN_TARGETS = []
+if RUN_VARSCAN:
+    VARSCAN_TARGETS = expand("05_qc-reports/mapped-snp-genotypes/{sample}.varscan.snp.tsv", sample=SAMPLES)
+
 
 # Make final targets
 rule all:
@@ -285,7 +290,7 @@ rule all:
         "05_qc-reports/mapped-rnaseqc/rna_seqc_summary_wide.tsv",
 
         # QC mapped SNP genotypes
-        expand("05_qc-reports/mapped-snp-genotypes/{sample}.varscan.snp.tsv", sample=SAMPLES),
+        VARSCAN_TARGETS,
 
         # QC MultiQC — single report
         "05_qc-reports/multiqc/multiqc_report.html",

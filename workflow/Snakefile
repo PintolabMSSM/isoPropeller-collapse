@@ -21,6 +21,7 @@ min_snakemake_version = "8.25.0"
 configfile: ''.join([os.environ['GIT_REPODIR'], "/config/config.yaml"])
 #configfile: "/sc/arion/projects/pintod02a/Xiao/NIAP_benchmark/isopropeller/collapse_config.yaml"
 #configfile: "/sc/arion/projects/pintod02a/Xiao/NIAP_benchmark/isopropeller/config_mouse.yaml"
+#configfile: "/sc/arion/projects/pintod02a/Xiao/NIAP_benchmark/isopropeller/HPG_config.yaml"
 
 # ───────────────────────────────────────────────
 # INPUT CSV VALIDATION 
@@ -93,13 +94,13 @@ PART_MAP = {(s, i): p for s, lst in PARTS.items() for i, p in enumerate(lst)}
 
 
 # Define local variables: General
-SAMPLES         = sorted(PARTS.keys())
-MERGEDISOPREFIX = config.get("merged_isoform_prefix", "ISOP")
-MAXINTRONLEN    = config.get("max_intron_length", 1250000)
-USE_TC          = as_bool(config.get("use_transcriptclean", False))
-USE_ISOP_SJCORR = as_bool(config.get("use_isopropeller_sjcorrect", True))
-ONLYCHR         = as_bool(config.get("limit_output_to_chrNXY", True))
-MAXCHRMREADS    = config.get("max_chrM_reads", 50000)
+SAMPLES          = sorted(PARTS.keys())
+MERGEDISOPREFIX  = config.get("merged_isoform_prefix", "ISOP")
+MAXINTRONLEN     = config.get("max_intron_length", 1250000)
+USE_ISOP_SJCORR  = as_bool(config.get("use_isopropeller_sjcorrect", True))
+ISOP_DENOVO_MODE = as_bool(config.get("isopropeller_denovo_mode", False))
+ONLYCHR          = as_bool(config.get("limit_output_to_chrNXY", True))
+MAXCHRMREADS     = config.get("max_chrM_reads", 50000)
 
 # Define local variables: Reference files
 GENOMEFASTA     = config.get("reference_genome_fasta")
@@ -110,6 +111,10 @@ TERMINALEXONBED = config.get("reference_intrapriming_exclude_regions_bed","")
 RMSKBED         = config.get("reference_repeat_regions_bed")
 PARBED          = config.get("reference_PAR_regions_bed")
 SEGDUP          = config.get("reference_segdups_bed")
+
+# Known transcripts protection in filter, fully contained splicechains consolidation
+# and low-expressed isoforms pruning
+PROTECT_KNOWN_TRANSCRIPTS   = as_bool(config.get("protect_known_transcripts", True))
 
 # Define local variables: Filter thresholds
 FILT_MONOEXON_TSS_MAXDIST_BP      = config.get("filt_monoexon_tss_maxdist_bp", 10)
@@ -133,22 +138,21 @@ if DEPTHSUFFIX not in _ALLOWED_DEPTHSUFFIX:
     )
 
 # Parameters for merging fully contained splicechains
-CONSOLIDATE_PROTECT_KNOWN_TRANSCRIPTS   = as_bool(config.get("protect_known_transcripts", True))
 CONSOLIDATE_CONTAINED_SPLICECHAINS      = as_bool(config.get("consolidate_contained_splicechains", True))
 CONSOLIDATE_PROTECT_WINDOW              = int(config.get("consolidate_protect_window", 75))
 CONSOLIDATE_ROUND_MODE                  = config.get("consolidate_round_mode","nearest")
 CONSOLIDATE_MERGE_MIN_FRAC              = config.get("consolidate_merge_min_frac",0.1)
 CONSOLIDATE_MERGE_MIN_SAMPLES           = config.get("consolidate_merge_min_samples",2)
 
-CONSOLIDATE_EXTRAARGS = ""
-if CONSOLIDATE_PROTECT_KNOWN_TRANSCRIPTS:
-    CONSOLIDATE_EXTRAARGS += f" --reference-gtf {REFGTF}"
-
 # Parameters for pruning low-expressed isoforms
 PRUNE_LOW_EXPRESSED_ISOFORMS_RETAIN_PCT  = config.get("prune_low_expressed_isoforms_retain_pct",98)
 PRUNE_LOW_EXPRESSED_ISOFORMS_MATCH_MODE  = config.get("prune_low_expressed_isoforms_match_mode","gene_id")
 PRUNE_LOW_EXPRESSED_ISOFORMS_MIN_SAMPLES = config.get("prune_low_expressed_isoforms_min_samples",3)
 PRUNE_LOW_EXPRESSED_ISOFORMS_TIE_POLICY  = config.get("prune_low_expressed_isoforms_tie_policy","include_all_ties")
+
+# CONSOLIDATE_EXTRAARGS / PRUNE_EXTRAARGS (known-transcript protection) are defined
+# further down, right after TPM_FILTERTAG resolves -- see that section -- since the
+# protection file they point to lives under a TPM_FILTERTAG-named directory.
 
 # Define local variables: Choose whether or not to run certain filter rules
 REMOVE_MONOEXONS_NO_TSS       = as_bool(config.get("remove_monoexons_without_cage_support", True))
@@ -161,13 +165,13 @@ REMOVE_PAR_OVERLAP            = as_bool(config.get("remove_isoforms_overlapping_
 REMOVE_BELOW_TPM              = as_bool(config.get("remove_isoforms_not_meeting_TPM_threshold", False))
 REMOVE_TERMINAL_EXONS_SEGDUP  = as_bool(config.get("remove_isoforms_with_mismapped_segdup_exons", True))
 
-# Define local variables: transcriptclean chunking parameters
-TRANSCRIPTCLEAN_CHUNK_MAXREADS  = config.get("transcriptclean_chunk_maxreads",2000000)
-TRANSCRIPTCLEAN_CHUNK_THREADS   = config.get("transcripclean_chunk_threads",2)
-
 # QC local variables
-RUN_VARSCAN         = as_bool(config.get("run_varscan", True))
-BAM_CHOICE          = str(config.get("qc_bam_choice", "labeled")).lower()  # "labeled" | "mapped"
+# RUN_ALL_QC gates the entire 05_qc-reports.smk module (its include: below and every one of
+# its targets in rule all:). RUN_VARSCAN only gates the varscan genotyping sub-feature WITHIN
+# that module, so it is ANDed with RUN_ALL_QC here: RUN_ALL_QC off forces RUN_VARSCAN off
+# regardless of its own setting, while RUN_ALL_QC on leaves RUN_VARSCAN free to be either.
+RUN_ALL_QC          = as_bool(config.get("run_all_qc", True))
+RUN_VARSCAN         = RUN_ALL_QC and as_bool(config.get("run_varscan", True))
 VARSCAN_MIN_COV     = config.get("varscan_min_coverage", 20),
 VARSCAN_MIN_READS2  = config.get("varscan_min_reads2", 4),
 
@@ -197,8 +201,9 @@ ISOPROPEXTRAARGS = ""
 if TERMINALEXONBED:
     ISOPROPEXTRAARGS += f" -l {TERMINALEXONBED}"
 if USE_ISOP_SJCORR:
-    ISOPROPEXTRAARGS += f" -x {SPLICEJUNCTIONS}"
-
+    ISOPROPEXTRAARGS += f" -j {SPLICEJUNCTIONS}"
+if ISOP_DENOVO_MODE:
+    ISOPROPEXTRAARGS += f" -x"
 
 # Define the filter tags used to mark subdirectories and group outputs.
 # Placed here (after their config dependencies) so all three resolve at parse time.
@@ -209,6 +214,27 @@ TPM_FILTERTAG    = (
 )
 DEFRAG_FILTERTAG = f"defrag{CONSOLIDATE_MERGE_MIN_FRAC}s{CONSOLIDATE_MERGE_MIN_SAMPLES}"
 PRUNE_FILTERTAG  = f"prune{PRUNE_LOW_EXPRESSED_ISOFORMS_RETAIN_PCT}s{PRUNE_LOW_EXPRESSED_ISOFORMS_MIN_SAMPLES}"
+
+# Known-transcript protection for the consolidate (06) and prune (07) steps.
+# Rather than having each step re-derive "known" transcripts itself via
+# --reference-gtf (parsing REFGTF and matching splice-junction chains), reuse the
+# transcript_ids rules/04_isopropeller-filter.smk's isop_annotate rule already
+# classified as "known" for this exact sample/depth/TPM-filter combination
+# (04_isoPropeller-filter/{prefix}_{suffix}/{TPM_FILTERTAG}/keep_reference/
+# isoqc_keep_{prefix}_{suffix}_reference.ids) via --protect-transcript-ids instead:
+# a plain transcript_id lookup, no second GTF parse, no chain matching. Built from
+# MERGEDISOPREFIX/DEPTHSUFFIX/TPM_FILTERTAG (not hardcoded) so it stays in sync with
+# isop_annotate's own output path if any of those config values change, and is only
+# resolvable here, after TPM_FILTERTAG is defined above.
+PROTECT_KNOWN_TRANSCRIPTS_IDS = (
+    f"04_isoPropeller-filter/{MERGEDISOPREFIX}_{DEPTHSUFFIX}/{TPM_FILTERTAG}/keep_reference/isoqc_keep_{MERGEDISOPREFIX}_{DEPTHSUFFIX}_reference.ids"
+)
+
+CONSOLIDATE_EXTRAARGS = ""
+PRUNE_EXTRAARGS = ""
+if PROTECT_KNOWN_TRANSCRIPTS:
+    CONSOLIDATE_EXTRAARGS += f" --protect-transcript-ids {PROTECT_KNOWN_TRANSCRIPTS_IDS}"
+    PRUNE_EXTRAARGS += f" --protect-transcript-ids {PROTECT_KNOWN_TRANSCRIPTS_IDS}"
 
 
 # ───────────────────────────────────────────────
@@ -221,7 +247,6 @@ include: "rules/01_mapping.smk"
 include: "rules/02_isopropeller.smk"
 include: "rules/03_isopropeller-merge.smk"
 include: "rules/04_isopropeller-filter.smk"
-include: "rules/05_qc-reports.smk"
 include: "rules/06_isopropeller-defrag.smk"
 include: "rules/07_isopropeller-defrag-prune.smk"
 
@@ -232,10 +257,6 @@ if MODE == "bam":
 else:
     print("[INFO] Loading FASTQ staging rules.", file=sys.stderr)
     include: "rules/00_fastq-input.smk"
-
-if USE_TC:
-    print("[INFO] Loading conditional transcriptclean rules.", file=sys.stderr)
-    include: "rules/01_transcriptclean.smk"
 
 PBFUSION_TARGETS = []
 if RUN_PBFUSION:
@@ -261,9 +282,57 @@ if RUN_OARFISH:
     # written into each stage's own output folder.
     OARFISH_TARGETS = OARFISH_COUNT_MATRICES
 
-VARSCAN_TARGETS = []
-if RUN_VARSCAN:
-    VARSCAN_TARGETS = expand("05_qc-reports/mapped-snp-genotypes/{sample}.varscan.snp.tsv", sample=SAMPLES)
+QC_TARGETS = []
+if RUN_ALL_QC:
+    print("[INFO] Loading conditional QC-report rules.", file=sys.stderr)
+    include: "rules/05_qc-reports.smk"
+
+    VARSCAN_TARGETS = []
+    if RUN_VARSCAN:
+        VARSCAN_TARGETS = expand("05_qc-reports/mapped-snp-genotypes/{sample}.varscan.snp.tsv", sample=SAMPLES)
+
+    # Every final target that only 05_qc-reports.smk's rules can produce. Collected into one
+    # list (rather than left as individual rule all: input lines) so the whole module -- not
+    # just varscan -- disappears from the DAG cleanly when RUN_ALL_QC is off.
+    QC_TARGETS = [
+        # QC Seqkit on FLNC fastq
+        "05_qc-reports/flnc-seqkit-stats/seqkit_flnc_wide.stats.tsv",
+
+        # QC mapped BAM summaries (per-sample + cohort table)
+        *expand("05_qc-reports/mapped-bamqc/{sample}/summary.tsv", sample=SAMPLES),
+        "05_qc-reports/mapped-bamqc/bam_qc_summary_long.tsv",
+        "05_qc-reports/mapped-bamqc/bam_qc_summary_wide.tsv",
+
+        # QC mapped RNA-SeQC metrics table
+        "05_qc-reports/mapped-rnaseqc/rna_seqc_summary_long.tsv",
+        "05_qc-reports/mapped-rnaseqc/rna_seqc_summary_wide.tsv",
+
+        # QC mapped SNP genotypes
+        *VARSCAN_TARGETS,
+
+        # QC MultiQC — single report
+        "05_qc-reports/multiqc/multiqc_report.html",
+
+        # QC longreasum, FASTQ report
+        *expand("05_qc-reports/flnc-longreadsum-fastq-report/{sample}", sample=SAMPLES),
+
+        # QC longreadsum, RNA-seq BAM report
+        *expand("05_qc-reports/mapped-longreadsum-rnaseq-report/{sample}", sample=SAMPLES),
+
+        # QC isoform filtering reports
+        *expand(
+            "05_qc-reports/isoform-filtering/{prefix}_{suffix}/{tpm_filtertag}/isoform-filter-stats.totals.tsv",
+            prefix=[MERGEDISOPREFIX],
+            suffix=[DEPTHSUFFIX],
+            tpm_filtertag=[TPM_FILTERTAG],
+        ),
+        *expand(
+            "05_qc-reports/isoform-filtering/{prefix}_{suffix}/{tpm_filtertag}/isoform-filter-stats.per-sample-wide.tsv",
+            prefix=[MERGEDISOPREFIX],
+            suffix=[DEPTHSUFFIX],
+            tpm_filtertag=[TPM_FILTERTAG],
+        ),
+    ]
 
 
 # Make final targets
@@ -277,43 +346,8 @@ rule all:
         expand("04_isoPropeller-filter/{prefix}_{suffix}/" + TPM_FILTERTAG + "/isoqc_pass_tts.bed", prefix=[MERGEDISOPREFIX], suffix=[DEPTHSUFFIX]),
         expand("04_isoPropeller-filter/{prefix}_{suffix}/" + TPM_FILTERTAG + "/isoqc_pass.trackgroups", prefix=[MERGEDISOPREFIX], suffix=[DEPTHSUFFIX]),
 
-        # QC Seqkit on FLNC fastq
-        "05_qc-reports/flnc-seqkit-stats/seqkit_flnc_wide.stats.tsv",
-
-        # QC mapped BAM summaries (per-sample + cohort table)
-        expand("05_qc-reports/mapped-bamqc/{sample}/summary.tsv", sample=SAMPLES),
-        "05_qc-reports/mapped-bamqc/bam_qc_summary_long.tsv",
-        "05_qc-reports/mapped-bamqc/bam_qc_summary_wide.tsv",
-
-        # QC mapped RNA-SeQC metrics table
-        "05_qc-reports/mapped-rnaseqc/rna_seqc_summary_long.tsv",
-        "05_qc-reports/mapped-rnaseqc/rna_seqc_summary_wide.tsv",
-
-        # QC mapped SNP genotypes
-        VARSCAN_TARGETS,
-
-        # QC MultiQC — single report
-        "05_qc-reports/multiqc/multiqc_report.html",
-
-        # QC longreasum, FASTQ report
-        expand("05_qc-reports/flnc-longreadsum-fastq-report/{sample}", sample=SAMPLES),
-
-        # QC longreadsum, RNA-seq BAM report
-        expand("05_qc-reports/mapped-longreadsum-rnaseq-report/{sample}", sample=SAMPLES),
-
-        # QC isoform filtering reports
-        expand(
-            "05_qc-reports/isoform-filtering/{prefix}_{suffix}/{tpm_filtertag}/isoform-filter-stats.totals.tsv",
-            prefix=[MERGEDISOPREFIX],
-            suffix=[DEPTHSUFFIX],
-            tpm_filtertag=[TPM_FILTERTAG],
-        ),
-        expand(
-            "05_qc-reports/isoform-filtering/{prefix}_{suffix}/{tpm_filtertag}/isoform-filter-stats.per-sample-wide.tsv",
-            prefix=[MERGEDISOPREFIX],
-            suffix=[DEPTHSUFFIX],
-            tpm_filtertag=[TPM_FILTERTAG],
-        ),
+        # QC reports (entire 05_qc-reports.smk module; empty when RUN_ALL_QC is off)
+        QC_TARGETS,
 
         # Defragmented pipeline outputs
         expand("06_isoPropeller-defrag/{prefix}_{suffix}/" + TPM_FILTERTAG + "/" + DEFRAG_FILTERTAG + "/isoqc_pass_defrag_exp_redist.txt", prefix=[MERGEDISOPREFIX], suffix=[DEPTHSUFFIX]),
@@ -340,3 +374,4 @@ rule all:
 
         # Conditional oarfish requantification count matrices
         OARFISH_TARGETS
+

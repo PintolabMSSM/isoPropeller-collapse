@@ -15,7 +15,7 @@ reference_annotations_refflat: "/hpc/users/pintod02/pintod02c/reference-database
 # reference_tss_bed: "/sc/arion/projects/pintod02c/reference-databases/hg38-v41-ERCC/isopropeller/combined_cage_Pitt-Fantom5-119FrontalLob_refTSS3.3_refseq_gencode_extended.merged.sorted_chr.bed"
 reference_tss_bed: "/sc/arion/projects/pintod02c/reference-databases/hg38-v41-ERCC/refseq_2025-10-06_gencode_v41_TSS-coordinates.bed"
 
-# A reference set of trusted splice junctions (needed for transcriptclean step) in STAR SJ.out.tab format
+# A reference set of trusted splice junctions (needed for splice junction correction) in STAR SJ.out.tab format
 splice_junctions_file: "/sc/arion/projects/pintod02c/reference-databases/hg38-v41-ERCC/isopropeller/merged-intropolis-PEC-GTEX_sirvs4.SJ.out.tab"
 
 # A reference set of repeat regions in the genome (e.g from repeatmasker) in BED format
@@ -35,14 +35,14 @@ reference_intrapriming_exclude_regions_bed: "/sc/arion/projects/pintod02c/refere
 # This is set to 1.25 Mb by default, which is the maximum known intron size in the human genome
 max_intron_length: 1250000
 
-# Select method for isoform correction. Two options are currently supported.
 # - The 'use_isopropeller_sjcorrect' option will use the native isoPropeller splice
-#   junction correction approach to correct non-canonical junctions.
-# - The 'use_transcriptclean' option will use transcriptclean for correcting splice
-#   junctions and variants.
-# Set either one of these options to 'true' or set both to 'false' to skip all corrections
+#   junction correction approach to correct non-reference junctions.
+# Set it to 'false' to skip the correction step
 use_isopropeller_sjcorrect:   true
-use_transcriptclean:          false
+
+#The 'isopropeller_denovo_mode' option is recommended for more aggresive novel isoform detection
+#when the external splice junction support is not complete.
+isopropeller_denovo_mode:     true
 
 # Set to 'true' if outputs should be limited to autosomes (chrN) and sex chromosomes (chrX, chrY), 
 # removing chrM and other contigs. Make sure to set this to false if you use a non-reference 
@@ -51,7 +51,8 @@ use_transcriptclean:          false
 limit_output_to_chrNXY: true
 
 # If the mitochondrial read count is very high (>500k reads), it will take a long time to run
-# the isoPropeller collapsing. By default the pipeline will therefore downsample mitochondrial reads
+# the isoPropeller collapsing. By default the pipeline will therefore downsample mitochondrial reads.
+# It can be skipped by setting it to a value smaller than 0, e.g. -1.
 max_chrM_reads: 50000
 
 # Prefix to use for the merged isoform file and final merged isoforms
@@ -64,6 +65,10 @@ merged_isoform_prefix:  "ISOP"
 #   "all"       : keep the full, unfiltered isoPropeller output
 isoform_depth_suffix:   "depth-gt1"
 
+# By default, isoforms that match the splice chain of reference transcripts defined in `reference_annotations_gtf`
+# will also be protected from merging. This can be disabled by setting 'protect_known_transcripts' to False
+protect_known_transcripts:                          True
+  
 # After the isoPropeller merging steps, optionally perform the following filtering steps to reduce
 # technical and biological noise.
 remove_monoexons_without_cage_support:              True
@@ -90,12 +95,9 @@ filt_tpm_min_samples:               3
 # proportionally redistributed across the longer splice chains. Dominant isoforms that account for at 
 # least 10% or more of the transcript output per gene (consolidate_merge_min_frac) in at least 2 or 
 # more samples (consolidate_merge_min_samples) will never be merged into larger transcripts.
-# By default, isoforms that match the splice chain of reference transcripts defined in `reference_annotations_gtf`
-# will also be protected from merging. This can be disabled by setting 'protect_known_transcripts' to False
-protect_known_transcripts:                          True
 consolidate_contained_splicechains:                 True
 consolidate_merge_min_frac:                         0.1
-consolidate_merge_min_samples:                      3
+consolidate_merge_min_samples:                      2
 
 # Set parameters for pruning rare isoforms from overlapping isoform clusters.
 prune_low_expressed_isoforms_retain_pct:            98                 # Cumulative expression retention % per sample (0, 100]
@@ -103,12 +105,9 @@ prune_low_expressed_isoforms_match_mode:            "gene_id"          # Cluster
 prune_low_expressed_isoforms_min_samples:           3                  # Min samples required to support an isoform (integer >= 1).
 prune_low_expressed_isoforms_tie_policy:            "include_all_ties" # Tie-handling policy at cutoff boundary: "include_all_ties", "exclude_all_ties", "truncate_ties".
 
-# Set up chunking parameters for transcriptclean
-transcriptclean_chunk_maxreads:  2000000
-transcripclean_chunk_threads:    8
-
 # QC analysis parameters
-run_varscan:           True
+run_all_qc:            True
+run_varscan:           False
 varscan_min_coverage:  20
 varscan_min_reads2:    4
 

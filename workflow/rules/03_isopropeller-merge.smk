@@ -133,6 +133,7 @@ rule analyze_end_regions:
             -i "{input.dist_list}" \
             -o "{output.tsscount}" \
             -d "{input.id_list}" \
+            -b 1000 \
             -t {threads}
 
         # TTS clustering and qantification
@@ -140,6 +141,7 @@ rule analyze_end_regions:
             -i "{input.dist_list}" \
             -o "{output.ttscount}" \
             -d "{input.id_list}" \
+            -b 1000 \
             -t {threads}
 
         # Update GTF file with modal ends

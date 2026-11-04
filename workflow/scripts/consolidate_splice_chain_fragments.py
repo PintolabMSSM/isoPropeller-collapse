@@ -1,8 +1,135 @@
 #!/usr/bin/env python3
 """
-consolidate_splice_chain_fragments_v2.py
+consolidate_splice_chain_fragments_v3.py
 
 Change log:
+  v3  2026-10  Bug fix: --reference-gtf silently did nothing at the default
+      --threads 1.
+
+      Root cause: find_supersets_with_filters_and_logging() takes
+      `reference_chains` as a normal function parameter (correctly passed in
+      from main(), and correctly forwarded into the multiprocessing branch's
+      Pool(initargs=...)). But its serial branch (used whenever --threads <= 1,
+      i.e. the DEFAULT) checked the module-level global `_G_reference_chains`
+      instead of that parameter:
+
+          if _G_reference_chains and tuple(Alist) in _G_reference_chains:
+              continue
+
+      `_G_reference_chains` is a multiprocessing-only global that is set to a
+      real value ONLY inside _mp_init(), and _mp_init() is only ever invoked
+      as the `initializer=` of mp.Pool(...) in the threads > 1 branch. In the
+      serial branch, _mp_init() is never called, so `_G_reference_chains`
+      stays at its module-level default of None for the entire run -- making
+      the `if _G_reference_chains and ...` check always False, so no
+      transcript was ever protected by --reference-gtf at the default thread
+      count. The same serial loop already used its *other* filter parameters
+      (tss_regions, tes_regions, protect_window, terminal_only,
+      minimal_superset) by name correctly -- only reference_chains /
+      _G_reference_chains was inconsistent, evidently copy-paste residue from
+      _process_gene() (the multiprocessing worker, where using the
+      _G_-prefixed global IS correct) introduced while fixing v2's unrelated
+      contained/UnboundLocalError crash bug.
+
+      This was found by code review (prompted by a user question about
+      whether --reference-gtf treats monoexonic transcripts consistently
+      between this script and prune_rare_isoforms_from_clusters_v3.py) and
+      confirmed empirically: the same --reference-gtf invocation silently
+      failed to protect a transcript at --threads 1 (default) but correctly
+      protected it at --threads 2, using fixtures in
+      consolidate_mono_test/ (query.gtf: gene G1 with a 2-exon MULTI
+      transcript and a MONO transcript fully contained within MULTI's first
+      exon; reference.gtf: one unrelated monoexonic transcript on a different
+      chromosome/gene, to isolate the "any reference monoexonic transcript
+      protects all monoexonic query transcripts" matching-by-chain-identity
+      behavior that this script has always had, in both v1 and v2, and which
+      is unchanged here -- see note below).
+
+      Fix: the serial branch now reads the `reference_chains` parameter
+      (already in scope and already used correctly elsewhere in this exact
+      function) instead of the global:
+
+          if reference_chains and tuple(Alist) in reference_chains:
+              continue
+
+      The multiprocessing branch and _process_gene() are untouched -- they
+      were already correct, since _mp_init() does run as the Pool's
+      initializer in that path.
+
+      Validated:
+        - No --reference-gtf (regression): output and containment map
+          byte-identical to v2's no-flag output; MULTI absorbs MONO exactly
+          as before.
+        - --reference-gtf + default --threads 1: MONO is now protected
+          (previously silently collapsed into MULTI, matching the bug).
+          Output now matches the already-correct --threads 2 behavior
+          (MONO kept at its own expression, 0 contained transcripts,
+          empty containment map) -- confirming parity between --threads 1
+          and --threads >= 2 is restored.
+        - --reference-gtf + --threads 2 (regression): unchanged, still
+          correctly protects MONO (this path was never buggy).
+        - Monoexonic-chain caveat note (inherited design characteristic,
+          not a bug, present unchanged since v1): a monoexonic transcript's
+          splice chain is the empty tuple (). If the reference GTF contains
+          ANY monoexonic transcript, its chain is also (), so every
+          monoexonic query transcript matches "a" reference chain and is
+          protected -- matching is by splice-chain identity only, not by
+          gene/locus/position. Confirmed identical in v1, v2, and this v3,
+          and confirmed identical to the same caveat already documented for
+          prune_rare_isoforms_from_clusters_v3.py's --reference-gtf
+          implementation (both treat monoexonic transcripts the same way).
+
+Interface:
+  v3  2026-10  Added --protect-transcript-ids: a plain-text file of
+      transcript_ids (one per line) to protect from collapsing, matched by
+      exact transcript_id against --gtf -- no chain computation at all. 
+      This is the fast alternative to --reference-gtf when
+      you already know, from some other source, exactly which of this
+      --gtf's own transcript_ids should be protected (e.g. IDs already
+      classified as reference-matched by an upstream annotation step): it
+      skips parsing a second GTF and building/matching splice-junction
+      chains entirely. It only works when the supplied IDs already match
+      this --gtf's own transcript_id values, unlike --reference-gtf's
+      structural (splice-chain identity) matching, which works regardless of
+      ID naming -- the two are not drop-in replacements for each other, see
+      the per-option --help text. Implementation: the loaded IDs are simply
+      unioned into the same `protected_tx` set already built from
+      --merge-min-frac and passed into redistribute_expression() -- no
+      changes to find_supersets_with_filters_and_logging(), _mp_init(), or
+      _process_gene(), since protected_tx's existing "never donate, never
+      dropped as contained" handling there already gives an ID-protected
+      transcript the same guarantee as a --reference-gtf chain match,
+      without needing to thread a third parameter through the
+      multiprocessing worker path (and risk reintroducing the kind of
+      global-vs-parameter inconsistency this same v3 changelog entry above
+      just fixed for --reference-gtf). Can be combined freely with
+      --reference-gtf and/or --merge-min-frac; all protection sources are
+      unioned. Note: unlike --reference-gtf's chain-identity skip (which
+      excludes a protected transcript from find_supersets_with_filters_and_
+      logging() entirely, so it never appears in --map-out at all),
+      --protect-transcript-ids still lets the transcript be discovered as
+      structurally "contained in" a superset -- --map-out still reports that
+      relationship -- it just never actually donates/gets merged away or
+      dropped from --out. --map-out's containment relationships and --out's
+      redistribution decisions are different questions; this only changes
+      the second one.
+      Validated using consolidate_mono_test/ (MULTI: 2-exon transcript at
+      100.0; MONO: contained in MULTI's first exon at 5.0): with only
+      --protect-transcript-ids=MONO (no --reference-gtf, no
+      --merge-min-frac), MONO keeps its own 5.0 and MULTI stays at 100.0 --
+      the same outcome as --reference-gtf protecting MONO via chain identity
+      -- while --map-out still correctly reports MONO as contained in MULTI
+      (the one documented difference above). Combined with --reference-gtf
+      protecting the same transcript, the reported protected count is
+      correctly the union (not double-counted). An unlisted/unknown ID is
+      reported but otherwise ignored, and output then matches the
+      no-protection baseline exactly. Re-ran the three existing --reference-
+      gtf regression cases (no-ref, --threads 1, --threads 2) unchanged by
+      this addition: all three still byte-identical to their pre-existing
+      recorded output. Existing invocations without
+      --protect-transcript-ids are completely unaffected (new argument
+      defaults to None, and the new code block is a no-op when unset).
+
   v2  2026-10  Speed/memory/correctness fix.
 
       1) Fixed a crash bug in find_supersets_with_filters_and_logging(): the
@@ -145,6 +272,47 @@ def point_within_window_of_any_interval(chrom: str, strand: str, pos: int,
             if s - window <= pos <= e + window:
                 return True
     return False
+
+
+def load_transcript_id_list(path: Path) -> Set[str]:
+    """
+    Load a plain-text list of transcript IDs to protect directly, with no chain
+    computation at all.
+
+    One ID per line. Blank lines and lines starting with '#' are ignored. If a
+    line has more than one whitespace/tab-delimited field (e.g. a two-column
+    "transcript_id<TAB>note" file), only the first field is used as the ID.
+    Transparent on gzip-compressed input (see `smart_open()`).
+
+    This is the fast alternative to `--reference-gtf`: it skips parsing a
+    reference GTF and building/matching splice-junction chains entirely, at
+    the cost of only working when the supplied IDs already match this
+    script's own `--gtf`'s `transcript_id` values (e.g. IDs already
+    classified as reference-matched by an upstream annotation step, pulled
+    out of that step's own output). It is not a substitute for
+    `--reference-gtf` when your assembly's transcript IDs don't already
+    correspond to the ones you want protected.
+
+    Parameters
+    ----------
+    path : Path
+        Path to the transcript ID list (optionally .gz).
+
+    Returns
+    -------
+    Set[str]
+        The set of transcript IDs read from the file, exactly as given (not
+        yet intersected with any GTF -- the caller does that and reports how
+        many were actually found).
+    """
+    ids: Set[str] = set()
+    with smart_open(path) as fh:
+        for line in fh:
+            line = line.strip()
+            if not line or line.startswith("#"):
+                continue
+            ids.add(line.split()[0])
+    return ids
 
 
 def parse_gtf(gtf_path: Path,
@@ -488,7 +656,7 @@ def find_supersets_with_filters_and_logging(
     tss_regions: Dict[Tuple[str, str], List[Tuple[int, int]]],
     tes_regions: Dict[Tuple[str, str], List[Tuple[int, int]]],
     protect_window: int,
-    reference_chains: Optional[Set[Tuple[int, int]]] = None,
+    reference_chains: Optional[Set[Tuple[Tuple[int, int], ...]]] = None,
     log_every: int = 1000,
     threads: int = 1,
 ) -> Tuple[Dict[str, List[str]], int, int]:
@@ -534,7 +702,14 @@ def find_supersets_with_filters_and_logging(
                 Aset = chain_sets[a]
                 Alist = chain_lists[a]
 
-                if _G_reference_chains and tuple(Alist) in _G_reference_chains:
+                # v3 fix: this must check the `reference_chains` parameter (already
+                # correctly passed into and in scope within this function), NOT the
+                # multiprocessing-only global `_G_reference_chains`, which is never
+                # populated in this serial branch (it is only ever set inside
+                # _mp_init(), which runs solely as mp.Pool's initializer in the
+                # threads > 1 branch below). Checking the global here made
+                # --reference-gtf a silent no-op at the default --threads 1.
+                if reference_chains and tuple(Alist) in reference_chains:
                     continue
 
                 chrom, strand, a_tss, a_tes = tx2_tss_tes.get(a, ("?", "?", 0, 0))
@@ -801,6 +976,14 @@ def main():
 
     # Long-read specific controls
     ap.add_argument("--reference-gtf", type=Path, default=None, help="Optional reference GTF file. Transcripts with matching splice chains will be protected from collapsing.")
+    ap.add_argument("--protect-transcript-ids", type=Path, default=None,
+                    help=("Optional plain-text file of transcript_ids (one per line) to protect "
+                          "directly from collapsing, matched by exact transcript_id against --gtf. No "
+                          "chain computation at all, so this is much faster than --reference-gtf on a "
+                          "large reference file, but only works if the listed IDs already match this "
+                          "--gtf's own transcript_id values (e.g. IDs you already know are "
+                          "reference-matched from an upstream annotation step). Can be combined with "
+                          "--reference-gtf and/or --merge-min-frac; all protection sources are unioned."))
     ap.add_argument("--terminal-only", action="store_true", help="Require that contained vs. parent differ only at transcript ends (no internal novel junctions).")
     ap.add_argument("--minimal-superset", action="store_true", help="Route only to the closest (fewest extra junctions) supersets.")
     ap.add_argument("--protect-tss-bed", type=Path, default=None, help="BED file with known CAGE/TSS regions; enforces TSS proximity within --protect-window.")
@@ -909,6 +1092,17 @@ def main():
     else:
         print(f"[INFO {ts()}] No cross-sample protection rule active (all contained transcripts eligible to merge)")
 
+    if args.protect_transcript_ids:
+        print(f"[INFO {ts()}] Loading transcript ID protection list...")
+        id_list = load_transcript_id_list(args.protect_transcript_ids)
+        matched_ids = id_list & set(tx2chain.keys())
+        protected_tx |= matched_ids
+        print(f"[INFO {ts()}]   {len(id_list)} ID(s) in list; {len(matched_ids)} found in --gtf and "
+              f"protected ({len(protected_tx)} transcript(s) protected in total).")
+        if id_list and not matched_ids:
+            print(f"[INFO {ts()}]   WARNING: none of the listed transcript IDs were found in --gtf. "
+                  f"Check that the ID list matches this --gtf's own transcript_id values.")
+
     print(f"[INFO {ts()}] Redistributing expression across {n_cols} column(s) with cascade...")
     adjusted_df = redistribute_expression(
         expr_df,
@@ -974,3 +1168,4 @@ Usage examples:
 """)
     else:
         main()
+

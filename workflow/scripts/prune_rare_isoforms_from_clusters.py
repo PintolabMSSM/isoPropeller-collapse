@@ -97,6 +97,52 @@ v3 (multiprocessing):
       available cores than this sandbox's 2. `--threads 1` remains the default,
       so existing invocations are unaffected unless `--threads` is passed
       explicitly.
+
+Interface:
+    - Renamed the isoform-protection option: `--protect-isoform-gtf` (with
+      `--reference-gtf` as a deprecated alias) is now simply `--reference-gtf`,
+      to match consolidate_splice_chain_fragments.py's option of the same name
+      and purpose. `--protect-isoform-gtf` is no longer
+      accepted at all -- this is a breaking rename, not an added alias.
+      Everything about how it works is unchanged (splice-chain identity match
+      against the reference GTF; single-exon/empty-chain transcripts are never
+      protected). Re-validated the full 18-case old-vs-new e2e regression suite
+      (prune_root_profile/validate_e2e_v3.sh, updated to pass `--reference-gtf`)
+      after the rename: all 18 cases pass, including the two cases exercising
+      isoform protection.
+    - Added `--protect-transcript-ids`: a plain-text file of transcript_ids
+      (one per line) to protect from filtering, matched by exact
+      transcript_id against `--gtf` -- no chain computation at all, 
+      following a discussion of `--reference-gtf`'s parsing
+      cost (benchmarked separately: ~120 MB/s, negligible for a
+      per-chromosome reference like this pipeline's ref_chr21.gtf, but
+      several seconds for a full multi-chromosome/genome-scale reference
+      file). This is the fast alternative when you already know, from some
+      other source, exactly which of this `--gtf`'s own transcript_ids
+      should be protected (e.g. IDs already classified as reference-matched
+      by an upstream annotation step) -- it skips parsing a second GTF and
+      building/matching splice-junction chains entirely. It only works when
+      the supplied IDs already match this `--gtf`'s own transcript_id
+      values, unlike `--reference-gtf`'s structural (splice-chain identity)
+      matching, which works regardless of ID naming -- the two are not
+      drop-in replacements for each other, see the per-option `--help` text.
+      Implementation: loaded IDs are simply unioned into the same
+      `protected_txs` set already built from `--reference-gtf` -- no new
+      parameters threaded through `_mp_init()`/`_process_group_mp()`/
+      `_process_group_core()`, since `protected_txs` is already passed to
+      every one of those unchanged. Can be combined freely with
+      `--reference-gtf`; the two protected sets are unioned. Validated: with
+      only `--protect-transcript-ids` at an aggressive
+      `--retain-locus-expr-pct-per-sample` setting that would otherwise drop
+      them, the listed transcripts survive while non-listed ones are
+      filtered exactly as before; combined with `--reference-gtf`, the
+      reported protected count is the correct union of both sources; unknown
+      IDs in the list are reported but otherwise ignored; comment lines
+      (`#...`) and blank lines in the list are skipped. Re-ran the full
+      18-case e2e regression suite after this change: all 18 still pass,
+      confirming no behavior change for existing invocations (new argument
+      defaults to `None`, and the new code block is a no-op when unset).
+>>>>>>> 14f87ff (Removed TranscriptClean related rules and variables. Added ISOP_DENOVO_MODE for telerating splice junctions without external support. Added an option to skip chrM downsample. Known transcript protection was synced for filter, defrag and prune steps. Added an option to enable all QC steps.)
 """
 
 import argparse
@@ -386,6 +432,47 @@ def resolve_protected_transcripts(
                 protected_txs.add(str(tx))
 
     return protected_txs, len(reference_chains)
+
+
+def load_transcript_id_list(path: Path) -> Set[str]:
+    """
+    Load a plain-text list of transcript IDs to protect directly, with no chain
+    computation at all.
+
+    One ID per line. Blank lines and lines starting with '#' are ignored. If a
+    line has more than one whitespace/tab-delimited field (e.g. a two-column
+    "transcript_id<TAB>note" file), only the first field is used as the ID.
+    Transparent on gzip-compressed input (see `smart_open()`).
+
+    This is the fast alternative to `--reference-gtf`: it skips parsing a
+    reference GTF and building/matching splice-junction chains entirely, at
+    the cost of only working when the supplied IDs already match this
+    script's own `--gtf`'s `transcript_id` values (e.g. IDs already
+    classified as reference-matched by an upstream annotation step, pulled
+    out of that step's own output). It is not a substitute for
+    `--reference-gtf` when your assembly's transcript IDs don't already
+    correspond to the ones you want protected.
+
+    Parameters
+    ----------
+    path : Path
+        Path to the transcript ID list (optionally .gz).
+
+    Returns
+    -------
+    Set[str]
+        The set of transcript IDs read from the file, exactly as given (not
+        yet intersected with any GTF -- the caller does that and reports how
+        many were actually found).
+    """
+    ids: Set[str] = set()
+    with smart_open(path) as fh:
+        for line in fh:
+            line = line.strip()
+            if not line or line.startswith("#"):
+                continue
+            ids.add(line.split()[0])
+    return ids
 
 
 def jaccard(a: Set[Tuple[int, int]], b: Set[Tuple[int, int]]) -> float:
@@ -1105,12 +1192,21 @@ def main():
 
     # Reference protection
     ref_group = ap.add_argument_group("Isoform Protection")
-    ref_group.add_argument("--protect-isoform-gtf", "--reference-gtf",
-                           dest="protect_isoform_gtf", type=Path, default=None,
-                           help=("Optional GTF of isoforms to protect. Transcripts whose splice chain "
-                                 "exactly matches an isoform in this GTF are PROTECTED from all filtering "
-                                 "and always kept. Single-exon transcripts (empty chain) are never "
-                                 "protected by this mechanism. (--reference-gtf is a deprecated alias.)"))
+    ref_group.add_argument("--reference-gtf", type=Path, default=None,
+                           help=("Optional reference GTF file. Transcripts whose splice chain exactly "
+                                 "matches an isoform in this GTF are PROTECTED from all filtering and "
+                                 "always kept. Single-exon transcripts (empty chain) are never protected "
+                                 "by this mechanism. (Same option name/semantics as "
+                                 "consolidate_splice_chain_fragments.py's --reference-gtf: chain identity "
+                                 "only, not gene/locus-aware.)"))
+    ref_group.add_argument("--protect-transcript-ids", type=Path, default=None,
+                           help=("Optional plain-text file of transcript_ids (one per line) to protect "
+                                 "directly from all filtering, matched by exact transcript_id against "
+                                 "--gtf. No chain computation at all, so this is much faster than "
+                                 "--reference-gtf on a large reference file, but only works if the listed "
+                                 "IDs already match this --gtf's own transcript_id values (e.g. IDs you "
+                                 "already know are reference-matched from an upstream annotation step). "
+                                 "Can be combined with --reference-gtf; the protected sets are unioned."))
 
     # Per-Sample Filtering Options
     filter_group = ap.add_argument_group("Per-Sample Filtering Options")
@@ -1178,15 +1274,27 @@ def main():
     tx2chain, tx2gene, tx2locus = parse_gtf(args.gtf)
 
     protected_txs: Set[str] = set()
-    if args.protect_isoform_gtf:
+    if args.reference_gtf:
         print(f"[{ts()}] Parsing reference GTF for known splice chains...")
-        protected_txs, n_ref_chains = resolve_protected_transcripts(tx2chain, args.protect_isoform_gtf)
+        protected_txs, n_ref_chains = resolve_protected_transcripts(tx2chain, args.reference_gtf)
         print(f"[{ts()}]   {n_ref_chains} distinct reference splice chains; "
               f"{len(protected_txs)} transcripts protected from filtering.")
         if n_ref_chains and not protected_txs:
             print(f"[{ts()}]   WARNING: no transcript matched a reference chain. Check that both GTFs "
                   f"use the same coordinate system and assembly.")
 
+    if args.protect_transcript_ids:
+        print(f"[{ts()}] Loading transcript ID protection list...")
+        id_list = load_transcript_id_list(args.protect_transcript_ids)
+        matched_ids = id_list & set(tx2chain.keys())
+        protected_txs |= matched_ids
+        print(f"[{ts()}]   {len(id_list)} ID(s) in list; {len(matched_ids)} found in --gtf and protected "
+              f"({len(protected_txs)} transcript(s) protected in total).")
+        if id_list and not matched_ids:
+            print(f"[{ts()}]   WARNING: none of the listed transcript IDs were found in --gtf. Check "
+                  f"that the ID list matches this --gtf's own transcript_id values.")
+
+>>>>>>> 14f87ff (Removed TranscriptClean related rules and variables. Added ISOP_DENOVO_MODE for telerating splice junctions without external support. Added an option to skip chrM downsample. Known transcript protection was synced for filter, defrag and prune steps. Added an option to enable all QC steps.)
     print(f"[{ts()}] Loading expression table...")
     expr_df = load_expression_table(args.expr, args.tx_col, args.expr_col)
 
@@ -1326,7 +1434,7 @@ def main():
     print(f"[{ts()}] Done. Kept {len(keep_set)} transcripts across {cluster_id_counter} clusters.")
     print(f"[{ts()}]   {len(rescued_set)} of these were retained only by the --min-keep fallback "
           f"(no support criterion passed).")
-    if args.protect_isoform_gtf:
+    if args.reference_gtf:
         print(f"[{ts()}]   {len(protected_kept)} were reference-protected "
               f"({len(protected_only)} of which no support criterion passed).")
     print(f"[{ts()}] Wrote: {args.out}")
@@ -1338,3 +1446,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

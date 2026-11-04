@@ -2,6 +2,7 @@
 # Define active filters (and their filter rules)
 # ───────────────────────────────────────────────
 FILTER_FAIL_ID_PATHS = []
+FILTER_KEEP_ID_PATHS = []
 
 if REMOVE_MONOEXONS_NO_TSS:
     FILTER_FAIL_ID_PATHS.append(
@@ -47,6 +48,10 @@ if REMOVE_TERMINAL_EXONS_SEGDUP:
         lambda wc: f"04_isoPropeller-filter/{wc.prefix}_{wc.suffix}/{TPM_FILTERTAG}/filt_terminal_exon_segdup/isoqc_fail_{wc.prefix}_{wc.suffix}_mismapped-terminal-exon-in-segdup.ids"
     )
 
+if PROTECT_KNOWN_TRANSCRIPTS:
+    FILTER_KEEP_ID_PATHS.append(
+        lambda wc: f"04_isoPropeller-filter/{wc.prefix}_{wc.suffix}/{TPM_FILTERTAG}/keep_reference/isoqc_keep_{wc.prefix}_{wc.suffix}_reference.ids"
+    )
 
 # ───────────────────────────────────────────────
 # Rule: Filter Monoexon Transcripts by TSS 
@@ -425,19 +430,54 @@ rule filter_terminal_exons_in_segdup:
 
 
 # ───────────────────────────────────────────────
+# Rule: Keep reference isoform
+# ───────────────────────────────────────────────
+rule isop_annotate:
+    message: "Annotating isoforms against reference GTF"
+    input:
+        isoform_gtf = "03_isoPropeller-merge/{prefix}_{suffix}.gtf",
+        tss_bed     = "03_isoPropeller-merge/{prefix}_{suffix}_tss.bed"
+    output:
+        keep_ids      = "04_isoPropeller-filter/{prefix}_{suffix}/" + TPM_FILTERTAG + "/keep_reference/isoqc_keep_{prefix}_{suffix}_reference.ids",
+        annotated_gtf = "04_isoPropeller-filter/{prefix}_{suffix}/" + TPM_FILTERTAG + "/keep_reference/{prefix}_{suffix}_reference.gtf"
+    params:
+        ref_gtf = config["reference_annotations_gtf"]
+    threads: 24
+    conda: 
+        SNAKEDIR + "envs/isopropeller.yaml"
+    log: 
+        "logs/04_isoPropeller-filter/{prefix}_{suffix}/" + TPM_FILTERTAG + "/keep_reference/keep_reference.log"
+    shell:
+        r'''
+        set -euo pipefail
+        (
+            echo "## Running isoPropeller_annotate ##"
+
+            mkdir -p "$(dirname "{output.keep_ids}")"
+
+            isoPropeller_annotate \
+                -q "{input.isoform_gtf}" -r "{params.ref_gtf}" \
+                -o "{output.annotated_gtf}" -t {threads} -e "{input.tss_bed}"
+            
+            grep "known" "{output.annotated_gtf}" | cut -d'"' -f2 | sort -u > "{output.keep_ids}"
+        ) &> "{log}"
+        '''
+
+# ───────────────────────────────────────────────
 # Rule: Aggregate Filtered Final Outputs 
 # ───────────────────────────────────────────────
 ruleorder: filter_aggregate_final_outputs > gff_to_bed
 rule filter_aggregate_final_outputs:
     message: "Aggregating final isoform outputs after filtering ({wildcards.prefix}_{wildcards.suffix})"
     input:
-        gtf = "03_isoPropeller-merge/{prefix}_{suffix}.gtf",
-        mod = "03_isoPropeller-merge/{prefix}_{suffix}_modal_ends.gtf",
-        exp = "03_isoPropeller-merge/{prefix}_{suffix}_exp.txt",
-        ids = "03_isoPropeller-merge/{prefix}_{suffix}_id.txt",
-        tss = "03_isoPropeller-merge/{prefix}_{suffix}_tss.bed",
-        tts = "03_isoPropeller-merge/{prefix}_{suffix}_tts.bed",
-        fail_ids = lambda wc: [func(wc) for func in FILTER_FAIL_ID_PATHS]
+        gtf      = "03_isoPropeller-merge/{prefix}_{suffix}.gtf",
+        mod      = "03_isoPropeller-merge/{prefix}_{suffix}_modal_ends.gtf",
+        exp      = "03_isoPropeller-merge/{prefix}_{suffix}_exp.txt",
+        ids      = "03_isoPropeller-merge/{prefix}_{suffix}_id.txt",
+        tss      = "03_isoPropeller-merge/{prefix}_{suffix}_tss.bed",
+        tts      = "03_isoPropeller-merge/{prefix}_{suffix}_tts.bed",
+        fail_ids = lambda wc: [func(wc) for func in FILTER_FAIL_ID_PATHS],
+        keep_ids = lambda wc: [func(wc) for func in FILTER_KEEP_ID_PATHS]
     output:
         gtf = "04_isoPropeller-filter/{prefix}_{suffix}/" + TPM_FILTERTAG + "/isoqc_pass.gtf",
         mod = "04_isoPropeller-filter/{prefix}_{suffix}/" + TPM_FILTERTAG + "/isoqc_pass_modal_ends.gtf",
@@ -446,7 +486,7 @@ rule filter_aggregate_final_outputs:
         tss = "04_isoPropeller-filter/{prefix}_{suffix}/" + TPM_FILTERTAG + "/isoqc_pass_tss.bed",
         tts = "04_isoPropeller-filter/{prefix}_{suffix}/" + TPM_FILTERTAG + "/isoqc_pass_tts.bed",
         qcf = "04_isoPropeller-filter/{prefix}_{suffix}/" + TPM_FILTERTAG + "/isoqc_fail.ids",
-        trk = "04_isoPropeller-filter/{prefix}_{suffix}/" + TPM_FILTERTAG + "/isoqc_pass.trackgroups",
+        trk = "04_isoPropeller-filter/{prefix}_{suffix}/" + TPM_FILTERTAG + "/isoqc_pass.trackgroups"
     params:
         snakedir = SNAKEDIR,
         tpm_filtertag = TPM_FILTERTAG
@@ -459,7 +499,7 @@ rule filter_aggregate_final_outputs:
         SNAKEDIR + "envs/omics-toolkit.yaml"
     run:
         from pathlib import Path
-        import shlex # Import the shlex module
+        import shlex
 
         Path(output.gtf).parent.mkdir(parents=True, exist_ok=True)
 
@@ -476,15 +516,26 @@ rule filter_aggregate_final_outputs:
                 
                 # Generate a default trackgroups file
                 awk 'BEGIN{{OFS="\\t"}} NR==1{{for(i=2; i<=NF; i++) print $i, "ALL"; exit}}' "{output.exp}" > "{output.trk}" 2>> "{log}"
-                
             """)
         else:
-            # Join the list of files into a single, properly quoted string
-            # shlex.quote() correctly handles spaces and other special characters
             fail_id_files_quoted = " ".join([shlex.quote(str(f)) for f in input.fail_ids])
             
+            # Subtraction logic check
+            if input.keep_ids:
+                keep_id_files_quoted = " ".join([shlex.quote(str(f)) for f in input.keep_ids])
+                subtraction_cmd = f"""
+                sort -u {fail_id_files_quoted} > "{output.qcf}.raw" 2>> "{log}"
+                sort -u {keep_id_files_quoted} > "{output.qcf}.keep" 2>> "{log}"
+                diff-by-ids -ff "{output.qcf}.raw" -fc 1 -if "{output.qcf}.keep" > "{output.qcf}" 2>> "{log}"
+                rm -f "{output.qcf}.raw" "{output.qcf}.keep"
+                """
+            else:
+                subtraction_cmd = f"""
+                sort -u {fail_id_files_quoted} > "{output.qcf}" 2>> "{log}"
+                """
+
             shell("""
-                sort -u {fail_id_files_quoted}                                > "{output.qcf}" 2>> "{log}"
+                {subtraction_cmd}
                 gtf-filter-attributes.pl -m "{output.qcf}" -v "{input.gtf}"   > "{output.gtf}" 2>> "{log}"
                 gtf-filter-attributes.pl -m "{output.qcf}" -v "{input.mod}"   > "{output.mod}" 2>> "{log}"
                 diff-by-ids -ff "{input.ids}" -fc 4 -if "{output.qcf}"        > "{output.ids}" 2>> "{log}"
@@ -498,5 +549,4 @@ rule filter_aggregate_final_outputs:
 
                 # Generate a default trackgroups file
                 awk 'BEGIN{{OFS="\\t"}} NR==1{{for(i=2; i<=NF; i++) print $i, "ALL"; exit}}' "{output.exp}" > "{output.trk}" 2>> "{log}"
-
             """)

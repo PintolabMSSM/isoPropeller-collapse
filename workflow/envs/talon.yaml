@@ -1,9 +1,0 @@
-name: talon_env
-channels:
-  - conda-forge
-  - bioconda
-  - defaults
-dependencies:
-  - talon >=5.0.0
-  - samtools
-  - pigz

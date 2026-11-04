@@ -27,14 +27,6 @@ set-resources:
   mapping:
     mem_mb:   64000
 
-  talon_label_reads:
-    mem_mb:   32000
-
-  run_transcriptclean:
-    mem_mb:   250000
-    runtime:  "24h"
-    queue:    "premium"
-
   run_isopropeller:
     mem_mb:   90000
     runtime:  "24h"

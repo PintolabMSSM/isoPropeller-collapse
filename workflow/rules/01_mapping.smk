@@ -59,8 +59,8 @@ rule mapping:
         fastq = "01_mapping/{sample}/flnc_merged.fastq.gz",
         ref   = GENOMEFASTA
     output:
-        bam   = temp("01_mapping/{sample}/mapped.bam"),
-        bai   = temp("01_mapping/{sample}/mapped.bam.bai")
+        bam   = "01_mapping/{sample}/{sample}_mapped.bam",
+        bai   = "01_mapping/{sample}/{sample}_mapped.bam.bai"
     log:
         "logs/01_mapping/{sample}_mapping.log"
     threads: 24
@@ -90,83 +90,38 @@ rule mapping:
         """
 
 # ───────────────────────────────────────────────
-# Rule: Run talon_label_reads to prepare a talon-compatible mapping file
+# Rule: Helper function to determine mapping output file path
 # ───────────────────────────────────────────────
-rule talon_label_reads:
-    message: "Running TALON label_reads on sample {wildcards.sample}"
-    input:
-        bam = "01_mapping/{sample}/mapped.bam",
-        ref = GENOMEFASTA,
-        fai = GENOMEFASTA + ".fai"
-    output:
-        tsv     = "01_mapping/{sample}/{sample}_mapped_fa_read_labels.tsv.gz",
-        bam     = "01_mapping/{sample}/{sample}_mapped_labeled.bam",
-        bai     = "01_mapping/{sample}/{sample}_mapped_labeled.bam.bai"
-    log:
-        "logs/01_mapping/{sample}_talon_label_reads.log"
-    threads: 12
-    params:
-        tmpdir    = "01_mapping/{sample}/talon_tmp",
-        outprefix = "01_mapping/{sample}/{sample}_mapped_fa"
-    benchmark: 
-        "benchmarks/01_mapping/{sample}_talon_label_reads.txt"
-    conda:
-        SNAKEDIR + "envs/talon.yaml"
-    shell:
-        r"""
-        (
-        echo "Running TALON label_reads"
-        
-        mkdir -p {params.tmpdir}
-
-        # Run talon_label_reads function, which produces sam output unfortunately...
-        talon_label_reads \
-            --f="{input.bam}" \
-            --g="{input.ref}" \
-            --t={threads} \
-            --o="{params.outprefix}" \
-            --tmpDir="{params.tmpdir}" \
-            --deleteTmp
-
-        # Convert SAM to BAM and remove the intermediate SAM
-        samtools view -@ {threads} -b "{params.outprefix}_labeled.sam" \
-            | samtools sort -@ {threads} -o "{output.bam}"
-        samtools index "{output.bam}"
-        
-        # Delete the intermediary sam file
-        rm -f "{params.outprefix}_labeled.sam"
-
-        # Compress the label read csv output
-        pigz -f -c -p {threads} "{params.outprefix}_read_labels.tsv" > "{output.tsv}"
-        
-        # Delete the intermediary tsv file
-        rm -f "{params.outprefix}_read_labels.tsv"
-        
-        echo "Finished running TALON label_reads"
-        ) &> "{log}"
-        """
+def get_final_mapping_bam(wildcards):
+    """
+    Returns downsampled BAM path if MAXCHRMREADS > -1, otherwise returns mapped.bam.
+    """
+    if MAXCHRMREADS >= 0:
+        return f"01_mapping/{wildcards.sample}/{wildcards.sample}_mapped_chrM_DS.bam"
+    return f"01_mapping/{wildcards.sample}/{wildcards.sample}_mapped.bam"
 
 
 # ───────────────────────────────────────────────
 # Rule: Downsample reads on chrM to avoid slowdowns in subsequent correction steps
 # ───────────────────────────────────────────────
-rule downsample_chrM:
-    message: "Downsample mitochondrial reads for {wildcards.sample}"
-    input:
-        bam     = "01_mapping/{sample}/{sample}_mapped_labeled.bam",
-        bai     = "01_mapping/{sample}/{sample}_mapped_labeled.bam.bai"
-    output:
-        bam     = "01_mapping/{sample}/{sample}_mapped_labeled_chrM_DS.bam",
-        bai     = "01_mapping/{sample}/{sample}_mapped_labeled_chrM_DS.bam.bai"
-    params:
-        max_chrM_reads = MAXCHRMREADS,
-        seed           = 4232
-    log:
-        "logs/01_mapping/{sample}_downsample_chrM.log"
-    benchmark:
-        "benchmarks/01_mapping/{sample}_downsample_chrM.txt"
-    threads: 4
-    conda:
-        SNAKEDIR + "envs/pysam.yaml"
-    script:
-        SNAKEDIR + "scripts/downsample_chrM_bam.py"
+if MAXCHRMREADS >= 0:
+    rule downsample_chrM:
+        message: "Downsample mitochondrial reads for {wildcards.sample}"
+        input:
+            bam     = "01_mapping/{sample}/{sample}_mapped.bam",
+            bai     = "01_mapping/{sample}/{sample}_mapped.bam.bai"
+        output:
+            bam     = "01_mapping/{sample}/{sample}_mapped_chrM_DS.bam",
+            bai     = "01_mapping/{sample}/{sample}_mapped_chrM_DS.bam.bai"
+        params:
+            max_chrM_reads = MAXCHRMREADS,
+            seed           = 4232
+        log:
+            "logs/01_mapping/{sample}_downsample_chrM.log"
+        benchmark:
+            "benchmarks/01_mapping/{sample}_downsample_chrM.txt"
+        threads: 24
+        conda:
+            SNAKEDIR + "envs/pysam.yaml"
+        script:
+            SNAKEDIR + "scripts/downsample_chrM_bam.py"

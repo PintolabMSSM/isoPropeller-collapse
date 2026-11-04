@@ -4,9 +4,7 @@
 rule run_isopropeller:
     message: "Running isoPropeller on sample {wildcards.sample}"
     input:
-        bam  = lambda wc: ( f"01_transcriptclean/{wc.sample}/{wc.sample}_mapped_labeled_tclean.bam"
-                            if USE_TC
-                            else f"01_mapping/{wc.sample}/{wc.sample}_mapped_labeled_chrM_DS.bam"),
+        bam      = get_final_mapping_bam,
         genfasta = GENOMEFASTA,
         reftss   = REFTSS
     output:

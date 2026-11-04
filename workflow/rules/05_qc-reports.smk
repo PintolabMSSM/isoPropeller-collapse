@@ -2,14 +2,6 @@
 # Helper functions
 #────────────────────────────────────────────────
 
-def _bam_for(sample):
-    return (f"01_mapping/{sample}/{sample}_mapped_labeled.bam"
-            if BAM_CHOICE == "labeled"
-            else f"01_mapping/{sample}/mapped.bam")
-
-def _bai_for(sample):
-    return _bam_for(sample) + ".bai"
-
 def _as_int(x):
     try:
         return int(x if not isinstance(x, (list, tuple)) else x[0])
@@ -121,10 +113,10 @@ rule rnaseqc_collapse_gtf:
 
 
 rule rnaseqc_sample:
-    message: "RNA-SeQC: {wildcards.sample} (bam_choice={BAM_CHOICE})"
+    message: "RNA-SeQC: {wildcards.sample}"
     input:
-        bam = lambda wc: _bam_for(wc.sample),
-        bai = lambda wc: _bai_for(wc.sample),
+        bam = "01_mapping/{sample}/{sample}_mapped.bam",
+        bai = "01_mapping/{sample}/{sample}_mapped.bam.bai",
         gtf = "05_qc-reports/mapped-rnaseqc/reference/collapsed_reference.gtf",
         ref = GENOMEFASTA
     output:
@@ -184,8 +176,8 @@ rule rnaseqc_metrics_cohort:
 rule picard_collect_rnaseqmetrics:
     message: "Picard CollectRnaSeqMetrics: {wildcards.sample}"
     input:
-        bam     = lambda wc: _bam_for(wc.sample),
-        bai     = lambda wc: _bai_for(wc.sample),
+        bam     = "01_mapping/{sample}/{sample}_mapped.bam",
+        bai     = "01_mapping/{sample}/{sample}_mapped.bam.bai",
         refflat = lambda wc: config["reference_annotations_refflat"]  # <- from config.yaml
     output:
         metrics = "05_qc-reports/mapped-picard-RnaSeqMetrics/{sample}/{sample}.RnaSeqMetrics.txt",
@@ -283,7 +275,7 @@ rule longreadsum_gtf_to_bed12:
 rule longreadsum_rnaseq_bam_cohort:
     message: "LongReadSum RNA-Seq BAM (cohort)"
     input:
-        bam   = lambda wc: _bam_for(wc.sample),
+        bam   = "01_mapping/{sample}/{sample}_mapped.bam",
         bed12 = "05_qc-reports/mapped-rnaseqc/reference/collapsed_reference.bed12"
     output:
         outdir = directory("05_qc-reports/mapped-longreadsum-rnaseq-report/{sample}"),
@@ -319,10 +311,10 @@ rule longreadsum_rnaseq_bam_cohort:
 # ────────────────────────────────────────────────
 
 rule bam_flagstat:
-    message: "samtools flagstat: {wildcards.sample} ({BAM_CHOICE})"
+    message: "samtools flagstat: {wildcards.sample}"
     input:
-        bam = lambda wc: _bam_for(wc.sample),
-        bai = lambda wc: _bai_for(wc.sample)
+        bam = "01_mapping/{sample}/{sample}_mapped.bam",
+        bai = "01_mapping/{sample}/{sample}_mapped.bam.bai"
     output:
         txt = "05_qc-reports/mapped-bamqc/{sample}/flagstat.txt"
     log:
@@ -343,10 +335,10 @@ rule bam_flagstat:
         '''
 
 rule bam_idxstats:
-    message: "samtools idxstats: {wildcards.sample} ({BAM_CHOICE})"
+    message: "samtools idxstats: {wildcards.sample}"
     input:
-        bam = lambda wc: _bam_for(wc.sample),
-        bai = lambda wc: _bai_for(wc.sample)
+        bam = "01_mapping/{sample}/{sample}_mapped.bam",
+        bai = "01_mapping/{sample}/{sample}_mapped.bam.bai"
     output:
         txt = "05_qc-reports/mapped-bamqc/{sample}/idxstats.txt"
     log:
@@ -367,10 +359,10 @@ rule bam_idxstats:
         '''
 
 rule bam_stats:
-    message: "samtools stats: {wildcards.sample} ({BAM_CHOICE})"
+    message: "samtools stats: {wildcards.sample}"
     input:
-        bam = lambda wc: _bam_for(wc.sample),
-        bai = lambda wc: _bai_for(wc.sample)
+        bam = "01_mapping/{sample}/{sample}_mapped.bam",
+        bai = "01_mapping/{sample}/{sample}_mapped.bam.bai"
     output:
         txt = "05_qc-reports/mapped-bamqc/{sample}/stats.txt"
     log:
@@ -438,7 +430,6 @@ rule bam_qc_summary:
     benchmark:
         "benchmarks/05_qc-reports/mapped-bamqc/{sample}_bam_qc_summary.txt"
     params:
-        bam_choice     = BAM_CHOICE,
         chrm_threshold = MAXCHRMREADS
     threads: 1
     shell:
@@ -456,7 +447,6 @@ rule bam_qc_summary:
             
             {{
                 echo -e "metric\tvalue"
-                echo -e "bam_choice\t{params.bam_choice}"
                 echo -e "total_reads\t$total"
                 echo -e "mapped_reads\t$mapped"
                 echo -e "primary_mapped_reads\t$primary"
@@ -504,8 +494,8 @@ rule qc_genotyping_snps:
     message:
         "Genotyping QC (mpileup→VarScan) for sample {wildcards.sample}"
     input:
-        bam = "01_mapping/{sample}/{sample}_mapped_labeled.bam",
-        bai = "01_mapping/{sample}/{sample}_mapped_labeled.bam.bai",
+        bam = "01_mapping/{sample}/{sample}_mapped.bam",
+        bai = "01_mapping/{sample}/{sample}_mapped.bam.bai",
         ref = GENOMEFASTA
     output:
         snp = "05_qc-reports/mapped-snp-genotypes/{sample}.varscan.snp.tsv"
@@ -598,6 +588,8 @@ def _active_filter_id_paths(prefix, suffix):
         paths.append(f"04_isoPropeller-filter/{prefix}_{suffix}/{TPM_FILTERTAG}/filt_min_tpm/isoqc_fail_{prefix}_{suffix}_min-TPM.ids")
     if REMOVE_TERMINAL_EXONS_SEGDUP:
         paths.append(f"04_isoPropeller-filter/{prefix}_{suffix}/{TPM_FILTERTAG}/filt_terminal_exon_segdup/isoqc_fail_{prefix}_{suffix}_mismapped-terminal-exon-in-segdup.ids")
+    if PROTECT_KNOWN_TRANSCRIPTS:
+        paths.append(f"04_isoPropeller-filter/{prefix}_{suffix}/{TPM_FILTERTAG}/keep_reference/isoqc_keep_{prefix}_{suffix}_reference.ids")
     return paths
 
 def _active_filter_id_paths_wc(wc):
@@ -774,4 +766,5 @@ rule pivot_long_to_wide:
         wide.reset_index(inplace=True)
         os.makedirs(os.path.dirname(output.wide), exist_ok=True)
         wide.to_csv(output.wide, sep="\t", index=False, na_rep="NA")
+
 

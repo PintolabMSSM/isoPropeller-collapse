@@ -12,7 +12,7 @@ retries:            1
 default-resources:
   lsf_queue:    "express"
   lsf_project:  "acc_EPIASD"
-  mem_mb:       25000
+  mem_mb:       50000
   runtime:      720
   threads:      4
   span:         "span[hosts=1]"
@@ -28,19 +28,6 @@ set-resources:
   mapping:
     mem_mb:     96000
 
-  talon_label_reads:
-    mem_mb:     32000
-
-  run_transcriptclean:
-    lsf_queue:  "premium"
-    mem_mb:     350000
-    runtime:    1440
-
-  run_transcriptclean_on_chunk:
-    lsf_queue:  "express"
-    mem_mb:     40000
-    runtime:    720
-
   run_isopropeller:
     lsf_queue:  "express"
     mem_mb:     300000
@@ -48,13 +35,13 @@ set-resources:
 
   merge_isopropeller_gtfs:
     lsf_queue:  "premium"
-    mem_mb:     200000
+    mem_mb:     1000000
     runtime:    1440
 
   analyze_end_regions:
-    lsf_queue:  "express"
-    mem_mb:     500000
-    runtime:    720
+    lsf_queue:  "premium"
+    mem_mb:     1000000
+    runtime:    1440
 
   qc_genotyping_snps:
     lsf_queue:  "premium"
@@ -80,4 +67,6 @@ set-resources:
     mem_mb:     200000
 
   isopropeller_defrag_prune:
+    lsf_queue:  "premium"
     mem_mb:     200000
+    runtime:    1440

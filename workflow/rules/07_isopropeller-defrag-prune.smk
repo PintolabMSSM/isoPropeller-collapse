@@ -4,7 +4,7 @@
 # ───────────────────────────────────────────────
 ruleorder: isopropeller_defrag_prune > gff_to_bed
 rule isopropeller_defrag_prune:
-    message: "Defragmenting isoPropeller outputs"
+    message: "Pruning isoPropeller outputs"
     input:
         gtf = "06_isoPropeller-defrag/{prefix}_{suffix}/" + TPM_FILTERTAG + "/" + DEFRAG_FILTERTAG + "/isoqc_pass_defrag.gtf",
         mod = "06_isoPropeller-defrag/{prefix}_{suffix}/" + TPM_FILTERTAG + "/" + DEFRAG_FILTERTAG + "/isoqc_pass_defrag_modal_ends.gtf",
@@ -37,6 +37,7 @@ rule isopropeller_defrag_prune:
         min_samples = PRUNE_LOW_EXPRESSED_ISOFORMS_MIN_SAMPLES,
         match_mode  = PRUNE_LOW_EXPRESSED_ISOFORMS_MATCH_MODE,
         tie_policy  = PRUNE_LOW_EXPRESSED_ISOFORMS_TIE_POLICY,
+        extra_args  = PRUNE_EXTRAARGS
     shell:
         r"""
         (
@@ -57,7 +58,9 @@ rule isopropeller_defrag_prune:
           --min-keep 1 \
           --out "{output.exp}" \
           --clusters-out "{output.cls}" \
-          --dropped-out "{output.drp}"
+          --dropped-out "{output.drp}" \
+          --threads {threads} \
+          {params.extra_args}
         
         # Filter the 
         gtf-filter-attributes.pl -m "{output.exp}" "{input.gtf}"      > "{output.gtf}"
